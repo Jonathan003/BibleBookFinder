@@ -1,0 +1,237 @@
+.settings-page {
+  padding: 1rem 1.5rem;
+  min-height: calc(100vh - 80px);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.settings-header h2 {
+  font-size: 1.3rem;
+}
+
+.back-btn {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+}
+
+.back-btn:hover {
+  color: var(--text-primary);
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--bg-tile);
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: var(--bg-tile);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: -2px;
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+}
+
+.settings-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.settings-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.settings-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.setting-row:last-of-type {
+  border-bottom: none;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-label strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.setting-label span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.number-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.number-input button {
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  background: var(--bg-tile);
+  border-radius: 8px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.number-input button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.setting-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  min-width: 48px;
+  text-align: center;
+  color: var(--accent);
+}
+
+.setting-select {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tile);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.toggle {
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.toggle.on {
+  background: var(--accent);
+}
+
+.toggle.off {
+  background: var(--bg-tile);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle.on .toggle-thumb {
+  transform: translateX(24px);
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.btn-save {
+  flex: 1;
+  padding: 0.875rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.btn-save:hover {
+  filter: brightness(1.1);
+}
+
+.btn-reset {
+  padding: 0.875rem 1.25rem;
+  background: var(--bg-tile);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: var(--bg-tile-hover);
+}
+
+.version-info {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 1.5rem;
+}
