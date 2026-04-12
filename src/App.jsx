@@ -44,6 +44,7 @@ function App() {
   const [view, setView] = useState('menu');
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
+  const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
 
   const lang = config.display.lang;
 
@@ -68,6 +69,17 @@ function App() {
         }
 
         setConfig(userConfig);
+
+        // Welcome back detection
+        const now = Date.now();
+        const lastActive = user.lastActive || 0;
+        if (lastActive) {
+          const hoursSince = (now - lastActive) / (1000 * 60 * 60);
+          if (hoursSince > 168) setWelcomeMessage('7d');
+          else if (hoursSince > 24) setWelcomeMessage('24h');
+        }
+        // Update lastActive timestamp
+        updateUser(user.id, { lastActive: now });
       }
     }
   }, []);
@@ -77,6 +89,16 @@ function App() {
     persistCurrentUser(user.id);
     const userConfig = mergeConfig(user.settings);
     setConfig(userConfig);
+
+    // Welcome back detection
+    const now = Date.now();
+    const lastActive = user.lastActive || 0;
+    if (lastActive) {
+      const hoursSince = (now - lastActive) / (1000 * 60 * 60);
+      if (hoursSince > 168) setWelcomeMessage('7d');
+      else if (hoursSince > 24) setWelcomeMessage('24h');
+    }
+    updateUser(user.id, { lastActive: now });
   };
 
   const updateUserData = useCallback((updates) => {
@@ -105,6 +127,12 @@ function App() {
     if (!currentUser) return;
     const history = [...(currentUser.quizHistory || []), { ...session, date: Date.now() }];
     updateUserData({ quizHistory: history });
+  }, [currentUser, updateUserData]);
+
+  const updateBestTime = useCallback((bookId, ms) => {
+    if (!currentUser) return;
+    const bestTimes = { ...(currentUser.bestTimes || {}), [bookId]: ms };
+    updateUserData({ bestTimes });
   }, [currentUser, updateUserData]);
 
   // FSRS-based stats
@@ -196,6 +224,11 @@ function App() {
         <main className="app-main">
           {view === 'menu' && (
             <div className="menu">
+              {welcomeMessage && (
+                <div className="welcome-back-banner" onClick={() => setWelcomeMessage(null)}>
+                  {welcomeMessage === '7d' ? t.welcomeBack7d : t.welcomeBack24h}
+                </div>
+              )}
               <div className="stats">
                 <div className="stat-card">
                   <span className="stat-number">{stats.mastered}</span>
@@ -203,7 +236,7 @@ function App() {
                 </div>
                 <div className="stat-card">
                   <span className="stat-number">{stats.dueNow}</span>
-                  <span className="stat-label">{t.dueToday || 'Due today'}</span>
+                  <span className="stat-label">{t.readyToPractice}</span>
                 </div>
               </div>
 
@@ -243,6 +276,8 @@ function App() {
             <QuizGrid
               fsrsCards={fsrsCards}
               updateFsrsCard={updateFsrsCard}
+              bestTimes={currentUser.bestTimes || {}}
+              updateBestTime={updateBestTime}
               bestStreak={currentUser.bestStreak || 0}
               setBestStreak={updateBestStreak}
               addQuizSession={addQuizSession}

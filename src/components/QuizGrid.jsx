@@ -8,7 +8,7 @@ import {
 } from '../fsrs';
 import './QuizGrid.css';
 
-export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBestStreak, addQuizSession, onBack }) {
+export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -22,6 +22,11 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
   const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
+  const [sessionNewBests, setSessionNewBests] = useState(0);
+  const [sessionStartTime] = useState(() => Date.now());
+  const [showSummary, setShowSummary] = useState(false);
+  const [milestone, setMilestone] = useState(null); // message string | null
+  const [showNewBest, setShowNewBest] = useState(false);
   
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
@@ -116,7 +121,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
     window.scrollTo(0, 0);
   }, [pickNextBook]);
 
-  const handleBack = useCallback(() => {
+  const finishSession = useCallback(() => {
     if (score.total > 0) {
       const avgTime = responseTimes.length > 0
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
@@ -132,6 +137,14 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
     }
     onBack();
   }, [score, responseTimes, addQuizSession, onBack, sessionMasteredBooks, sessionHintedBooks, sessionWrongBooks]);
+
+  const handleBack = useCallback(() => {
+    if (score.total > 0) {
+      setShowSummary(true);
+    } else {
+      onBack();
+    }
+  }, [score.total, onBack]);
 
   const handleBookClick = (book) => {
     if (!targetBook || feedbackRef.current) return;
@@ -165,6 +178,35 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
         setSessionMasteredBooks(prev => new Set(prev).add(book.id));
+
+        // Personal best check
+        const prevBest = bestTimes[targetBook.id];
+        if (!prevBest || timeTaken < prevBest) {
+          updateBestTime(targetBook.id, timeTaken);
+          setSessionNewBests(prev => prev + 1);
+          setShowNewBest(true);
+          setTimeout(() => setShowNewBest(false), 1500);
+        }
+
+        // Milestone check — did this book newly cross the mastered threshold?
+        const wasAlreadyMastered = fsrsCards[targetBook.id]?.stability > 7;
+        const isNowMastered = result.card.stability > 7;
+        if (!wasAlreadyMastered && isNowMastered) {
+          const newCount = stats.mastered + 1;
+          const milestoneMessages = {
+            10: t.milestone10,
+            20: t.milestone20,
+            33: t.milestone33,
+            39: t.milestone39,
+            50: t.milestone50,
+            66: t.milestone66,
+          };
+          const msg = milestoneMessages[newCount];
+          if (msg) {
+            setMilestone(msg);
+            setTimeout(() => setMilestone(null), 3000);
+          }
+        }
       } else {
         setStreak(0);
       }
@@ -245,6 +287,44 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
 
   if (!targetBook) return null;
 
+  // Session summary screen
+  if (showSummary) {
+    const durationMin = Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000));
+    return (
+      <div className="quiz-grid summary-screen">
+        <h2 className="summary-title">{t.sessionSummaryTitle}</h2>
+        <div className="summary-stats">
+          <div className="summary-stat">
+            <span className="summary-number">{score.total}</span>
+            <span className="summary-label">{t.sessionReviewed}</span>
+          </div>
+          <div className="summary-stat">
+            <span className="summary-number">{durationMin}</span>
+            <span className="summary-label">{t.sessionMinutes}</span>
+          </div>
+          <div className="summary-stat">
+            <span className="summary-number">{score.correct}</span>
+            <span className="summary-label">{t.sessionCorrect}</span>
+          </div>
+          {sessionNewBests > 0 && (
+            <div className="summary-stat summary-best">
+              <span className="summary-number">⚡ {sessionNewBests}×</span>
+              <span className="summary-label">{t.sessionNewBests}</span>
+            </div>
+          )}
+        </div>
+        <div className="summary-buttons">
+          <button className="btn" onClick={() => setShowSummary(false)}>
+            {t.keepGoing}
+          </button>
+          <button className="btn quiz-btn" onClick={finishSession}>
+            {t.done}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="quiz-grid">
       <div className="quiz-top">
@@ -273,14 +353,21 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBes
         </div>
       </div>
 
-      {feedback === 'correct' && (
+      {feedback === 'correct' && !showNewBest && (
         <div className="feedback correct"><p>{t.correct} {formatTime(responseTime)}</p></div>
+      )}
+      {showNewBest && (
+        <div className="feedback correct"><p>⚡ {t.newBest} {formatTime(responseTime)}</p></div>
       )}
       {feedback === 'slow' && (
         <div className="feedback slow"><p>{t.tooSlow} — {formatTime(responseTime)}</p></div>
       )}
       {feedback === 'wrong' && (
         <div className="feedback wrong"><p>{t.wrong}</p></div>
+      )}
+
+      {milestone && (
+        <div className="milestone-banner">{milestone}</div>
       )}
 
       {hintVisible && (
