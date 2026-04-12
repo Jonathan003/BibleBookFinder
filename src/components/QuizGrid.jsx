@@ -20,6 +20,7 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
   
   const feedbackRef = useRef(false);
+  const scrollRef = useRef(null);
 
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
@@ -79,6 +80,9 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
     setResponseTime(null);
     setFeedback(null);
     setHintVisible(false);
+    // Scroll to top on new question
+    scrollRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
@@ -239,7 +243,7 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
         </div>
       )}
 
-      <div className="quiz-bottom">
+      <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
           <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>

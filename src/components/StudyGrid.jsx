@@ -12,6 +12,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
 
   const feedbackRef = useRef(false);
   const pickerRef = useRef(null);
+  const scrollRef = useRef(null);
 
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
@@ -96,6 +97,9 @@ export default function StudyGrid({ quizHistory, onBack }) {
     setTargetBook(selectedBook);
     setHintVisible(false);
     setFeedback(null);
+    // Scroll to top on new question
+    scrollRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   }, [weakBookIds, sessionFoundBooks]);
 
   pickerRef.current = pickRandomBook;
@@ -195,7 +199,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
         </div>
       )}
 
-      <div className="quiz-bottom">
+      <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
           <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
