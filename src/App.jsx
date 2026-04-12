@@ -13,6 +13,7 @@ export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
   quiz: { masteryMs: 5000, learningPace: 'balanced' },
   display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
+  study: { selectedGroups: [] },
 };
 
 // Deep merge saved settings with defaults so new keys are always present
@@ -29,6 +30,7 @@ export function mergeConfig(saved) {
     grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
     quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
     display: { ...defaultConfig.display, ...(saved.display || {}) },
+    study: { ...defaultConfig.study, ...(saved.study || {}) },
   };
 }
 
@@ -268,6 +270,11 @@ function App() {
 
           {view === 'study' && (
             <StudyGrid
+              savedGroups={config.study?.selectedGroups || []}
+              onSaveGroups={(groups) => saveConfig({
+                ...config,
+                study: { ...config.study, selectedGroups: groups }
+              })}
               onBack={() => setView('menu')}
             />
           )}
