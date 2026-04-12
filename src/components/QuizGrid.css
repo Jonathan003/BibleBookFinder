@@ -253,12 +253,13 @@
 }
 
 .book-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  display: grid;
+  align-content: center;
+  justify-items: start;
   transition: background-color 0.15s;
   position: relative;
-  padding: clamp(10px, 2.5vw, 18px) clamp(8px, 1.5vw, 14px);
+  padding: clamp(6px, 1.5vw, 12px) clamp(8px, 1.5vw, 14px);
+  min-height: clamp(44px, 7vw, 56px);
   border: none;
   cursor: pointer;
 }
