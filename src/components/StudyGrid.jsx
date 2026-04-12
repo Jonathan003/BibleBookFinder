@@ -31,6 +31,34 @@ export default function StudyGrid({ quizHistory, onBack }) {
   }
   const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
 
+  // Smart abbreviation detection
+  const gridRef = useRef(null);
+  const [autoAbbr, setAutoAbbr] = useState(false);
+  const abbrMode = config.display.abbreviations || 'auto';
+
+  const longestNameLength = useMemo(() => {
+    return bibleBooks.reduce((max, book) => {
+      const name = lang === 'nl' ? book.nl : book.en;
+      return Math.max(max, name.length);
+    }, 0);
+  }, [lang]);
+
+  useEffect(() => {
+    if (abbrMode !== 'auto') return;
+    const checkFit = () => {
+      const el = gridRef.current;
+      if (!el) return;
+      const cellWidth = el.offsetWidth / activeColumns;
+      const maxChars = Math.floor((cellWidth - 20) / 7.5);
+      setAutoAbbr(longestNameLength > maxChars);
+    };
+    const timer = setTimeout(checkFit, 50);
+    window.addEventListener('resize', checkFit);
+    return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
+  }, [abbrMode, activeColumns, longestNameLength]);
+
+  const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
+
   // Determine weak books from quiz history
   const weakBookIds = useMemo(() => {
     const weakSet = new Set();
@@ -111,9 +139,9 @@ export default function StudyGrid({ quizHistory, onBack }) {
     const isTarget = book.id === targetBook?.id;
     const showCorrect = feedback === 'correct' && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget;
-    const displayName = orientation === 'landscape'
-      ? (lang === 'nl' ? book.nl : book.en)
-      : (lang === 'nl' ? book.nlAbbr : book.enAbbr);
+    const displayName = useAbbreviations
+      ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
+      : (lang === 'nl' ? book.nl : book.en);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
@@ -169,7 +197,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
       <div className="quiz-bottom">
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className="book-grid" style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {otBooks.map(book => <BookCell key={book.id} book={book} />)}
           </div>
         </div>

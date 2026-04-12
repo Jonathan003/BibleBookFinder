@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import './QuizGrid.css';
@@ -38,6 +38,37 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
     orientation = isLandscape ? 'landscape' : 'portrait';
   }
   const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
+
+  // Smart abbreviation detection
+  const gridRef = useRef(null);
+  const [autoAbbr, setAutoAbbr] = useState(false);
+  const abbrMode = config.display.abbreviations || 'auto';
+
+  // Find the longest book name across all books for the current language
+  const longestNameLength = useMemo(() => {
+    return bibleBooks.reduce((max, book) => {
+      const name = lang === 'nl' ? book.nl : book.en;
+      return Math.max(max, name.length);
+    }, 0);
+  }, [lang]);
+
+  useEffect(() => {
+    if (abbrMode !== 'auto') return;
+    const checkFit = () => {
+      const el = gridRef.current;
+      if (!el) return;
+      const cellWidth = el.offsetWidth / activeColumns;
+      // At 0.85rem (~13.6px), average char is ~7.5px, minus padding (20px)
+      const maxChars = Math.floor((cellWidth - 20) / 7.5);
+      setAutoAbbr(longestNameLength > maxChars);
+    };
+    // Delay first check so DOM is ready
+    const timer = setTimeout(checkFit, 50);
+    window.addEventListener('resize', checkFit);
+    return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
+  }, [abbrMode, activeColumns, longestNameLength]);
+
+  const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
 
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
@@ -140,9 +171,9 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
     const isTarget = book.id === targetBook?.id;
     const showCorrect = feedback === 'correct' && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget;
-    const displayName = orientation === 'landscape'
-      ? (lang === 'nl' ? book.nl : book.en)
-      : (lang === 'nl' ? book.nlAbbr : book.enAbbr);
+    const displayName = useAbbreviations
+      ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
+      : (lang === 'nl' ? book.nl : book.en);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
@@ -210,7 +241,7 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
       <div className="quiz-bottom">
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className="book-grid" style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {otBooks.map(book => <BookCell key={book.id} book={book} />)}
           </div>
         </div>

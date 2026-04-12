@@ -182,6 +182,11 @@ export const translations = {
     hintTestament: 'Testament:',
     hintGroup: 'Groep:',
     mastered: 'Beheerst',
+    abbreviations: 'Afkortingen',
+    abbreviationsDesc: '(portretmodus)',
+    abbrAuto: 'Automatisch',
+    abbrAlways: 'Altijd',
+    abbrNever: 'Nooit',
   },
   en: {
     title: 'Bible Book Finder',
@@ -249,5 +254,10 @@ export const translations = {
     hintTestament: 'Testament:',
     hintGroup: 'Group:',
     mastered: 'Mastered',
+    abbreviations: 'Abbreviations',
+    abbreviationsDesc: '(portrait mode)',
+    abbrAuto: 'Auto',
+    abbrAlways: 'Always',
+    abbrNever: 'Never',
   }
 };
