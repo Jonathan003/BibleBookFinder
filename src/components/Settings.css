@@ -5,6 +5,10 @@
   margin: 0 auto;
 }
 
+@media (min-width: 768px) {
+  .settings-page { max-width: 600px; }
+}
+
 .settings-header {
   display: flex;
   align-items: center;
@@ -150,6 +154,31 @@
   color: var(--accent);
 }
 
+.orientation-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-tile);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .setting-select {
   padding: 0.5rem 0.75rem;
   background: var(--bg-tile);
@@ -234,4 +263,59 @@
   color: var(--text-secondary);
   font-size: 0.75rem;
   margin-top: 1.5rem;
+}
+
+/* Data Tab Styles */
+.btn-data {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.btn-export {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0ea5e9;
+}
+
+.btn-export:hover {
+  background: rgba(14, 165, 233, 0.25);
+}
+
+.btn-import {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-import:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.data-feedback {
+  text-align: center;
+  padding: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--correct);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: fadeIn 0.3s;
+}
+
+.data-warning {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.25rem;
+  line-height: 1.4;
 }

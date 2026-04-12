@@ -1,28 +1,107 @@
 import { useState } from 'react';
 import './Settings.css';
 
-export default function Settings({ config, onSave, onBack }) {
+export default function Settings({ config, onSave, onBack, currentUser, onRestore }) {
   const [grid, setGrid] = useState(config.grid);
   const [quiz, setQuiz] = useState(config.quiz);
   const [display, setDisplay] = useState(config.display);
   const [activeTab, setActiveTab] = useState('grid');
+  const [feedback, setFeedback] = useState('');
 
   const t = config.t;
 
   const tabs = [
     { id: 'grid', icon: '⊞', label: t.gridTab || 'Raster' },
     { id: 'quiz', icon: '⏱', label: t.quizTab || 'Quiz' },
-    { id: 'display', icon: '🎨', label: t.displayTab || 'Weergave' },
+    { id: 'data', icon: '👤', label: t.dataTab || 'Data' },
   ];
 
-  const handleSave = () => {
-    onSave({ grid, quiz, display });
+  const handleSave = (newConfig) => {
+    onSave(newConfig);
   };
 
-  const handleReset = () => {
-    setGrid({ portrait: 6, landscape: 5, orientation: 'auto' });
-    setQuiz({ alwaysGoodMs: 2000, beatRecordMs: 2000 });
-    setDisplay({ lang: 'nl', highlightFound: true });
+  const handleExport = async () => {
+    if (!currentUser) return;
+    const exportData = {
+      app: 'BibleBookFinder',
+      version: '1.1',
+      exportDate: new Date().toISOString(),
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar || 'book',
+        foundBooks: currentUser.foundBooks || [],
+        bestStreak: currentUser.bestStreak || 0,
+        quizHistory: currentUser.quizHistory || [],
+        settings: {
+          grid: config.grid,
+          quiz: config.quiz,
+          display: config.display,
+        },
+      }
+    };
+    const filename = `biblefinder-${currentUser.name.replace(/\s+/g, '-').toLowerCase()}-backup.json`;
+    const json = JSON.stringify(exportData, null, 2);
+    const file = new File([json], filename, { type: 'application/json' });
+
+    // Mobile: use native share sheet (reliable on iOS Safari / PWA)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        setFeedback(t.exportSuccess || 'Exported!');
+        setTimeout(() => setFeedback(''), 2500);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user cancelled
+      }
+    }
+
+    // Desktop fallback: blob download
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setFeedback(t.exportSuccess || 'Exported!');
+    setTimeout(() => setFeedback(''), 2500);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.user || data.app !== 'BibleBookFinder') throw new Error('Invalid');
+        
+        const confirmImport = window.confirm(
+          (config.display?.lang || 'nl') === 'nl' 
+            ? 'Dit overschrijft jouw huidige voortgang en instellingen. Doorgaan?' 
+            : 'This will overwrite your current progress and settings. Continue?'
+        );
+        if (confirmImport) {
+          onRestore(data.user);
+          // Update local state to reflect restored settings
+          if (data.user.settings) {
+            if (data.user.settings.grid) setGrid(data.user.settings.grid);
+            if (data.user.settings.quiz) setQuiz(data.user.settings.quiz);
+            if (data.user.settings.display) setDisplay(data.user.settings.display);
+          }
+          setFeedback(t.importSuccess || 'Restored!');
+          setTimeout(() => { setFeedback(''); onBack(); }, 1500);
+        }
+      } catch {
+        setFeedback(t.importError || 'Invalid file');
+        setTimeout(() => setFeedback(''), 3000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const renderTabContent = () => {
@@ -32,13 +111,22 @@ export default function Settings({ config, onSave, onBack }) {
           <h3>{t.gridTitle || 'Raster'}</h3>
           <p className="settings-desc">{t.gridDesc || 'Kolommen en schermstand.'}</p>
           <SettingRow label={t.portrait || 'Portret'} desc={t.portraitDesc || '(rechtop)'}>
-            <NumberInput value={grid.portrait} min={3} max={11} onChange={v => setGrid(g => ({ ...g, portrait: v }))} />
+            <NumberInput value={grid.portrait} min={3} max={11} onChange={v => {
+              setGrid(g => ({ ...g, portrait: v }));
+              handleSave({ grid: { ...grid, portrait: v }, quiz, display });
+            }} />
           </SettingRow>
           <SettingRow label={t.landscape || 'Liggend'} desc={t.landscapeDesc || '(gedraaid)'}>
-            <NumberInput value={grid.landscape} min={3} max={11} onChange={v => setGrid(g => ({ ...g, landscape: v }))} />
+            <NumberInput value={grid.landscape} min={3} max={11} onChange={v => {
+              setGrid(g => ({ ...g, landscape: v }));
+              handleSave({ grid: { ...grid, landscape: v }, quiz, display });
+            }} />
           </SettingRow>
           <SettingRow label={t.orientation || 'Schermstand'} desc={t.orientationDesc || '(forceer of auto)'}>
-            <select value={grid.orientation} onChange={e => setGrid(g => ({ ...g, orientation: e.target.value }))} className="setting-select">
+            <select value={grid.orientation} onChange={e => {
+              setGrid(g => ({ ...g, orientation: e.target.value }));
+              handleSave({ grid: { ...grid, orientation: e.target.value }, quiz, display });
+            }} className="setting-select">
               <option value="auto">{t.auto || 'Automatisch'}</option>
               <option value="portrait">{t.portraitMode || 'Portret'}</option>
               <option value="landscape">{t.landscapeMode || 'Liggend'}</option>
@@ -51,29 +139,54 @@ export default function Settings({ config, onSave, onBack }) {
       return (
         <>
           <h3>{t.quizTitle || 'Snelheid'}</h3>
-          <p className="settings-desc">{t.quizDesc || 'Tijdslimieten in milliseconden.'}</p>
-          <SettingRow label={t.alwaysGood || 'Altijd goed'} desc={t.alwaysGoodDesc || '(≤ deze tijd = goed)'}>
-            <NumberInput value={quiz.alwaysGoodMs} min={500} max={10000} step={500} onChange={v => setQuiz(q => ({ ...q, alwaysGoodMs: v }))} />
+          <p className="settings-desc">{t.quizDesc || 'Tijdslimiet voor beheersing.'}</p>
+          <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <span>{t.fast || 'Snel'}</span>
+                <span>{t.slow || 'Relaxed'}</span>
+              </div>
+              <input
+                type="range"
+                min={1000}
+                max={10000}
+                step={250}
+                value={quiz.masteryMs}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  setQuiz(q => ({ ...q, masteryMs: val }));
+                  handleSave({ grid, quiz: { ...quiz, masteryMs: val }, display });
+                }}
+                style={{ width: '100%', accentColor: 'var(--accent)' }}
+              />
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
+                {quiz.masteryMs} ms
+              </div>
+            </div>
           </SettingRow>
-          <SettingRow label={t.beatRecord || 'Record verslaan'} desc={t.beatRecordDesc || '(tolerantie boven record)'}>
-            <NumberInput value={quiz.beatRecordMs} min={500} max={10000} step={500} onChange={v => setQuiz(q => ({ ...q, beatRecordMs: v }))} />
+          <SettingRow label={t.highlightFound || 'Beheerste boeken'} desc={t.highlightFoundDesc || '(markeer boeken die je beheerst)'}>
+            <Toggle value={display.highlightFound} onChange={v => {
+              setDisplay(d => ({ ...d, highlightFound: v }));
+              handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
+            }} />
           </SettingRow>
         </>
       );
     }
+    // DATA TAB
     return (
       <>
-        <h3>{t.displayTitle || 'Weergave'}</h3>
-        <p className="settings-desc">{t.displayDesc || 'Taal en kleuren.'}</p>
-        <SettingRow label={t.language || 'Taal'}>
-          <select value={display.lang} onChange={e => setDisplay(d => ({ ...d, lang: e.target.value }))} className="setting-select">
-            <option value="nl">🇳🇱 NL</option>
-            <option value="en">🇬 EN</option>
-          </select>
-        </SettingRow>
-        <SettingRow label={t.highlightFound || 'Gevonden boeken'} desc={t.highlightFoundDesc || '(markeer gevonden boeken)'}>
-          <Toggle value={display.highlightFound} onChange={v => setDisplay(d => ({ ...d, highlightFound: v }))} />
-        </SettingRow>
+        <h3>{t.dataTitle || 'Voortgang beheren'}</h3>
+        <p className="settings-desc">{t.dataDesc || 'Exporteer of importeer jouw persoonlijke voortgang en instellingen.'}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <button className="btn-data btn-export" onClick={handleExport}>{t.exportBtn || 'Exporteer voortgang'}</button>
+          <label className="btn-data btn-import">
+            {t.importBtn || 'Importeer voortgang'}
+            <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+          </label>
+          {feedback && <p className="data-feedback">{feedback}</p>}
+          <p className="data-warning">{t.importWarning || '⚠️ Importeren overschrijft jouw huidige voortgang en instellingen.'}</p>
+        </div>
       </>
     );
   };
@@ -101,13 +214,9 @@ export default function Settings({ config, onSave, onBack }) {
 
       <div className="settings-card">
         {renderTabContent()}
-        <div className="settings-actions">
-          <button className="btn-save" onClick={handleSave}>{t.save || 'Opslaan'}</button>
-          <button className="btn-reset" onClick={handleReset}>{t.resetDefaults || 'Standaard'}</button>
-        </div>
       </div>
 
-      <p className="version-info">Bible Book Finder v1.0</p>
+      <p className="version-info">Bible Book Finder v1.1</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getUsers, createUser, setCurrentUser } from '../users';
+import { getUsers, createUser, getUser, updateUser } from '../users';
 import { avatarIcons, AvatarIcon } from './Icons';
 import './UserSelect.css';
 
@@ -14,15 +14,15 @@ export default function UserSelect({ onSelect }) {
     if (!newName.trim()) return;
     const result = createUser(newName);
     if (result.error) { setError(result.error); return; }
-    const updatedUsers = getUsers();
-    const newUser = updatedUsers[updatedUsers.length - 1];
-    import('../users').then(({ updateUser }) => {
-      updateUser(newUser.id, { avatar: selectedAvatar });
-    });
+    // Set avatar on the new user
+    updateUser(result.user.id, { avatar: selectedAvatar });
+    const updatedUser = getUser(result.user.id);
     setUsers(getUsers());
     setNewName('');
     setShowAdd(false);
     setError('');
+    // Auto-select the newly created user
+    if (updatedUser) onSelect(updatedUser);
   };
 
   return (

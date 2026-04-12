@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { bibleBooks, groupColors } from '../data';
+import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import './QuizGrid.css';
 
-export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStreak, addQuizSession, onBack }) {
+export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestStreak, setBestStreak, addQuizSession, onBack }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -14,6 +14,13 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
   const [responseTimes, setResponseTimes] = useState([]);
   const [bookTimes, setBookTimes] = useState({});
   
+  const [hintVisible, setHintVisible] = useState(false);
+  const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
+  const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
+  const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
+  
+  const feedbackRef = useRef(false);
+
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
     () => window.matchMedia('(orientation: landscape)').matches
@@ -32,8 +39,6 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
   }
   const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
 
-  const feedbackRef = useRef(false);
-
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
     const index = Math.floor(Math.random() * bibleBooks.length);
@@ -42,6 +47,7 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
     setStartTime(Date.now());
     setResponseTime(null);
     setFeedback(null);
+    setHintVisible(false);
   }, []);
 
   useEffect(() => {
@@ -54,52 +60,72 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
       const avgTime = responseTimes.length > 0
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
         : 0;
-      addQuizSession({ correct: score.correct, total: score.total, avgTime });
+      addQuizSession({
+        correct: score.correct,
+        total: score.total,
+        avgTime,
+        masteredBookIds: [...sessionMasteredBooks],
+        hintedBookIds: [...sessionHintedBooks],
+        wrongBookIds: [...sessionWrongBooks],
+      });
     }
     onBack();
-  }, [score, responseTimes, addQuizSession, onBack]);
+  }, [score, responseTimes, addQuizSession, onBack, sessionMasteredBooks, sessionHintedBooks, sessionWrongBooks]);
 
   const handleBookClick = (book) => {
-    if (!targetBook || feedback || feedbackRef.current) return;
+    if (!targetBook || feedbackRef.current) return;
 
-    const timeTaken = Date.now() - startTime;
-    setResponseTime(timeTaken);
-
-    const prevBest = bookTimes[targetBook.id] || Infinity;
-    const isAlwaysGood = timeTaken <= config.quiz.alwaysGoodMs;
-    const isNearBest = timeTaken <= prevBest + config.quiz.beatRecordMs;
-    const isFirstTry = prevBest === Infinity;
-    const isCorrect = isAlwaysGood || isNearBest || isFirstTry;
-
-    if (book.id === targetBook.id && isCorrect) {
+    if (book.id === targetBook.id) {
       feedbackRef.current = true;
       setFeedback('correct');
+      const timeTaken = Date.now() - startTime;
+      setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
-      setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
 
+      // Track best time per book
+      const prevBest = bookTimes[targetBook.id] || Infinity;
       if (timeTaken < prevBest) {
         setBookTimes(prev => ({ ...prev, [targetBook.id]: timeTaken }));
       }
 
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      if (newStreak > bestStreak) setBestStreak(newStreak);
-      markFound(book.id);
+      const isMastered = timeTaken <= config.quiz.masteryMs;
+      
+      setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
+
+      if (isMastered) {
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        if (newStreak > bestStreak) setBestStreak(newStreak);
+        markFound(book.id);
+        setSessionMasteredBooks(prev => new Set(prev).add(book.id));
+      } else {
+        setStreak(0);
+      }
 
       setTimeout(() => pickRandomBook(), 800);
-    } else if (book.id === targetBook.id) {
-      feedbackRef.current = true;
-      setFeedback('slow');
-      setScore(prev => ({ ...prev, total: prev.total + 1 }));
-      setStreak(0);
-      setTimeout(() => { feedbackRef.current = false; setFeedback(null); setResponseTime(null); }, 1000);
-    } else {
-      feedbackRef.current = true;
-      setFeedback('wrong');
-      setScore(prev => ({ ...prev, total: prev.total + 1 }));
-      setStreak(0);
-      setTimeout(() => { feedbackRef.current = false; setFeedback(null); setResponseTime(null); }, 600);
+      return;
     }
+
+    // Wrong click
+    feedbackRef.current = true;
+    setFeedback('wrong');
+    setSessionWrongBooks(prev => new Set(prev).add(book.id));
+    setScore(prev => ({ ...prev, total: prev.total + 1 }));
+    setStreak(0);
+
+    setTimeout(() => {
+      feedbackRef.current = false;
+      setFeedback(null);
+      setResponseTime(null);
+    }, 600);
+  };
+
+  const handleHint = () => {
+    if (!targetBook) return;
+    if (!hintVisible) {
+      setSessionHintedBooks(prev => new Set(prev).add(targetBook.id));
+    }
+    setHintVisible(prev => !prev);
   };
 
   const formatTime = (ms) => ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
@@ -107,19 +133,22 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
   const otBooks = bibleBooks.filter(b => b.testament === 'OT');
   const ntBooks = bibleBooks.filter(b => b.testament === 'NT');
 
+  const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
+
   const BookCell = ({ book }) => {
-    const isFound = foundBooks.includes(book.id);
-    const showFeedback = feedback && book.id === targetBook.id;
-    const showWrong = feedback === 'wrong' && book.id !== targetBook.id;
+    const isMastered = masteredBookIds.includes(book.id);
+    const isTarget = book.id === targetBook?.id;
+    const showCorrect = feedback === 'correct' && isTarget;
+    const showWrong = feedback === 'wrong' && !isTarget;
     const displayName = orientation === 'landscape'
       ? (lang === 'nl' ? book.nl : book.en)
       : (lang === 'nl' ? book.nlAbbr : book.enAbbr);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
-    if (config.display.highlightFound && isFound) bgColor = colors.hover;
-    if (showFeedback === 'correct') bgColor = '#3b82f6';
-    else if (showFeedback === 'slow') bgColor = '#ef4444';
+    if (config.display.highlightFound && isMastered) bgColor = colors.hover;
+    if (showCorrect) bgColor = '#3b82f6';
+    else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
     else if (showWrong) bgColor = '#f97316';
 
     return (
@@ -127,7 +156,7 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
         className="book-cell"
         style={{ backgroundColor: bgColor }}
         onClick={() => handleBookClick(book)}
-        disabled={feedback !== null || feedbackRef.current}
+        disabled={feedbackRef.current}
       >
         <span className="book-name">{displayName}</span>
       </button>
@@ -142,10 +171,12 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
   return (
     <div className="quiz-grid">
       <div className="quiz-top">
-        <button className="back-btn" onClick={handleBack}>← {t.back}</button>
-        <div className="quiz-prompt">
-          <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
-          {targetLabel && <span className="prompt-target">{targetLabel}</span>}
+        <div className="quiz-prompt-row">
+          <button className="back-btn" onClick={handleBack}>← {t.back}</button>
+          <div className="quiz-prompt">
+            <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
+            {targetLabel && <span className="prompt-target">{targetLabel}</span>}
+          </div>
         </div>
         <div className="quiz-stats">
           <div className="stat">
@@ -156,6 +187,9 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
             <span className="stat-value">{streak}</span>
             <span className="stat-label">{t.streak}</span>
           </div>
+          <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
+            💡
+          </button>
         </div>
       </div>
 
@@ -165,8 +199,12 @@ export default function QuizGrid({ foundBooks, markFound, bestStreak, setBestStr
       {feedback === 'wrong' && (
         <div className="feedback wrong"><p>{t.wrong}</p></div>
       )}
-      {feedback === 'slow' && (
-        <div className="feedback slow"><p>{t.tooSlow}</p></div>
+
+      {hintVisible && (
+        <div className="feedback hint">
+          <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+          <p>{t.hintReveal} <strong>{hintGroup}</strong></p>
+        </div>
       )}
 
       <div className="quiz-bottom">

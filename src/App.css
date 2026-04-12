@@ -3,7 +3,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -11,16 +11,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  background: var(--card);
+  padding: 0.6rem 1rem;
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  gap: 0.5rem;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .user-btn {
@@ -28,7 +30,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
-  background: var(--bg);
+  background: var(--bg-primary);
   border-radius: 8px;
   transition: all 0.2s;
 }
@@ -42,6 +44,7 @@
   align-items: center;
   justify-content: center;
   color: var(--accent);
+  flex-shrink: 0;
 }
 
 .header-avatar svg {
@@ -50,22 +53,32 @@
 }
 
 .header-name {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .subtitle {
-  font-size: 0.75rem;
-  color: var(--text-soft);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
 }
 
 .lang-btn {
-  padding: 0.4rem 0.75rem;
-  background: var(--bg);
+  padding: 0.6rem 1rem;
+  background: var(--bg-primary);
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lang-btn:hover {
@@ -90,6 +103,10 @@
   animation: slideUp 0.3s ease;
 }
 
+@media (min-width: 768px) {
+  .menu { max-width: 600px; }
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -99,7 +116,7 @@
 }
 
 .stat-card {
-  background: var(--card);
+  background: var(--bg-secondary);
   padding: 1.25rem;
   border-radius: 12px;
   display: flex;
@@ -117,13 +134,13 @@
 
 .stat-label {
   font-size: 0.85rem;
-  color: var(--text-soft);
+  color: var(--text-secondary);
 }
 
 .progress-bar {
   width: 100%;
   height: 10px;
-  background: var(--bg);
+  background: var(--bg-primary);
   border-radius: 5px;
   overflow: hidden;
   margin-bottom: 1.5rem;
@@ -136,62 +153,79 @@
   border-radius: 5px;
 }
 
-.menu-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-
+/* Button base */
 .btn {
   padding: 0.875rem 1.5rem;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .btn:active {
   transform: scale(0.98);
 }
 
-.btn.primary {
-  background: var(--accent);
+.btn-icon {
+  font-size: 1.2rem;
+}
+
+.menu-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.menu-buttons .reset-btn {
+  grid-column: 1 / -1;
+}
+
+.study-btn {
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
   color: white;
 }
 
-.btn.primary:hover {
-  filter: brightness(1.1);
+.study-btn:hover {
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+  transform: translateY(-2px);
 }
 
-.btn.secondary {
-  background: var(--card);
-  color: var(--text);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+.quiz-btn {
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  color: white;
 }
 
-.btn.secondary:hover {
-  background: var(--bg);
+.quiz-btn:hover {
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.35);
+  transform: translateY(-2px);
 }
 
-.btn.share {
-  background: rgba(16, 185, 129, 0.15);
+.share-btn {
+  background: rgba(16, 185, 129, 0.12);
   color: var(--success);
 }
 
-.btn.share:hover {
-  background: rgba(16, 185, 129, 0.25);
+.share-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  transform: translateY(-2px);
 }
 
-.btn.reset {
-  background: rgba(249, 115, 22, 0.1);
+.reset-btn {
+  background: rgba(249, 115, 22, 0.08);
   color: var(--wrong);
-  font-size: 0.9rem;
-  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  flex-direction: row;
+  justify-content: center;
 }
 
-.btn.reset:hover {
-  background: rgba(249, 115, 22, 0.2);
+.reset-btn:hover {
+  background: rgba(249, 115, 22, 0.18);
 }
 
 .share-feedback {
@@ -213,16 +247,4 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive */
-@media (min-width: 768px) {
-  .menu {
-    padding: 2rem 1.5rem;
-  }
-
-  .menu-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
 }

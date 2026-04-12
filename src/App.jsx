@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { bibleBooks, translations } from './data';
-import { getCurrentUser, getUser, updateUser } from './users';
+import { getCurrentUser, getUser, updateUser, setCurrentUser as persistCurrentUser } from './users';
 import { AvatarIcon } from './components/Icons';
 import UserSelect from './components/UserSelect';
 import StudyGrid from './components/StudyGrid';
@@ -8,19 +8,27 @@ import QuizGrid from './components/QuizGrid';
 import Settings from './components/Settings';
 import './App.css';
 
-const defaultConfig = {
+export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
-  quiz: { alwaysGoodMs: 2000, beatRecordMs: 2000 },
+  quiz: { masteryMs: 5000 },
   display: { lang: 'nl', highlightFound: true },
 };
 
-function loadConfig() {
-  try {
-    const saved = localStorage.getItem('biblefinder_config');
-    return saved ? { ...defaultConfig, ...JSON.parse(saved) } : defaultConfig;
-  } catch {
-    return defaultConfig;
+// Deep merge saved settings with defaults so new keys are always present
+export function mergeConfig(saved) {
+  if (!saved) return { ...defaultConfig };
+  // Handle legacy format where settings was just { lang: 'nl' }
+  if (saved.lang && !saved.display) {
+    return {
+      ...defaultConfig,
+      display: { ...defaultConfig.display, lang: saved.lang },
+    };
   }
+  return {
+    grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
+    quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
+    display: { ...defaultConfig.display, ...(saved.display || {}) },
+  };
 }
 
 const ConfigContext = createContext(null);
@@ -31,34 +39,50 @@ export function useAppConfig() {
 }
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUserState] = useState(null);
   const [view, setView] = useState('menu');
-  const [config, setConfig] = useState(loadConfig);
+  const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
 
   const lang = config.display.lang;
 
-  // Load current user on mount
+  // Load current user on mount + migrate old global config if present
   useEffect(() => {
     const userId = getCurrentUser();
     if (userId) {
       const user = getUser(userId);
-      if (user) setCurrentUser(user);
+      if (user) {
+        setCurrentUserState(user);
+        let userConfig = mergeConfig(user.settings);
+
+        // Migration: absorb old global config into this user's settings, then delete it
+        const oldGlobal = localStorage.getItem('biblefinder_config');
+        if (oldGlobal) {
+          try {
+            const parsed = JSON.parse(oldGlobal);
+            userConfig = mergeConfig({ ...userConfig, ...parsed });
+            updateUser(user.id, { settings: userConfig });
+          } catch { /* ignore bad data */ }
+          localStorage.removeItem('biblefinder_config');
+        }
+
+        setConfig(userConfig);
+      }
     }
   }, []);
 
   const handleUserSelect = (user) => {
-    setCurrentUser(user);
-    if (user.settings?.lang) {
-      setConfig(c => ({ ...c, display: { ...c.display, lang: user.settings.lang } }));
-    }
+    setCurrentUserState(user);
+    persistCurrentUser(user.id);
+    const userConfig = mergeConfig(user.settings);
+    setConfig(userConfig);
   };
 
   const updateUserData = useCallback((updates) => {
     if (!currentUser) return;
     const updated = { ...currentUser, ...updates };
     updateUser(currentUser.id, updates);
-    setCurrentUser(updated);
+    setCurrentUserState(updated);
   }, [currentUser]);
 
   const markFound = useCallback((bookId) => {
@@ -70,7 +94,7 @@ function App() {
   const updateBestStreak = useCallback((streak) => {
     if (!currentUser) return;
     const newBest = Math.max(currentUser.bestStreak || 0, streak);
-    if (newBest > currentUser.bestStreak) {
+    if (newBest > (currentUser.bestStreak || 0)) {
       updateUserData({ bestStreak: newBest });
     }
   }, [currentUser, updateUserData]);
@@ -81,10 +105,14 @@ function App() {
     updateUserData({ quizHistory: history });
   }, [currentUser, updateUserData]);
 
+  const RECENT_SESSIONS = 5;
+  const recentSessions = (currentUser?.quizHistory || []).slice(-RECENT_SESSIONS);
+  const masteredBookIds = [...new Set(recentSessions.flatMap(s => s.masteredBookIds || []))];
+
   const resetProgress = () => {
     if (!currentUser) return;
-    if (!window.confirm(lang === 'nl' 
-      ? 'Weet je zeker dat je je voortgang wilt wissen?' 
+    if (!window.confirm(lang === 'nl'
+      ? 'Weet je zeker dat je je voortgang wilt wissen?'
       : 'Are you sure you want to reset your progress?')) return;
     updateUserData({ foundBooks: [], bestStreak: 0, quizHistory: [] });
   };
@@ -107,13 +135,28 @@ function App() {
 
   const t = translations[lang];
 
+  // Save config per-user (no global localStorage)
   const saveConfig = (newConfig) => {
     setConfig(newConfig);
-    localStorage.setItem('biblefinder_config', JSON.stringify(newConfig));
-    setView('menu');
+    if (currentUser) {
+      updateUserData({ settings: newConfig });
+    }
   };
 
-  // Show user selection if no user
+  const handleRestore = (userData) => {
+    if (!currentUser || !userData) return;
+    const restoredConfig = mergeConfig(userData.settings);
+    updateUserData({
+      name: userData.name || currentUser.name,
+      avatar: userData.avatar || currentUser.avatar,
+      foundBooks: userData.foundBooks || [],
+      bestStreak: userData.bestStreak || 0,
+      quizHistory: userData.quizHistory || [],
+      settings: restoredConfig,
+    });
+    setConfig(restoredConfig);
+  };
+
   if (!currentUser) {
     return (
       <ConfigContext.Provider value={{ config, lang, t }}>
@@ -140,9 +183,10 @@ function App() {
           <div className="header-right">
             <button className="lang-btn" onClick={() => {
               const newLang = lang === 'nl' ? 'en' : 'nl';
-              setConfig(c => ({ ...c, display: { ...c.display, lang: newLang } }));
+              const newConfig = { ...config, display: { ...config.display, lang: newLang } };
+              saveConfig(newConfig);
             }}>
-              {lang === 'nl' ? '🇳🇱 NL' : '🇬🇧 EN'}
+              {lang === 'nl' ? 'NL' : 'EN'}
             </button>
           </div>
         </header>
@@ -152,8 +196,8 @@ function App() {
             <div className="menu">
               <div className="stats">
                 <div className="stat-card">
-                  <span className="stat-number">{(currentUser.foundBooks || []).length}</span>
-                  <span className="stat-label">{t.found} {t.of} 66</span>
+                  <span className="stat-number">{masteredBookIds.length}</span>
+                  <span className="stat-label">{t.mastered} {t.of} 66</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-number">{currentUser.bestStreak || 0}</span>
@@ -162,23 +206,34 @@ function App() {
               </div>
 
               <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${((currentUser.foundBooks || []).length / 66) * 100}%` }} />
+                <div className="progress-fill" style={{ width: `${(masteredBookIds.length / 66) * 100}%` }} />
               </div>
 
               <div className="menu-buttons">
-                <button className="btn primary" onClick={() => setView('study')}>{t.studyMode}</button>
-                <button className="btn secondary" onClick={() => setView('quiz')}>{t.quizMode}</button>
-                <button className="btn share" onClick={share}>{t.share}</button>
+                <button className="btn study-btn" onClick={() => setView('study')}>
+                  <span className="btn-icon">📖</span>
+                  <span>{t.studyMode}</span>
+                </button>
+                <button className="btn quiz-btn" onClick={() => setView('quiz')}>
+                  <span className="btn-icon">🎯</span>
+                  <span>{t.quizMode}</span>
+                </button>
+                <button className="btn share-btn" onClick={share}>
+                  <span className="btn-icon">🔗</span>
+                  <span>{t.share}</span>
+                </button>
                 {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
-                <button className="btn reset" onClick={resetProgress}>{t.resetProgress}</button>
+                <button className="btn reset-btn" onClick={resetProgress}>
+                  <span className="btn-icon">🗑️</span>
+                  <span>{t.resetProgress}</span>
+                </button>
               </div>
             </div>
           )}
 
           {view === 'study' && (
             <StudyGrid
-              foundBooks={currentUser.foundBooks || []}
-              markFound={markFound}
+              quizHistory={currentUser?.quizHistory || []}
               onBack={() => setView('menu')}
             />
           )}
@@ -186,6 +241,7 @@ function App() {
           {view === 'quiz' && (
             <QuizGrid
               foundBooks={currentUser.foundBooks || []}
+              masteredBookIds={masteredBookIds}
               markFound={markFound}
               bestStreak={currentUser.bestStreak || 0}
               setBestStreak={updateBestStreak}
@@ -199,6 +255,8 @@ function App() {
               config={{ grid: config.grid, quiz: config.quiz, display: config.display, t }}
               onSave={saveConfig}
               onBack={() => setView('menu')}
+              currentUser={currentUser}
+              onRestore={handleRestore}
             />
           )}
         </main>
