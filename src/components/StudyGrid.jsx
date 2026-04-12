@@ -250,39 +250,35 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
           </div>
-          <div className="quiz-stats">
-            <span className="mode-icon">📖</span>
-            <div className="stat">
-              <span className="stat-value">{sessionCount}</span>
-              <span className="stat-label">{t.practiced || 'Practiced'}</span>
-            </div>
-            <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
-              💡
-            </button>
-          </div>
         </div>
-
-        {/* Fixed-height zone — never causes layout shift */}
-        <div className={`quiz-feedback-zone${
-          hintVisible ? ' fb-state-hint' :
-          feedback === 'correct' ? ' fb-state-correct' :
-          feedback === 'wrong' ? ' fb-state-wrong' : ''
-        }`}>
-          {hintVisible
-            ? (
-              <span className="fb-hint">
-                <span className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-                {t.hintReveal} <strong>{hintGroup}</strong>
-              </span>
-            )
-            : feedback === 'correct'
-              ? <span className="fb-correct">{t.correct}</span>
-              : feedback === 'wrong'
-                ? <span className="fb-wrong">{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
-                : null
-          }
+        <div className="quiz-stats">
+          <div className="study-badge">
+            <span className="study-badge-icon">📖</span>
+            <span>{t.studyMode}</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{sessionCount}</span>
+            <span className="stat-label">{t.practiced || 'Practiced'}</span>
+          </div>
+          <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
+            💡
+          </button>
         </div>
       </div>
+
+      {feedback === 'correct' && <div className="feedback correct"><p>{t.correct}</p></div>}
+      {feedback === 'wrong' && (
+        <div className="feedback wrong">
+          <p>{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</p>
+        </div>
+      )}
+
+      {hintVisible && (
+        <div className="feedback hint">
+          <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+          <p>{t.hintReveal} <strong>{hintGroup}</strong></p>
+        </div>
+      )}
 
       <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">

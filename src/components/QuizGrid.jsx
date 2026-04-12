@@ -333,55 +333,48 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
           </div>
-          <div className="quiz-stats">
-            <span className="mode-icon">🎯</span>
-            <div className="stat">
-              <span className="stat-value">{score.correct}/{score.total}</span>
-              <span className="stat-label">{t.score}</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{streak}</span>
-              <span className="stat-label">{t.streak}</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{stats.dueNow}</span>
-              <span className="stat-label">{t.due || 'Due'}</span>
-            </div>
-            <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
-              💡
-            </button>
-          </div>
         </div>
-
-        {/* Fixed-height zone — always same height, never causes layout shift */}
-        <div className={`quiz-feedback-zone${
-          hintVisible ? ' fb-state-hint' :
-          (feedback === 'correct' || showNewBest) ? ' fb-state-correct' :
-          feedback === 'slow' ? ' fb-state-slow' :
-          feedback === 'wrong' ? ' fb-state-wrong' : ''
-        }`}>
-          {hintVisible
-            ? (
-              <span className="fb-hint">
-                <span className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-                {t.hintReveal} <strong>{hintGroup}</strong>
-              </span>
-            )
-            : feedback === 'correct' && !showNewBest
-              ? <span className="fb-correct">{t.correct} {formatTime(responseTime)}</span>
-              : showNewBest
-                ? <span className="fb-correct">⚡ {t.newBest} {formatTime(responseTime)}</span>
-                : feedback === 'slow'
-                  ? <span className="fb-slow">{t.tooSlow} — {formatTime(responseTime)}</span>
-                  : feedback === 'wrong'
-                    ? <span className="fb-wrong">{t.wrong}</span>
-                    : null
-          }
+        <div className="quiz-stats">
+          <div className="stat">
+            <span className="stat-value">{score.correct}/{score.total}</span>
+            <span className="stat-label">{t.score}</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{streak}</span>
+            <span className="stat-label">{t.streak}</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{stats.dueNow}</span>
+            <span className="stat-label">{t.due || 'Due'}</span>
+          </div>
+          <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
+            💡
+          </button>
         </div>
       </div>
 
+      {feedback === 'correct' && !showNewBest && (
+        <div className="feedback correct"><p>{t.correct} {formatTime(responseTime)}</p></div>
+      )}
+      {showNewBest && (
+        <div className="feedback correct"><p>⚡ {t.newBest} {formatTime(responseTime)}</p></div>
+      )}
+      {feedback === 'slow' && (
+        <div className="feedback slow"><p>{t.tooSlow} — {formatTime(responseTime)}</p></div>
+      )}
+      {feedback === 'wrong' && (
+        <div className="feedback wrong"><p>{t.wrong}</p></div>
+      )}
+
       {milestone && (
         <div className="milestone-banner">{milestone}</div>
+      )}
+
+      {hintVisible && (
+        <div className="feedback hint">
+          <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+          <p>{t.hintReveal} <strong>{hintGroup}</strong></p>
+        </div>
       )}
 
       <div className="quiz-bottom" ref={scrollRef}>
