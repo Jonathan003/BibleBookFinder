@@ -111,6 +111,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
     if (book.id === targetBook.id) {
       feedbackRef.current = true;
       setFeedback('correct');
+      setHintVisible(false);
       setSessionFoundBooks(prev => new Set(prev).add(book.id));
       setTimeout(() => pickerRef.current(), 800);
       return;

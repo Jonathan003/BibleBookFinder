@@ -109,6 +109,7 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
     if (book.id === targetBook.id) {
       feedbackRef.current = true;
       setFeedback('correct');
+      setHintVisible(false);
       const timeTaken = Date.now() - startTime;
       setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
