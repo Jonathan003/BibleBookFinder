@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, setCurrentUser as persistCurrentUser } from './users';
+import { getBookStats } from './fsrs';
 import { AvatarIcon } from './components/Icons';
 import UserSelect from './components/UserSelect';
 import StudyGrid from './components/StudyGrid';
@@ -10,7 +11,7 @@ import './App.css';
 
 export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
-  quiz: { masteryMs: 5000 },
+  quiz: { masteryMs: 5000, learningPace: 'balanced' },
   display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
 };
 
@@ -85,10 +86,11 @@ function App() {
     setCurrentUserState(updated);
   }, [currentUser]);
 
-  const markFound = useCallback((bookId) => {
-    if (!currentUser || currentUser.foundBooks?.includes(bookId)) return;
-    const newFound = [...(currentUser.foundBooks || []), bookId];
-    updateUserData({ foundBooks: newFound });
+  // FSRS card management
+  const updateFsrsCard = useCallback((bookId, cardData) => {
+    if (!currentUser) return;
+    const fsrsCards = { ...(currentUser.fsrsCards || {}), [bookId]: cardData };
+    updateUserData({ fsrsCards });
   }, [currentUser, updateUserData]);
 
   const updateBestStreak = useCallback((streak) => {
@@ -105,24 +107,23 @@ function App() {
     updateUserData({ quizHistory: history });
   }, [currentUser, updateUserData]);
 
-  const RECENT_SESSIONS = 5;
-  const recentSessions = (currentUser?.quizHistory || []).slice(-RECENT_SESSIONS);
-  const masteredBookIds = [...new Set(recentSessions.flatMap(s => s.masteredBookIds || []))];
+  // FSRS-based stats
+  const fsrsCards = currentUser?.fsrsCards || {};
+  const stats = getBookStats(fsrsCards, bibleBooks);
 
   const resetProgress = () => {
     if (!currentUser) return;
     if (!window.confirm(lang === 'nl'
       ? 'Weet je zeker dat je je voortgang wilt wissen?'
       : 'Are you sure you want to reset your progress?')) return;
-    updateUserData({ foundBooks: [], bestStreak: 0, quizHistory: [] });
+    updateUserData({ foundBooks: [], bestStreak: 0, quizHistory: [], fsrsCards: {} });
   };
 
   const share = () => {
     if (!currentUser) return;
-    const foundCount = (currentUser.foundBooks || []).length;
     const text = (lang === 'nl'
-      ? `Ik heb ${foundCount} van 66 bijbelboeken gevonden in de Bijbelboek Zoeker quiz!`
-      : `I found ${foundCount} out of 66 Bible books in the Bible Book Finder quiz!`
+      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst in de Bijbelboek Zoeker quiz!`
+      : `I mastered ${stats.mastered} out of 66 Bible books in the Bible Book Finder quiz!`
     );
     if (navigator.share) {
       navigator.share({ title: 'Bible Book Finder', text, url: window.location.href });
@@ -152,6 +153,7 @@ function App() {
       foundBooks: userData.foundBooks || [],
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],
+      fsrsCards: userData.fsrsCards || {},
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
@@ -196,17 +198,17 @@ function App() {
             <div className="menu">
               <div className="stats">
                 <div className="stat-card">
-                  <span className="stat-number">{masteredBookIds.length}</span>
+                  <span className="stat-number">{stats.mastered}</span>
                   <span className="stat-label">{t.mastered} {t.of} 66</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-number">{currentUser.bestStreak || 0}</span>
-                  <span className="stat-label">{t.best} {t.streak}</span>
+                  <span className="stat-number">{stats.dueNow}</span>
+                  <span className="stat-label">{t.dueToday || 'Due today'}</span>
                 </div>
               </div>
 
               <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${(masteredBookIds.length / 66) * 100}%` }} />
+                <div className="progress-fill" style={{ width: `${(stats.mastered / 66) * 100}%` }} />
               </div>
 
               <div className="menu-buttons">
@@ -233,16 +235,14 @@ function App() {
 
           {view === 'study' && (
             <StudyGrid
-              quizHistory={currentUser?.quizHistory || []}
               onBack={() => setView('menu')}
             />
           )}
 
           {view === 'quiz' && (
             <QuizGrid
-              foundBooks={currentUser.foundBooks || []}
-              masteredBookIds={masteredBookIds}
-              markFound={markFound}
+              fsrsCards={fsrsCards}
+              updateFsrsCard={updateFsrsCard}
               bestStreak={currentUser.bestStreak || 0}
               setBestStreak={updateBestStreak}
               addQuizSession={addQuizSession}

@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
+import {
+  createScheduler, createBookCard, ratingFromSpeed,
+  reviewBook, getDueBooks, serializeCard, deserializeCard,
+  Rating, getBookStats
+} from '../fsrs';
 import './QuizGrid.css';
 
-export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestStreak, setBestStreak, addQuizSession, onBack }) {
+export default function QuizGrid({ fsrsCards, updateFsrsCard, bestStreak, setBestStreak, addQuizSession, onBack }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -12,7 +17,6 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
   const [responseTime, setResponseTime] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [responseTimes, setResponseTimes] = useState([]);
-  const [bookTimes, setBookTimes] = useState({});
   
   const [hintVisible, setHintVisible] = useState(false);
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
@@ -21,6 +25,13 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
   
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
+  const fsrsCardsRef = useRef(fsrsCards);
+  useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
+
+  // FSRS scheduler based on learning pace
+  const scheduler = useMemo(() => {
+    return createScheduler(config.quiz.learningPace || 'balanced');
+  }, [config.quiz.learningPace]);
 
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
@@ -45,7 +56,6 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
   const [autoAbbr, setAutoAbbr] = useState(false);
   const abbrMode = config.display.abbreviations || 'auto';
 
-  // Find the longest book name across all books for the current language
   const longestNameLength = useMemo(() => {
     return bibleBooks.reduce((max, book) => {
       const name = lang === 'nl' ? book.nl : book.en;
@@ -59,11 +69,9 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
       const el = gridRef.current;
       if (!el) return;
       const cellWidth = el.offsetWidth / activeColumns;
-      // At 0.85rem (~13.6px), average char is ~7.5px, minus padding (20px)
       const maxChars = Math.floor((cellWidth - 20) / 7.5);
       setAutoAbbr(longestNameLength > maxChars);
     };
-    // Delay first check so DOM is ready
     const timer = setTimeout(checkFit, 50);
     window.addEventListener('resize', checkFit);
     return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
@@ -71,24 +79,42 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
 
-  const pickRandomBook = useCallback(() => {
+  // FSRS-driven book selection
+  const pickNextBook = useCallback(() => {
     feedbackRef.current = false;
-    const index = Math.floor(Math.random() * bibleBooks.length);
-    const book = bibleBooks[index];
-    setTargetBook(book);
+    const cards = fsrsCardsRef.current || {};
+    const { dueBooks, unseenBooks } = getDueBooks(cards, bibleBooks);
+
+    let selected;
+    if (dueBooks.length > 0) {
+      // Mix: 80% due books, 20% unseen (if available)
+      if (unseenBooks.length > 0 && Math.random() < 0.2) {
+        selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
+      } else {
+        // Pick from top 5 most overdue to add some variety
+        const pool = dueBooks.slice(0, Math.min(5, dueBooks.length));
+        selected = pool[Math.floor(Math.random() * pool.length)];
+      }
+    } else if (unseenBooks.length > 0) {
+      selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
+    } else {
+      // All books reviewed and none due — pick random for practice
+      selected = bibleBooks[Math.floor(Math.random() * bibleBooks.length)];
+    }
+
+    setTargetBook(selected);
     setStartTime(Date.now());
     setResponseTime(null);
     setFeedback(null);
     setHintVisible(false);
-    // Scroll to top on new question
     scrollRef.current?.scrollTo(0, 0);
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    pickRandomBook();
+    pickNextBook();
     window.scrollTo(0, 0);
-  }, [pickRandomBook]);
+  }, [pickNextBook]);
 
   const handleBack = useCallback(() => {
     if (score.total > 0) {
@@ -112,42 +138,54 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
     if (book.id === targetBook.id) {
       feedbackRef.current = true;
-      setFeedback('correct');
       setHintVisible(false);
       const timeTaken = Date.now() - startTime;
       setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
 
-      // Track best time per book
-      const prevBest = bookTimes[targetBook.id] || Infinity;
-      if (timeTaken < prevBest) {
-        setBookTimes(prev => ({ ...prev, [targetBook.id]: timeTaken }));
-      }
-
       const isMastered = timeTaken <= config.quiz.masteryMs;
-      
-      setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
+      const rating = ratingFromSpeed(timeTaken, config.quiz.masteryMs);
+      setFeedback(isMastered ? 'correct' : 'slow');
+
+      // Update FSRS card
+      const currentCard = fsrsCards[targetBook.id]
+        ? deserializeCard(fsrsCards[targetBook.id])
+        : createBookCard();
+      const result = reviewBook(scheduler, currentCard, rating);
+      updateFsrsCard(targetBook.id, serializeCard(result.card));
+
+      // Score only counts if within time limit
+      setScore(prev => ({
+        correct: isMastered ? prev.correct + 1 : prev.correct,
+        total: prev.total + 1
+      }));
 
       if (isMastered) {
         const newStreak = streak + 1;
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
-        markFound(book.id);
         setSessionMasteredBooks(prev => new Set(prev).add(book.id));
       } else {
         setStreak(0);
       }
 
-      setTimeout(() => pickRandomBook(), 800);
+      setTimeout(() => pickNextBook(), 800);
       return;
     }
 
-    // Wrong click
+    // Wrong click — rate as Again
     feedbackRef.current = true;
     setFeedback('wrong');
-    setSessionWrongBooks(prev => new Set(prev).add(book.id));
+    setSessionWrongBooks(prev => new Set(prev).add(targetBook.id));
     setScore(prev => ({ ...prev, total: prev.total + 1 }));
     setStreak(0);
+
+    // Update FSRS card for wrong answer
+    const currentCard = fsrsCards[targetBook.id]
+      ? deserializeCard(fsrsCards[targetBook.id])
+      : createBookCard();
+    const result = reviewBook(scheduler, currentCard, Rating.Again);
+    updateFsrsCard(targetBook.id, serializeCard(result.card));
 
     setTimeout(() => {
       feedbackRef.current = false;
@@ -171,10 +209,14 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
   const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
 
+  // Stats for display
+  const stats = useMemo(() => getBookStats(fsrsCards, bibleBooks), [fsrsCards]);
+
   const BookCell = ({ book }) => {
-    const isMastered = masteredBookIds.includes(book.id);
+    const cardData = fsrsCards[book.id];
+    const isMastered = cardData && cardData.stability > 7;
     const isTarget = book.id === targetBook?.id;
-    const showCorrect = feedback === 'correct' && isTarget;
+    const showCorrect = (feedback === 'correct' || feedback === 'slow') && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget;
     const displayName = useAbbreviations
       ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
@@ -182,14 +224,16 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
-    if (config.display.highlightFound && isMastered) bgColor = colors.hover;
-    if (showCorrect) bgColor = '#3b82f6';
+    if (showCorrect && feedback === 'correct') bgColor = '#3b82f6';
+    else if (showCorrect && feedback === 'slow') bgColor = '#f59e0b';
     else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
     else if (showWrong) bgColor = '#f97316';
 
+    const showMasteryLine = config.display.highlightFound && isMastered;
+
     return (
       <button
-        className="book-cell"
+        className={`book-cell ${showMasteryLine ? 'mastered' : ''}`}
         style={{ backgroundColor: bgColor }}
         onClick={() => handleBookClick(book)}
         disabled={feedbackRef.current}
@@ -201,9 +245,6 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
   if (!targetBook) return null;
 
-  const prevBest = bookTimes[targetBook.id];
-  const targetLabel = prevBest ? `~${formatTime(prevBest)}` : '';
-
   return (
     <div className="quiz-grid">
       <div className="quiz-top">
@@ -211,7 +252,6 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
           <button className="back-btn" onClick={handleBack}>← {t.back}</button>
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
-            {targetLabel && <span className="prompt-target">{targetLabel}</span>}
           </div>
         </div>
         <div className="quiz-stats">
@@ -223,6 +263,10 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
             <span className="stat-value">{streak}</span>
             <span className="stat-label">{t.streak}</span>
           </div>
+          <div className="stat">
+            <span className="stat-value">{stats.dueNow}</span>
+            <span className="stat-label">{t.due || 'Due'}</span>
+          </div>
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
@@ -231,6 +275,9 @@ export default function QuizGrid({ foundBooks, masteredBookIds, markFound, bestS
 
       {feedback === 'correct' && (
         <div className="feedback correct"><p>{t.correct} {formatTime(responseTime)}</p></div>
+      )}
+      {feedback === 'slow' && (
+        <div className="feedback slow"><p>{t.tooSlow} — {formatTime(responseTime)}</p></div>
       )}
       {feedback === 'wrong' && (
         <div className="feedback wrong"><p>{t.wrong}</p></div>

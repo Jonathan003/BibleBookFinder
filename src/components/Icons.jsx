@@ -7,9 +7,10 @@ export const Icons = {
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
     </svg>
   ),
-  cross: (props) => (
+  stake: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M11 2h2v7h7v2h-7v7h-2v-7H4V9h7z"/>
+      <line x1="12" y1="6" x2="12" y2="22"/>
+      <rect x="8" y="2" width="8" height="4" rx="0.5"/>
     </svg>
   ),
   dove: (props) => (
@@ -70,7 +71,7 @@ export const Icons = {
   ),
 };
 
-export const avatarIcons = ['book', 'cross', 'dove', 'star', 'heart', 'scroll', 'lamp', 'bell', 'shield', 'flame'];
+export const avatarIcons = ['book', 'stake', 'dove', 'star', 'heart', 'scroll', 'lamp', 'bell', 'shield', 'flame'];
 
 export function AvatarIcon({ name, size = 32 }) {
   const Icon = Icons[name];

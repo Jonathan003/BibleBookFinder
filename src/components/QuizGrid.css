@@ -223,7 +223,7 @@
 
 .feedback.correct { background: rgba(59, 130, 246, 0.12); color: var(--correct); }
 .feedback.wrong { background: rgba(249, 115, 22, 0.12); color: var(--wrong); }
-.feedback.slow { background: rgba(239, 68, 68, 0.12); color: var(--slow); }
+.feedback.slow { background: rgba(245, 158, 11, 0.12); color: #d97706; }
 
 .feedback p { font-size: 0.9rem; font-weight: 600; }
 
@@ -258,6 +258,7 @@
   justify-items: start;
   transition: background-color 0.15s;
   position: relative;
+  overflow: hidden;
   padding: clamp(6px, 1.5vw, 12px) clamp(8px, 1.5vw, 14px);
   min-height: clamp(44px, 7vw, 56px);
   border: none;
@@ -268,6 +269,16 @@
 .book-cell:disabled { cursor: default; }
 .book-cell.correct { animation: flashCorrect 0.5s ease-in-out; }
 .book-cell.wrong, .book-cell.slow { animation: flashWrong 0.4s; }
+
+.book-cell.mastered::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #f59e0b;
+}
 
 @keyframes flashCorrect {
   0%, 100% { transform: scale(1); }
@@ -291,4 +302,85 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #ffffff;
+}
+
+/* Group Picker (Study Mode) */
+.group-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 12px;
+  text-align: left;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.group-pick-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.group-pick-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.group-pick-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.group-pick-count {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #5a5a5a);
+}
+
+.group-pick-btn.selected {
+  background: rgba(107, 91, 141, 0.12);
+  border: 2px solid var(--accent, #6b5b8d);
+}
+
+.group-pick-btn:not(.selected) {
+  border: 2px solid transparent;
+}
+
+.group-pick-check {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.group-start-btn {
+  width: 100%;
+  padding: 0.95rem;
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.group-start-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+  transform: translateY(-2px);
+}
+
+.group-start-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

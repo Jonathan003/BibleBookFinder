@@ -3,12 +3,29 @@ import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import './QuizGrid.css';
 
-export default function StudyGrid({ quizHistory, onBack }) {
+const GROUPS = [
+  { id: 'all', icon: '📖' },
+  { id: 'law', icon: '📜' },
+  { id: 'history', icon: '⚔️' },
+  { id: 'poetry', icon: '🎵' },
+  { id: 'prophets', icon: '🔥' },
+  { id: 'gospels', icon: '🕊️' },
+  { id: 'acts', icon: '💨' },
+  { id: 'epistles', icon: '✉️' },
+  { id: 'revelation', icon: '👑' },
+];
+
+const ALL_GROUP_IDS = ['law', 'history', 'poetry', 'prophets', 'gospels', 'acts', 'epistles', 'revelation'];
+
+export default function StudyGrid({ onBack }) {
   const { config, t, lang } = useAppConfig();
+  const [selectedGroups, setSelectedGroups] = useState(new Set());
+  const [started, setStarted] = useState(false);
   const [targetBook, setTargetBook] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
-  const [sessionFoundBooks, setSessionFoundBooks] = useState(new Set());
+  const [correctBookId, setCorrectBookId] = useState(null);
+  const [sessionCount, setSessionCount] = useState(0);
 
   const feedbackRef = useRef(false);
   const pickerRef = useRef(null);
@@ -60,54 +77,27 @@ export default function StudyGrid({ quizHistory, onBack }) {
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
 
-  // Determine weak books from quiz history
-  const weakBookIds = useMemo(() => {
-    const weakSet = new Set();
-    const recentSessions = (quizHistory || []).slice(-5);
-    recentSessions.forEach(session => {
-      if (session.hintedBookIds) session.hintedBookIds.forEach(id => weakSet.add(id));
-      if (session.wrongBookIds) session.wrongBookIds.forEach(id => weakSet.add(id));
-    });
-    return weakSet;
-  }, [quizHistory]);
-
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
-
-    let available = bibleBooks.filter(b => !sessionFoundBooks.has(b.id));
-    if (available.length === 0) {
-      // All books found this session — reset and start over
-      setSessionFoundBooks(new Set());
-      available = [...bibleBooks];
-    }
-
-    const weakPool = available.filter(b => weakBookIds.has(b.id));
-    const normalPool = available.filter(b => !weakBookIds.has(b.id));
-
-    let selectedBook;
-    // 70% chance to pick a weak book if available
-    if (weakPool.length > 0 && normalPool.length > 0 && Math.random() < 0.7) {
-      selectedBook = weakPool[Math.floor(Math.random() * weakPool.length)];
-    } else if (weakPool.length > 0 && normalPool.length === 0) {
-      selectedBook = weakPool[Math.floor(Math.random() * weakPool.length)];
-    } else {
-      selectedBook = available[Math.floor(Math.random() * available.length)];
-    }
-
-    setTargetBook(selectedBook);
+    const pool = selectedGroups.size > 0
+      ? bibleBooks.filter(b => selectedGroups.has(b.group))
+      : bibleBooks;
+    const selected = pool[Math.floor(Math.random() * pool.length)];
+    setTargetBook(selected);
     setHintVisible(false);
     setFeedback(null);
-    // Scroll to top on new question
+    setCorrectBookId(null);
     scrollRef.current?.scrollTo(0, 0);
     window.scrollTo(0, 0);
-  }, [weakBookIds, sessionFoundBooks]);
+  }, [selectedGroups]);
 
   pickerRef.current = pickRandomBook;
 
   useEffect(() => {
-    pickerRef.current();
-    window.scrollTo(0, 0);
-  }, []);
+    if (started) {
+      pickerRef.current();
+    }
+  }, [started]);
 
   const handleBookClick = (book) => {
     if (!targetBook || feedbackRef.current) return;
@@ -116,18 +106,20 @@ export default function StudyGrid({ quizHistory, onBack }) {
       feedbackRef.current = true;
       setFeedback('correct');
       setHintVisible(false);
-      setSessionFoundBooks(prev => new Set(prev).add(book.id));
+      setSessionCount(prev => prev + 1);
       setTimeout(() => pickerRef.current(), 800);
       return;
     }
 
-    // Wrong click
+    // Wrong click — show where the correct book is
     feedbackRef.current = true;
     setFeedback('wrong');
+    setCorrectBookId(targetBook.id);
     setTimeout(() => {
       feedbackRef.current = false;
       setFeedback(null);
-    }, 600);
+      setCorrectBookId(null);
+    }, 1500);
   };
 
   const handleHint = () => {
@@ -140,10 +132,85 @@ export default function StudyGrid({ quizHistory, onBack }) {
 
   const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
 
+  const toggleGroup = (groupId) => {
+    setSelectedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedGroups.size === ALL_GROUP_IDS.length) {
+      setSelectedGroups(new Set());
+    } else {
+      setSelectedGroups(new Set(ALL_GROUP_IDS));
+    }
+  };
+
+  const selectedBookCount = selectedGroups.size === 0 ? 0
+    : bibleBooks.filter(b => selectedGroups.has(b.group)).length;
+
+  // Group selection screen
+  if (!started) {
+    const allSelected = selectedGroups.size === ALL_GROUP_IDS.length;
+    return (
+      <div className="study-grid quiz-grid">
+        <div className="study-header quiz-top">
+          <div className="quiz-prompt-row">
+            <button className="back-btn" onClick={onBack}>← {t.back}</button>
+            <div className="quiz-prompt">
+              <span className="prompt-book">{t.studyChooseGroup || 'Choose groups to study'}</span>
+            </div>
+          </div>
+        </div>
+        <div className="quiz-bottom" style={{ padding: '0.5rem' }}>
+          <div className="group-picker">
+            <button
+              className={`group-pick-btn ${allSelected ? 'selected' : ''}`}
+              onClick={toggleAll}
+            >
+              <span className="group-pick-check">{allSelected ? '☑' : '☐'}</span>
+              <span className="group-pick-icon">📖</span>
+              <span className="group-pick-label">{t.allBooks || 'All Books'}</span>
+              <span className="group-pick-count">66 {t.books || 'books'}</span>
+            </button>
+            {GROUPS.filter(g => g.id !== 'all').map(group => {
+              const isSelected = selectedGroups.has(group.id);
+              const groupLabel = groupNames[lang]?.[group.id] || group.id;
+              const count = bibleBooks.filter(b => b.group === group.id).length;
+              return (
+                <button
+                  key={group.id}
+                  className={`group-pick-btn ${isSelected ? 'selected' : ''}`}
+                  onClick={() => toggleGroup(group.id)}
+                >
+                  <span className="group-pick-check">{isSelected ? '☑' : '☐'}</span>
+                  <span className="group-pick-icon">{group.icon}</span>
+                  <span className="group-pick-label">{groupLabel}</span>
+                  <span className="group-pick-count">{count} {t.books || 'books'}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            className="group-start-btn"
+            disabled={selectedGroups.size === 0}
+            onClick={() => setStarted(true)}
+          >
+            {t.startStudy || 'Start'} ({selectedBookCount} {t.books || 'books'})
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const BookCell = ({ book }) => {
     const isTarget = book.id === targetBook?.id;
+    const isCorrectReveal = book.id === correctBookId;
     const showCorrect = feedback === 'correct' && isTarget;
-    const showWrong = feedback === 'wrong' && !isTarget;
+    const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
     const displayName = useAbbreviations
       ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
       : (lang === 'nl' ? book.nl : book.en);
@@ -152,6 +219,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
     let bgColor = colors.normal;
 
     if (showCorrect) bgColor = '#3b82f6';
+    else if (isCorrectReveal) bgColor = '#3b82f6'; // Show correct answer in blue
     else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
     else if (showWrong) bgColor = '#f97316';
 
@@ -173,7 +241,7 @@ export default function StudyGrid({ quizHistory, onBack }) {
     <div className="study-grid quiz-grid">
       <div className="study-header quiz-top">
         <div className="quiz-prompt-row">
-          <button className="back-btn" onClick={onBack}>← {t.back}</button>
+          <button className="back-btn" onClick={() => setStarted(false)}>← {t.back}</button>
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
           </div>
@@ -183,6 +251,10 @@ export default function StudyGrid({ quizHistory, onBack }) {
             <span className="study-badge-icon">📖</span>
             <span>{t.studyMode}</span>
           </div>
+          <div className="stat">
+            <span className="stat-value">{sessionCount}</span>
+            <span className="stat-label">{t.practiced || 'Practiced'}</span>
+          </div>
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
@@ -190,7 +262,11 @@ export default function StudyGrid({ quizHistory, onBack }) {
       </div>
 
       {feedback === 'correct' && <div className="feedback correct"><p>{t.correct}</p></div>}
-      {feedback === 'wrong' && <div className="feedback wrong"><p>{t.wrong}</p></div>}
+      {feedback === 'wrong' && (
+        <div className="feedback wrong">
+          <p>{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</p>
+        </div>
+      )}
 
       {hintVisible && (
         <div className="feedback hint">

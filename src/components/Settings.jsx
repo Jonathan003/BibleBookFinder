@@ -24,7 +24,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     if (!currentUser) return;
     const exportData = {
       app: 'BibleBookFinder',
-      version: '1.1',
+      version: '2.0',
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -33,6 +33,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         foundBooks: currentUser.foundBooks || [],
         bestStreak: currentUser.bestStreak || 0,
         quizHistory: currentUser.quizHistory || [],
+        fsrsCards: currentUser.fsrsCards || {},
         settings: {
           grid: config.grid,
           quiz: config.quiz,
@@ -174,12 +175,29 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               </div>
             </div>
           </SettingRow>
-          <SettingRow label={t.highlightFound || 'Beheerste boeken'} desc={t.highlightFoundDesc || '(markeer boeken die je beheerst)'}>
+          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
             <Toggle value={display.highlightFound} onChange={v => {
               setDisplay(d => ({ ...d, highlightFound: v }));
               handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
             }} />
           </SettingRow>
+          <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
+            <select value={quiz.learningPace || 'balanced'} onChange={e => {
+              setQuiz(q => ({ ...q, learningPace: e.target.value }));
+              handleSave({ grid, quiz: { ...quiz, learningPace: e.target.value }, display });
+            }} className="setting-select">
+              <option value="relaxed">{t.paceRelaxed || 'Relaxed'}</option>
+              <option value="balanced">{t.paceBalanced || 'Balanced'}</option>
+              <option value="intensive">{t.paceIntensive || 'Intensive'}</option>
+            </select>
+          </SettingRow>
+          {quiz.learningPace && (
+            <div className="pace-hint">
+              {quiz.learningPace === 'relaxed' && (t.paceRelaxedHint || '~5-10 min/day, master all books in ~6-8 weeks')}
+              {(quiz.learningPace === 'balanced' || !quiz.learningPace) && (t.paceBalancedHint || '~10-20 min/day, master all books in ~3-4 weeks')}
+              {quiz.learningPace === 'intensive' && (t.paceIntensiveHint || '~20-30 min/day, master all books in ~1-2 weeks')}
+            </div>
+          )}
         </>
       );
     }
@@ -226,7 +244,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         {renderTabContent()}
       </div>
 
-      <p className="version-info">Bible Book Finder v1.1</p>
+      <p className="version-info">Bible Book Finder v2.0</p>
     </div>
   );
 }
