@@ -6,33 +6,27 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 ## Features
 
-**Quiz Mode (FSRS spaced repetition)** — A book name appears and you tap its position in the grid as fast as you can. The app uses the FSRS algorithm to track your progress per book across sessions. Books you struggle with come back sooner, books you've mastered appear less often. Score only counts for answers within the mastery speed threshold.
+**Quiz Mode (FSRS spaced repetition)** — A book name appears and you tap its position in the grid as fast as you can. The app uses the FSRS algorithm to track your progress per book across sessions. Books you struggle with come back sooner, books you've mastered appear less often. Score only counts for answers within the mastery speed threshold. Feedback (correct, too slow, wrong) appears inline in the book name bar — stats remain visible at all times.
 
-**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the correct one lights up in blue so you can see where it is. Hints are always free. Your group selection is saved per user and restored next time you open Study Mode.
+**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the correct one lights up in blue so you can see where it is. Hints are always free.
 
 **Spaced repetition (FSRS)** — Long-term per-book tracking powered by the Free Spaced Repetition Scheduler algorithm. Your progress is saved across sessions. The home screen shows how many books are ready to practice.
-
-**Personal records** — In Quiz Mode, the app tracks your best response time per book. When you beat your previous best, you see a "⚡ New record!" notification. Your session summary shows how many new records you set.
-
-**Session summary** — When you tap Back in Quiz Mode after answering at least one question, a summary screen shows: books reviewed, time spent, correct answers, and new personal records. Tap "Keep going" to continue or "Done" to return to the menu.
-
-**Milestones** — When you master your 10th, 20th, 33rd (halfway), 39th (all Hebrew Scriptures), 50th, or 66th book, a celebration message appears.
-
-**Welcome back** — If you haven't opened the app for more than 24 hours, a friendly welcome message appears on the home screen. No guilt, no "you missed X days" — just a warm nudge to pick up where you left off.
 
 **Learning pace** — Choose between Relaxed, Balanced, or Intensive in Settings. This controls how often books come back for review. The app adapts to your schedule — practice as much or as little as you want, whenever you want. There is no daily requirement and no penalty for skipping days or weeks.
 
 **Mastery indicator** — Books you've mastered show a gold accent line at the bottom of the cell in Quiz Mode. Toggle this on or off in Settings.
 
-**Hints** — Toggle the hint button 💡 to see the book's color group and NWT description (e.g. "Prophetic books (17 books) — Prophecies, or predictions, concerning God's people"). The hint appears in a fixed zone that never causes the grid to shift.
+**Hints** — Toggle the hint button to see the book's color group and NWT description (e.g. "Prophetic books (17 books) — Prophecies, or predictions, concerning God's people").
 
-**Multi-user** — Supports up to 10 user profiles, each with their own avatar, progress, FSRS data, quiz history, personal records, and settings.
+**Multi-user** — Supports up to 10 user profiles, each with their own avatar, progress, FSRS data, quiz history, and settings.
 
 **Export / Import** — Back up your progress and settings as a JSON file from the Data tab in Settings. Import on another device to restore everything.
 
 **Bilingual** — Dutch and English, switchable from the header.
 
 **Smart abbreviations** — In portrait mode, the app automatically detects if full book names fit in the grid cells. If not, all cells switch to abbreviations together. You can override this in Settings (Auto / Always / Never). Landscape mode always shows full names.
+
+**Responsive layout** — In landscape mode the topbar compresses to a single row, giving more space to the book grid. In portrait mode the topbar uses two rows with more detail.
 
 **Color groups** — 4 purple shades matching the JW Library Study Bible grid: Pentateuch/Gospels (dark), History/Acts (light), Poetry/Epistles (medium), Prophets/Revelation (darkest).
 
@@ -100,23 +94,17 @@ In Quiz Mode, yes. Answers within the mastery speed (default 5 seconds) count to
 **What do Relaxed, Balanced, and Intensive mean?**
 This controls how often books come back for review. Relaxed means books come back less often — best if you practice occasionally. Intensive means books come back more frequently — best if you practice often. Balanced is recommended for most learners. You can change this anytime in Settings → Quiz.
 
-**What is a personal record?**
-In Quiz Mode, the app tracks your fastest correct response time for each book. When you beat your previous best time for a book, you see a "⚡ New record!" notification. Personal records are saved per user.
-
-**What happens when I tap Back in Quiz Mode?**
-If you've answered at least one question, a session summary appears showing books reviewed, time spent, correct answers, and new personal records. You can choose to keep going or return to the menu.
-
 **What happens if I use a hint?**
-Nothing negative. The hint shows which color group the book belongs to, helping you find the right area in the grid. There is no penalty for using hints. If you needed the hint to find the book, you will naturally be slower, and the algorithm picks that up automatically.
+Nothing negative. The hint shows which color group the book belongs to, helping you find the right area in the grid. The hint appears as an overlay — tap it to close. There is no penalty for using hints. If you needed the hint to find the book, you will naturally be slower, and the algorithm picks that up automatically.
 
 **What happens if I don't use the app for a while?**
-Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, a friendly welcome message appears and the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off.
+Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off. The algorithm adjusts automatically.
 
 **Is my progress saved?**
 Yes, in your browser's local storage. But it will be lost if you clear your browser history or switch to a different device. Use the Export function in Settings → Data to create a backup file you can import on any device.
 
 **Can multiple people use the app on the same device?**
-Yes. The app supports up to 10 user profiles, each with their own progress, settings, FSRS data, and personal records. Tap your name in the top left to switch users or create a new one.
+Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name in the top left to switch users or create a new one.
 
 **What is the gold line at the bottom of some book cells?**
 That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Quiz → "Mastered books".

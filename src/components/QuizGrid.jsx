@@ -400,7 +400,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
 
         {/* Hint overlay — starts exactly below prompt row */}
         {overlayTop !== null && hintVisible && (
-          <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
+          <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }} onClick={handleHint}>
             <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
             <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
           </div>
