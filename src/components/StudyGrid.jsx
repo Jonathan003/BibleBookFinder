@@ -27,6 +27,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [correctBookId, setCorrectBookId] = useState(null);
+  const [revealBookId, setRevealBookId] = useState(null);
   const [sessionCount, setSessionCount] = useState(0);
 
   const feedbackRef = useRef(false);
@@ -116,7 +117,17 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
   }, [started]);
 
   const handleBookClick = (book) => {
-    if (!targetBook || feedbackRef.current) return;
+    if (!targetBook) return;
+    // Allow clicking the correct book to dismiss wrong feedback
+    if (feedbackRef.current && book.id === correctBookId) {
+      feedbackRef.current = false;
+      setFeedback(null);
+      setCorrectBookId(null);
+      setRevealBookId(null);
+      pickerRef.current();
+      return;
+    }
+    if (feedbackRef.current) return;
 
     if (book.id === targetBook.id) {
       feedbackRef.current = true;
@@ -128,14 +139,14 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
     }
 
     // Wrong click — show where the correct book is
+    // User must click the correct (blue) book to advance
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
     setTimeout(() => {
-      feedbackRef.current = false;
-      setFeedback(null);
-      setCorrectBookId(null);
-    }, 1500);
+      document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+    setTimeout(() => setRevealBookId(targetBook.id), 650);
   };
 
   const handleHint = () => {
@@ -244,10 +255,11 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
 
     return (
       <button
-        className={`book-cell ${showCorrect ? 'correct' : ''} ${showWrong ? 'wrong' : ''}`}
+        className={`book-cell ${showCorrect ? 'correct' : ''} ${book.id === revealBookId ? 'reveal' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
+        data-book-id={book.id}
         onClick={() => handleBookClick(book)}
-        disabled={feedbackRef.current}
+        disabled={feedbackRef.current && book.id !== correctBookId}
       >
         <span className="book-name">{displayName}</span>
       </button>
@@ -292,7 +304,6 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
           <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
             <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
             <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
-            <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
           </div>
         )}
       </div>

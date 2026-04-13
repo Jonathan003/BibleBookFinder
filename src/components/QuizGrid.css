@@ -51,6 +51,10 @@
 .hint-overlay {
   background: #fef3c7;
   border: 1px solid rgba(245, 158, 11, 0.45);
+  /* Fixed height = enough for 3 lines of hint text, always consistent */
+  min-height: calc(3 * 1.4 * 0.88rem + 0.8rem);
+  height: calc(3 * 1.4 * 0.88rem + 0.8rem);
+  align-items: center;
 }
 
 .correct-overlay {
@@ -370,6 +374,7 @@
   50% { transform: scale(1.1); }
 }
 
+
 @keyframes flashWrong {
   0%, 25%, 50%, 75%, 100% { transform: translateX(0); }
   12.5%, 37.5%, 62.5%, 87.5% { transform: translateX(-4px); }
@@ -574,4 +579,78 @@
   background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
   color: #fff;
   border-color: transparent;
+}
+
+/* Landscape: hint fits on 2 lines */
+@media (orientation: landscape) {
+  .hint-overlay {
+    height: auto;
+    min-height: unset;
+    align-items: center;
+  }
+
+  .hint-overlay .overlay-text {
+    -webkit-line-clamp: 2;
+  }
+}
+@media (orientation: landscape) {
+
+  .quiz-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+  }
+
+  .quiz-prompt-row {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  .quiz-stats {
+    flex-shrink: 0;
+    gap: 1rem;
+    padding: 0;
+    justify-content: flex-end;
+  }
+
+  .quiz-stats .stat-label {
+    font-size: 0.55rem;
+  }
+
+  .quiz-stats .stat-value {
+    font-size: 1rem;
+  }
+
+  .back-btn {
+    padding: 0.3rem 0.5rem;
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .quiz-prompt {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .prompt-book {
+    font-size: 1rem;
+  }
+
+  .hint-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+/* ── Small phone landscape (narrow screen): hide labels to fit ── */
+@media (orientation: landscape) and (max-width: 600px) {
+  .quiz-stats .stat-label {
+    display: none;
+  }
+  .quiz-stats {
+    gap: 0.6rem;
+  }
 }

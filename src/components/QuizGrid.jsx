@@ -22,6 +22,8 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
   const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
+  const [correctBookId, setCorrectBookId] = useState(null);
+  const [revealBookId, setRevealBookId] = useState(null);
   const [sessionNewBests, setSessionNewBests] = useState(0);
   const [sessionStartTime] = useState(() => Date.now());
   const [showSummary, setShowSummary] = useState(false);
@@ -162,7 +164,18 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   }, [score.total, onBack]);
 
   const handleBookClick = (book) => {
-    if (!targetBook || feedbackRef.current) return;
+    if (!targetBook) return;
+    // Allow clicking the correct book to dismiss wrong feedback early
+    if (feedbackRef.current && book.id === correctBookId) {
+      feedbackRef.current = false;
+      setFeedback(null);
+      setResponseTime(null);
+      setCorrectBookId(null);
+      setRevealBookId(null);
+      pickNextBook();
+      return;
+    }
+    if (feedbackRef.current) return;
 
     if (book.id === targetBook.id) {
       feedbackRef.current = true;
@@ -233,6 +246,11 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     // Wrong click — rate as Again
     feedbackRef.current = true;
     setFeedback('wrong');
+    setCorrectBookId(targetBook.id);
+    setTimeout(() => {
+      document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+    setTimeout(() => setRevealBookId(targetBook.id), 650);
     setSessionWrongBooks(prev => new Set(prev).add(targetBook.id));
     setScore(prev => ({ ...prev, total: prev.total + 1 }));
     setStreak(0);
@@ -244,11 +262,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     const result = reviewBook(scheduler, currentCard, Rating.Again);
     updateFsrsCard(targetBook.id, serializeCard(result.card));
 
-    setTimeout(() => {
-      feedbackRef.current = false;
-      setFeedback(null);
-      setResponseTime(null);
-    }, 600);
+    // Wait for user to click the correct (blue) book to advance
   };
 
   const handleHint = () => {
@@ -274,7 +288,8 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     const isMastered = cardData && cardData.stability > 7;
     const isTarget = book.id === targetBook?.id;
     const showCorrect = (feedback === 'correct' || feedback === 'slow') && isTarget;
-    const showWrong = feedback === 'wrong' && !isTarget;
+    const isCorrectReveal = book.id === correctBookId;
+    const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
     const displayName = useAbbreviations
       ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
       : (lang === 'nl' ? book.nl : book.en);
@@ -283,6 +298,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     let bgColor = colors.normal;
     if (showCorrect && feedback === 'correct') bgColor = '#3b82f6';
     else if (showCorrect && feedback === 'slow') bgColor = '#f59e0b';
+    else if (isCorrectReveal) bgColor = '#3b82f6';
     else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
     else if (showWrong) bgColor = '#f97316';
 
@@ -290,10 +306,11 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
 
     return (
       <button
-        className={`book-cell ${showMasteryLine ? 'mastered' : ''}`}
+        className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${book.id === revealBookId ? 'reveal' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
+        data-book-id={book.id}
         onClick={() => handleBookClick(book)}
-        disabled={feedbackRef.current}
+        disabled={feedbackRef.current && book.id !== correctBookId}
       >
         <span className="book-name">{displayName}</span>
       </button>
@@ -358,7 +375,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
               : !hintVisible && feedback === 'slow'
               ? <span className="prompt-book">⏱ {t.tooSlow} — {formatTime(responseTime)}</span>
               : !hintVisible && feedback === 'wrong'
-              ? <span className="prompt-book">✗ {t.wrong}</span>
+              ? <span className="prompt-book">✗ {t.wrongShowCorrect || t.wrong}</span>
               : <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
             }
           </div>
@@ -386,7 +403,6 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
             <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
             <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
-            <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
           </div>
         )}
       </div>
