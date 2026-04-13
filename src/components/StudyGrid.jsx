@@ -261,8 +261,16 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
       <div className="study-header quiz-top" ref={quizTopRef}>
         <div className="quiz-prompt-row" ref={promptRowRef}>
           <button className="back-btn" onClick={() => setStarted(false)}>← {t.back}</button>
-          <div className="quiz-prompt">
-            <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
+          <div className={`quiz-prompt ${
+            !hintVisible && feedback === 'correct' ? 'prompt-correct' :
+            !hintVisible && feedback === 'wrong' ? 'prompt-wrong' : ''
+          }`}>
+            {!hintVisible && feedback === 'correct'
+              ? <span className="prompt-book">✓ {t.correct}</span>
+              : !hintVisible && feedback === 'wrong'
+              ? <span className="prompt-book">✗ {t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
+              : <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
+            }
           </div>
         </div>
         <div className="quiz-stats">
@@ -279,22 +287,12 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
           </button>
         </div>
 
-        {/* Overlay positioned relative to quiz-top, starts exactly below prompt row */}
+        {/* Hint overlay — starts exactly below prompt row */}
         {overlayTop !== null && hintVisible && (
           <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
             <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
             <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
             <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
-          </div>
-        )}
-        {overlayTop !== null && !hintVisible && feedback === 'correct' && (
-          <div className="topbar-overlay correct-overlay" style={{ top: overlayTop }}>
-            <span className="overlay-text">{t.correct}</span>
-          </div>
-        )}
-        {overlayTop !== null && !hintVisible && feedback === 'wrong' && (
-          <div className="topbar-overlay wrong-overlay" style={{ top: overlayTop }}>
-            <span className="overlay-text">{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
           </div>
         )}
       </div>
