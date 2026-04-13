@@ -36,10 +36,10 @@
 /* Topbar overlay — covers only row 2 (stats), row 1 always visible */
 .topbar-overlay {
   position: absolute;
-  top: 0;
+  top: -0.5rem;
   left: 0;
   right: 0;
-  min-height: 100%;
+  min-height: calc(100% + 0.5rem);
   z-index: 20;
   display: flex;
   align-items: flex-start;
