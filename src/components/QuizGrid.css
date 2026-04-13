@@ -17,6 +17,7 @@
 }
 
 /* ---- TOP BAR ---- */
+/* quiz-top needs relative for overlay positioning */
 .quiz-top {
   position: sticky;
   top: 0;
@@ -24,22 +25,15 @@
   background: var(--bg-primary);
   padding: 0.5rem 0 0.5rem;
   flex-shrink: 0;
-  /* needed for overlay positioning */
   isolation: isolate;
 }
 
-/* quiz-stats needs relative for overlay positioning */
-.quiz-stats {
-  position: relative;
-}
-
-/* Topbar overlay — covers only row 2 (stats), row 1 always visible */
+/* Topbar overlay — top set dynamically via JS, starts exactly below prompt row */
 .topbar-overlay {
   position: absolute;
-  top: -0.5rem;
   left: 0;
   right: 0;
-  min-height: calc(100% + 0.5rem);
+  /* top set via inline style from JS */
   z-index: 20;
   display: flex;
   align-items: flex-start;

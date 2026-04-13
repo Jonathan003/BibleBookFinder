@@ -32,6 +32,20 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
   const feedbackRef = useRef(false);
   const pickerRef = useRef(null);
   const scrollRef = useRef(null);
+  const promptRowRef = useRef(null);
+  const quizTopRef = useRef(null);
+  const [overlayTop, setOverlayTop] = useState(null);
+
+  useEffect(() => {
+    const measure = () => {
+      if (!promptRowRef.current || !quizTopRef.current) return;
+      const promptBottom = promptRowRef.current.offsetTop + promptRowRef.current.offsetHeight;
+      setOverlayTop(promptBottom);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [targetBook]);
 
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
@@ -244,8 +258,8 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
 
   return (
     <div className="study-grid quiz-grid">
-      <div className="study-header quiz-top">
-        <div className="quiz-prompt-row">
+      <div className="study-header quiz-top" ref={quizTopRef}>
+        <div className="quiz-prompt-row" ref={promptRowRef}>
           <button className="back-btn" onClick={() => setStarted(false)}>← {t.back}</button>
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
@@ -263,26 +277,26 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
-
-          {/* Overlay covers only row 2 (stats), row 1 (Back + book name) stays visible */}
-          {hintVisible && (
-            <div className="topbar-overlay hint-overlay">
-              <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-              <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
-              <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
-            </div>
-          )}
-          {!hintVisible && feedback === 'correct' && (
-            <div className="topbar-overlay correct-overlay">
-              <span className="overlay-text">{t.correct}</span>
-            </div>
-          )}
-          {!hintVisible && feedback === 'wrong' && (
-            <div className="topbar-overlay wrong-overlay">
-              <span className="overlay-text">{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
-            </div>
-          )}
         </div>
+
+        {/* Overlay positioned relative to quiz-top, starts exactly below prompt row */}
+        {overlayTop !== null && hintVisible && (
+          <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
+            <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+            <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
+            <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && feedback === 'correct' && (
+          <div className="topbar-overlay correct-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{t.correct}</span>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && feedback === 'wrong' && (
+          <div className="topbar-overlay wrong-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
+          </div>
+        )}
       </div>
 
       <div className="quiz-bottom" ref={scrollRef}>

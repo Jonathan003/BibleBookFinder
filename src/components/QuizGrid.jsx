@@ -31,7 +31,22 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
   const fsrsCardsRef = useRef(fsrsCards);
+  const promptRowRef = useRef(null);
+  const quizTopRef = useRef(null);
+  const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
+
+  // Measure prompt row height to perfectly position overlay
+  useEffect(() => {
+    const measure = () => {
+      if (!promptRowRef.current || !quizTopRef.current) return;
+      const promptBottom = promptRowRef.current.offsetTop + promptRowRef.current.offsetHeight;
+      setOverlayTop(promptBottom);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [targetBook]);
 
   // FSRS scheduler based on learning pace
   const scheduler = useMemo(() => {
@@ -327,8 +342,8 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
 
   return (
     <div className="quiz-grid">
-      <div className="quiz-top">
-        <div className="quiz-prompt-row">
+      <div className="quiz-top" ref={quizTopRef}>
+        <div className="quiz-prompt-row" ref={promptRowRef}>
           <button className="back-btn" onClick={handleBack}>← {t.back}</button>
           <div className="quiz-prompt">
             <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
@@ -350,36 +365,36 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
-
-          {/* Overlay covers only row 2 (stats), row 1 (Back + book name) stays visible */}
-          {hintVisible && (
-            <div className="topbar-overlay hint-overlay">
-              <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-              <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
-              <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
-            </div>
-          )}
-          {!hintVisible && feedback === 'correct' && !showNewBest && (
-            <div className="topbar-overlay correct-overlay">
-              <span className="overlay-text">{t.correct} {formatTime(responseTime)}</span>
-            </div>
-          )}
-          {!hintVisible && showNewBest && (
-            <div className="topbar-overlay correct-overlay">
-              <span className="overlay-text">⚡ {t.newBest} {formatTime(responseTime)}</span>
-            </div>
-          )}
-          {!hintVisible && feedback === 'slow' && (
-            <div className="topbar-overlay slow-overlay">
-              <span className="overlay-text">{t.tooSlow} — {formatTime(responseTime)}</span>
-            </div>
-          )}
-          {!hintVisible && feedback === 'wrong' && (
-            <div className="topbar-overlay wrong-overlay">
-              <span className="overlay-text">{t.wrong}</span>
-            </div>
-          )}
         </div>
+
+        {/* Overlay positioned relative to quiz-top, starts exactly below prompt row */}
+        {overlayTop !== null && hintVisible && (
+          <div className="topbar-overlay hint-overlay" style={{ top: overlayTop }}>
+            <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+            <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
+            <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && feedback === 'correct' && !showNewBest && (
+          <div className="topbar-overlay correct-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{t.correct} {formatTime(responseTime)}</span>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && showNewBest && (
+          <div className="topbar-overlay correct-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">⚡ {t.newBest} {formatTime(responseTime)}</span>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && feedback === 'slow' && (
+          <div className="topbar-overlay slow-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{t.tooSlow} — {formatTime(responseTime)}</span>
+          </div>
+        )}
+        {overlayTop !== null && !hintVisible && feedback === 'wrong' && (
+          <div className="topbar-overlay wrong-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{t.wrong}</span>
+          </div>
+        )}
       </div>
 
       {milestone && (
