@@ -151,7 +151,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         <>
           <h3>{t.quizTitle || 'Snelheid'}</h3>
           <p className="settings-desc">{t.quizDesc || 'Tijdslimiet voor beheersing.'}</p>
-          <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'}>
+          <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'} fullWidth>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 <span>{t.fast || 'Snel'}</span>
@@ -249,16 +249,16 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   );
 }
 
-function SettingRow({ label, desc, children }) {
+function SettingRow({ label, desc, children, fullWidth }) {
   return (
-    <div className="setting-row">
+    <div className={`setting-row${fullWidth ? ' setting-row-full' : ''}`}>
       <div className="setting-label">
         <div>
           <strong>{label}</strong>
           {desc && <span>{desc}</span>}
         </div>
       </div>
-      <div className="setting-control">{children}</div>
+      <div className={fullWidth ? 'setting-control-full' : 'setting-control'}>{children}</div>
     </div>
   );
 }
