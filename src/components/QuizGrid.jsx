@@ -129,9 +129,16 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     setResponseTime(null);
     setFeedback(null);
     setHintVisible(false);
-    scrollRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
-  }, []);
+    if (config.quiz.autoScroll !== false) {
+      // Scroll to target book after short delay so DOM updates first
+      setTimeout(() => {
+        document.querySelector(`[data-book-id="${selected.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      scrollRef.current?.scrollTo(0, 0);
+      window.scrollTo(0, 0);
+    }
+  }, [config.quiz.autoScroll]);
 
   useEffect(() => {
     pickNextBook();

@@ -181,6 +181,12 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
             }} />
           </SettingRow>
+          <SettingRow label={t.autoScroll || 'Auto-scroll (Quiz & Study)'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
+            <Toggle value={quiz.autoScroll !== false} onChange={v => {
+              setQuiz(q => ({ ...q, autoScroll: v }));
+              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display });
+            }} />
+          </SettingRow>
           <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
             <select value={quiz.learningPace || 'balanced'} onChange={e => {
               setQuiz(q => ({ ...q, learningPace: e.target.value }));

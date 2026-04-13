@@ -104,9 +104,15 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
     setHintVisible(false);
     setFeedback(null);
     setCorrectBookId(null);
-    scrollRef.current?.scrollTo(0, 0);
-    window.scrollTo(0, 0);
-  }, [selectedGroups]);
+    if (config.quiz.autoScroll !== false) {
+      setTimeout(() => {
+        document.querySelector(`[data-book-id="${selected.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      scrollRef.current?.scrollTo(0, 0);
+      window.scrollTo(0, 0);
+    }
+  }, [selectedGroups, config.quiz.autoScroll]);
 
   pickerRef.current = pickRandomBook;
 
