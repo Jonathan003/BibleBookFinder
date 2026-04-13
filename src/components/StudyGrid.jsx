@@ -90,7 +90,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
     const timer = setTimeout(checkFit, 50);
     window.addEventListener('resize', checkFit);
     return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
-  }, [abbrMode, activeColumns, longestNameLength]);
+  }, [abbrMode, activeColumns, longestNameLength, started]);
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
 
@@ -109,6 +109,13 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
   }, [selectedGroups]);
 
   pickerRef.current = pickRandomBook;
+
+  // Auto-save group selection whenever it changes
+  useEffect(() => {
+    if (!started) {
+      onSaveGroups([...selectedGroups]);
+    }
+  }, [selectedGroups]);
 
   useEffect(() => {
     if (started) {
