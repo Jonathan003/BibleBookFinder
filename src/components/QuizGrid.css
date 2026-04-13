@@ -24,6 +24,77 @@
   background: var(--bg-primary);
   padding: 0.5rem 0 0.5rem;
   flex-shrink: 0;
+  /* needed for overlay positioning */
+  isolation: isolate;
+}
+
+/* quiz-stats needs relative for overlay positioning */
+.quiz-stats {
+  position: relative;
+}
+
+/* Topbar overlay — covers only row 2 (stats), row 1 always visible */
+.topbar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 100%;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.4rem 0.5rem 0.4rem 0.75rem;
+  gap: 0.5rem;
+  border-radius: 8px;
+  animation: overlayFadeIn 0.15s ease;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.hint-overlay {
+  background: #fef3c7;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.correct-overlay {
+  background: #dbeafe;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.slow-overlay {
+  background: #fef3c7;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.wrong-overlay {
+  background: #fee2e2;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.overlay-text {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.hint-overlay .overlay-text  { color: #92400e; }
+.correct-overlay .overlay-text { color: #1d4ed8; }
+.slow-overlay .overlay-text  { color: #92400e; }
+.wrong-overlay .overlay-text { color: #b91c1c; }
+
+.overlay-hint-btn {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* Row 1: back button + book name */

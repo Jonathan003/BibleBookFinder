@@ -263,22 +263,27 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
+
+          {/* Overlay covers only row 2 (stats), row 1 (Back + book name) stays visible */}
+          {hintVisible && (
+            <div className="topbar-overlay hint-overlay">
+              <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+              <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
+              <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
+            </div>
+          )}
+          {!hintVisible && feedback === 'correct' && (
+            <div className="topbar-overlay correct-overlay">
+              <span className="overlay-text">{t.correct}</span>
+            </div>
+          )}
+          {!hintVisible && feedback === 'wrong' && (
+            <div className="topbar-overlay wrong-overlay">
+              <span className="overlay-text">{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</span>
+            </div>
+          )}
         </div>
       </div>
-
-      {feedback === 'correct' && <div className="feedback correct"><p>{t.correct}</p></div>}
-      {feedback === 'wrong' && (
-        <div className="feedback wrong">
-          <p>{t.wrongShowCorrect || 'Wrong — look for the blue cell!'}</p>
-        </div>
-      )}
-
-      {hintVisible && (
-        <div className="feedback hint">
-          <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-          <p>{t.hintReveal} <strong>{hintGroup}</strong></p>
-        </div>
-      )}
 
       <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">

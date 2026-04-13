@@ -350,31 +350,40 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>
             💡
           </button>
+
+          {/* Overlay covers only row 2 (stats), row 1 (Back + book name) stays visible */}
+          {hintVisible && (
+            <div className="topbar-overlay hint-overlay">
+              <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
+              <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
+              <button className="hint-btn active overlay-hint-btn" onClick={handleHint}>💡</button>
+            </div>
+          )}
+          {!hintVisible && feedback === 'correct' && !showNewBest && (
+            <div className="topbar-overlay correct-overlay">
+              <span className="overlay-text">{t.correct} {formatTime(responseTime)}</span>
+            </div>
+          )}
+          {!hintVisible && showNewBest && (
+            <div className="topbar-overlay correct-overlay">
+              <span className="overlay-text">⚡ {t.newBest} {formatTime(responseTime)}</span>
+            </div>
+          )}
+          {!hintVisible && feedback === 'slow' && (
+            <div className="topbar-overlay slow-overlay">
+              <span className="overlay-text">{t.tooSlow} — {formatTime(responseTime)}</span>
+            </div>
+          )}
+          {!hintVisible && feedback === 'wrong' && (
+            <div className="topbar-overlay wrong-overlay">
+              <span className="overlay-text">{t.wrong}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {feedback === 'correct' && !showNewBest && (
-        <div className="feedback correct"><p>{t.correct} {formatTime(responseTime)}</p></div>
-      )}
-      {showNewBest && (
-        <div className="feedback correct"><p>⚡ {t.newBest} {formatTime(responseTime)}</p></div>
-      )}
-      {feedback === 'slow' && (
-        <div className="feedback slow"><p>{t.tooSlow} — {formatTime(responseTime)}</p></div>
-      )}
-      {feedback === 'wrong' && (
-        <div className="feedback wrong"><p>{t.wrong}</p></div>
-      )}
-
       {milestone && (
         <div className="milestone-banner">{milestone}</div>
-      )}
-
-      {hintVisible && (
-        <div className="feedback hint">
-          <div className="hint-color-dot" style={{ backgroundColor: groupColors[targetBook.group]?.normal }} />
-          <p>{t.hintReveal} <strong>{hintGroup}</strong></p>
-        </div>
       )}
 
       <div className="quiz-bottom" ref={scrollRef}>
