@@ -118,19 +118,19 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.portrait || 'Portret'} desc={t.portraitDesc || '(rechtop)'}>
             <NumberInput value={grid.portrait} min={3} max={11} onChange={v => {
               setGrid(g => ({ ...g, portrait: v }));
-              handleSave({ grid: { ...grid, portrait: v }, quiz, display });
+              handleSave({ grid: { ...grid, portrait: v }, quiz, display, study });
             }} />
           </SettingRow>
           <SettingRow label={t.landscape || 'Liggend'} desc={t.landscapeDesc || '(gedraaid)'}>
             <NumberInput value={grid.landscape} min={3} max={11} onChange={v => {
               setGrid(g => ({ ...g, landscape: v }));
-              handleSave({ grid: { ...grid, landscape: v }, quiz, display });
+              handleSave({ grid: { ...grid, landscape: v }, quiz, display, study });
             }} />
           </SettingRow>
           <SettingRow label={t.orientation || 'Schermstand'} desc={t.orientationDesc || '(forceer of auto)'}>
             <select value={grid.orientation} onChange={e => {
               setGrid(g => ({ ...g, orientation: e.target.value }));
-              handleSave({ grid: { ...grid, orientation: e.target.value }, quiz, display });
+              handleSave({ grid: { ...grid, orientation: e.target.value }, quiz, display, study });
             }} className="setting-select">
               <option value="auto">{t.auto || 'Automatisch'}</option>
               <option value="portrait">{t.portraitMode || 'Portret'}</option>
@@ -140,7 +140,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.abbreviations || 'Afkortingen'} desc={t.abbreviationsDesc || '(portretmodus)'}>
             <select value={display.abbreviations || 'auto'} onChange={e => {
               setDisplay(d => ({ ...d, abbreviations: e.target.value }));
-              handleSave({ grid, quiz, display: { ...display, abbreviations: e.target.value } });
+              handleSave({ grid, quiz, display: { ...display, abbreviations: e.target.value }, study });
             }} className="setting-select">
               <option value="auto">{t.abbrAuto || 'Auto'}</option>
               <option value="always">{t.abbrAlways || 'Altijd'}</option>
@@ -168,7 +168,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
                 onChange={e => {
                   const val = Number(e.target.value);
                   setQuiz(q => ({ ...q, masteryMs: val }));
-                  handleSave({ grid, quiz: { ...quiz, masteryMs: val }, display });
+                  handleSave({ grid, quiz: { ...quiz, masteryMs: val }, display, study });
                 }}
                 style={{ width: '100%', accentColor: 'var(--accent)' }}
               />
@@ -180,7 +180,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
             <select value={quiz.learningPace || 'balanced'} onChange={e => {
               setQuiz(q => ({ ...q, learningPace: e.target.value }));
-              handleSave({ grid, quiz: { ...quiz, learningPace: e.target.value }, display });
+              handleSave({ grid, quiz: { ...quiz, learningPace: e.target.value }, display, study });
             }} className="setting-select">
               <option value="relaxed">{t.paceRelaxed || 'Relaxed'}</option>
               <option value="balanced">{t.paceBalanced || 'Balanced'}</option>
@@ -197,13 +197,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
             <Toggle value={display.highlightFound} onChange={v => {
               setDisplay(d => ({ ...d, highlightFound: v }));
-              handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
+              handleSave({ grid, quiz, display: { ...display, highlightFound: v }, study });
             }} />
           </SettingRow>
           <SettingRow label={t.autoScroll || 'Auto-scroll (Quiz & Study)'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
             <Toggle value={quiz.autoScroll !== false} onChange={v => {
               setQuiz(q => ({ ...q, autoScroll: v }));
-              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display });
+              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display, study });
             }} />
           </SettingRow>
           <SettingRow label={t.bookSelection || 'Book selection'} desc={t.bookSelectionDesc || '(in Study Mode)'}>
