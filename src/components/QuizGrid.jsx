@@ -235,15 +235,26 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
         const isNowMastered = result.card.stability > 7;
         if (!wasAlreadyMastered && isNowMastered) {
           const newCount = stats.mastered + 1;
-          const milestoneMessages = {
-            10: t.milestone10,
-            20: t.milestone20,
-            33: t.milestone33,
-            39: t.milestone39,
-            50: t.milestone50,
-            66: t.milestone66,
-          };
-          const msg = milestoneMessages[newCount];
+          const updatedFsrsCards = { ...fsrsCards, [targetBook.id]: serializeCard(result.card) };
+          const otBookIds = bibleBooks.filter(b => b.testament === 'OT').map(b => b.id);
+          const ntBookIds = bibleBooks.filter(b => b.testament === 'NT').map(b => b.id);
+          const allOTMastered = otBookIds.every(id => (updatedFsrsCards[id]?.stability || 0) > 7);
+          const allNTMastered = ntBookIds.every(id => (updatedFsrsCards[id]?.stability || 0) > 7);
+          const all66Mastered = newCount === 66;
+
+          // Priority: 66 > OT/NT scripture milestones > count milestones
+          let msg = null;
+          if (all66Mastered) {
+            msg = t.milestone66;
+          } else if (allOTMastered) {
+            msg = t.milestone39;
+          } else if (allNTMastered) {
+            msg = t.milestoneNT;
+          } else {
+            const countMilestones = { 10: t.milestone10, 20: t.milestone20, 33: t.milestone33, 50: t.milestone50 };
+            msg = countMilestones[newCount] || null;
+          }
+
           if (msg) {
             setMilestone(msg);
             setTimeout(() => setMilestone(null), 3000);
