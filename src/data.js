@@ -105,7 +105,7 @@ export const groupNames = {
   },
   en: {
     law: 'Pentateuch (5 books) — From creation to the founding of the ancient nation of Israel',
-    history: 'Historical books (12 books) — Israel\'s entry into the Promised Land and the history of the nation through the exile',
+    history: 'Historical books (12 books) — Israel\'s entry into the Promised Land and the history of the nation through and after the exile',
     poetry: 'Poetic books (5 books) — Collections of wise sayings and songs',
     prophets: 'Prophetic books (17 books) — Prophecies, or predictions, concerning God\'s people',
     gospels: 'The four Gospels (4 books) — History of Jesus\' life and ministry',
