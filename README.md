@@ -96,7 +96,7 @@ Study Mode is for learning without pressure — pick one or more groups, practic
 It shows how many books the algorithm suggests you review right now. This includes books you haven't seen yet and books where the review interval has passed. If you have time, it is ideal to train until Due reaches 0 — but there is no obligation. After training, Due will gradually rise again as review intervals expire. How quickly it rises depends on your Learning Pace setting: Intensive brings books back sooner, Relaxed keeps them away longer.
 
 **Does it matter how fast I tap?**
-In Quiz Mode, yes. Answers within the mastery speed (default 5 seconds) count toward your score and streak. Faster answers make the book come back less often (you know it well). Slower answers or wrong answers make the book come back sooner. In Study Mode, speed does not matter.
+In Quiz Mode, yes. Answers within the mastery speed threshold count toward your score and streak. You can adjust this threshold in Settings → Training. Faster answers make the book come back less often (you know it well). Slower answers or wrong answers make the book come back sooner. In Study Mode, speed does not matter.
 
 **What do Relaxed, Balanced, and Intensive mean?**
 This controls how often books come back for review, which directly affects how fast Due rises between sessions. Relaxed means longer intervals — Due rises slowly, sessions are shorter but less frequent. Intensive means shorter intervals — Due rises faster, you practice more often but learn faster. Balanced is recommended for most learners. You can change this anytime in Settings → Training.
@@ -117,7 +117,7 @@ Nothing negative. The hint shows which color group the book belongs to, helping 
 Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off. The algorithm adjusts automatically.
 
 **Is my progress saved?**
-Yes, in your browser's local storage. But it will be lost if you clear your browser history or switch to a different device. Use the Export function in Settings → Data to create a backup file you can import on any device.
+Yes, in your browser's local storage. But it will be lost if you clear your browser data/cache or switch to a different device. Use the Export function in Settings → Data to create a backup file you can import on any device.
 
 **Can multiple people use the app on the same device?**
 Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name in the top left to switch users or create a new one.
@@ -137,7 +137,7 @@ Yes. After opening the app once, it works offline as a PWA (Progressive Web App)
 ## Getting started
 
 **Just want to use the app?**
-Open [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app) in your browser. No installation needed.
+Open [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app) in your browser. No installation needed. If the Netlify site is unavailable, the app can also be hosted on GitHub Pages at no cost and with no build limits.
 
 To install on your phone: open the app in Chrome, tap the browser menu (three dots), and select "Add to Home Screen" or "Install". This installs the app as a PWA on your home screen and works offline.
 
@@ -157,7 +157,7 @@ Open `http://localhost:5173` in your browser. Any changes you make to the code a
 
 ## Deployment
 
-Hosted on Netlify with auto-deploy on push. Push to GitHub and the site updates within 30 seconds. The `netlify.toml` and Vite config are already set up.
+The app can be hosted on **Netlify** or **GitHub Pages** — both support auto-deploy on push. The `netlify.toml` and Vite config are already set up. See the Getting started section for setup instructions.
 
 ## Tech stack
 
