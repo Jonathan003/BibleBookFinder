@@ -5,6 +5,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   const [grid, setGrid] = useState(config.grid);
   const [quiz, setQuiz] = useState(config.quiz);
   const [display, setDisplay] = useState(config.display);
+  const [study, setStudy] = useState(config.study || {});
   const [activeTab, setActiveTab] = useState('grid');
   const [feedback, setFeedback] = useState('');
 
@@ -152,8 +153,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     if (activeTab === 'quiz') {
       return (
         <>
-          <h3>{t.quizTitle || 'Snelheid'}</h3>
-          <p className="settings-desc">{t.quizDesc || 'Tijdslimiet voor beheersing.'}</p>
           <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'} fullWidth>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -178,18 +177,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               </div>
             </div>
           </SettingRow>
-          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
-            <Toggle value={display.highlightFound} onChange={v => {
-              setDisplay(d => ({ ...d, highlightFound: v }));
-              handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
-            }} />
-          </SettingRow>
-          <SettingRow label={t.autoScroll || 'Auto-scroll (Quiz & Study)'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
-            <Toggle value={quiz.autoScroll !== false} onChange={v => {
-              setQuiz(q => ({ ...q, autoScroll: v }));
-              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display });
-            }} />
-          </SettingRow>
           <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
             <select value={quiz.learningPace || 'balanced'} onChange={e => {
               setQuiz(q => ({ ...q, learningPace: e.target.value }));
@@ -207,6 +194,28 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               {quiz.learningPace === 'intensive' && (t.paceIntensiveHint || '~20-30 min/day, master all books in ~1-2 weeks')}
             </div>
           )}
+          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
+            <Toggle value={display.highlightFound} onChange={v => {
+              setDisplay(d => ({ ...d, highlightFound: v }));
+              handleSave({ grid, quiz, display: { ...display, highlightFound: v } });
+            }} />
+          </SettingRow>
+          <SettingRow label={t.autoScroll || 'Auto-scroll (Quiz & Study)'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
+            <Toggle value={quiz.autoScroll !== false} onChange={v => {
+              setQuiz(q => ({ ...q, autoScroll: v }));
+              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display });
+            }} />
+          </SettingRow>
+          <SettingRow label={t.bookSelection || 'Book selection'} desc={t.bookSelectionDesc || '(in Study Mode)'}>
+            <select value={study.bookSelection || 'focused'} onChange={e => {
+              const val = e.target.value;
+              setStudy(s => ({ ...s, bookSelection: val }));
+              handleSave({ grid, quiz, display, study: { ...study, bookSelection: val } });
+            }} className="setting-select">
+              <option value="random">{t.bookSelectionRandom || 'Random'}</option>
+              <option value="focused">{t.bookSelectionFocused || 'Focused'}</option>
+            </select>
+          </SettingRow>
         </>
       );
     }

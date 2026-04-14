@@ -13,7 +13,7 @@ export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
   quiz: { masteryMs: 5000, learningPace: 'balanced', autoScroll: true },
   display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
-  study: { selectedGroups: [] },
+  study: { selectedGroups: [], bookSelection: 'focused' },
 };
 
 // Deep merge saved settings with defaults so new keys are always present

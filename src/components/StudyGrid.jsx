@@ -17,7 +17,7 @@ const GROUPS = [
 
 const ALL_GROUP_IDS = ['law', 'history', 'poetry', 'prophets', 'gospels', 'acts', 'epistles', 'revelation'];
 
-export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
+export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards }) {
   const { config, t, lang } = useAppConfig();
   const [selectedGroups, setSelectedGroups] = useState(
     () => new Set(savedGroups || [])
@@ -104,7 +104,28 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
     const pool = selectedGroups.size > 0
       ? bibleBooks.filter(b => selectedGroups.has(b.group))
       : bibleBooks;
-    const selected = pool[Math.floor(Math.random() * pool.length)];
+
+    let selected;
+    const bookSelection = config.study?.bookSelection || 'focused';
+    if (bookSelection === 'focused' && fsrsCards && Object.keys(fsrsCards).length > 0) {
+      // Weight books by difficulty: lower stability = higher weight
+      const weights = pool.map(b => {
+        const stability = fsrsCards[b.id]?.stability || 0;
+        // Books never seen (stability=0) get weight 3, hard books get high weight, easy books get low weight
+        if (stability === 0) return 3;
+        return Math.max(0.5, 10 / (stability + 1));
+      });
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      let rand = Math.random() * totalWeight;
+      let idx = 0;
+      for (let i = 0; i < weights.length; i++) {
+        rand -= weights[i];
+        if (rand <= 0) { idx = i; break; }
+      }
+      selected = pool[idx];
+    } else {
+      selected = pool[Math.floor(Math.random() * pool.length)];
+    }
     setTargetBook(selected);
     setHintVisible(false);
     setFeedback(null);

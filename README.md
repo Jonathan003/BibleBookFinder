@@ -8,7 +8,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Quiz Mode (FSRS spaced repetition)** — A book name appears and you tap its position in the grid as fast as you can. The app uses the FSRS algorithm to track your progress per book across sessions. Books you struggle with come back sooner, books you've mastered appear less often. Score only counts for answers within the mastery speed threshold. Feedback (correct, too slow, wrong) appears inline in the book name bar — stats remain visible at all times.
 
-**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the app scrolls to the correct book which lights up in blue — tap it to continue. Hints are always free. Your group selection is saved per user and restored next time.
+**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the app scrolls to the correct book which lights up in blue — tap it to continue. Hints are always free. Your group selection is saved per user and restored next time. Book selection can be set to Focused (books you struggle with in Quiz Mode appear more often) or Random.
 
 **Spaced repetition (FSRS)** — Long-term per-book tracking powered by the Free Spaced Repetition Scheduler algorithm. Your progress is saved across sessions. The home screen shows how many books are ready to practice.
 
@@ -16,7 +16,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Session summary** — When you tap Back in Quiz Mode after answering at least one question, a summary screen shows books reviewed, time spent, correct answers, and new personal records. Tap "Keep going" to continue or "Done" to return to the menu.
 
-**Milestones** — When you master your 10th, 20th, 33rd (halfway through all 66), 39th (all Hebrew-Aramaic Scriptures), 50th, or 66th book, a celebration message appears.
+**Milestones** — Celebration messages appear when you master your 10th, 20th, 33rd (halfway), 50th, or 66th book, or when you master all Hebrew-Aramaic Scriptures (39 books) or all Christian Greek Scriptures (27 books). When multiple milestones are reached at the same time, the most significant one is shown.
 
 **Welcome back** — If you haven't opened the app for more than 24 hours, a friendly welcome message appears on the home screen. No guilt, no streaks — just a warm nudge to pick up where you left off.
 
@@ -34,7 +34,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Smart abbreviations** — In portrait mode, the app automatically detects if full book names fit in the grid cells. If not, all cells switch to abbreviations together. You can override this in Settings (Auto / Always / Never). Landscape mode always shows full names.
 
-**Auto-scroll** — When enabled in Settings → Quiz, the app automatically scrolls to the target book on each new question: Hebrew-Aramaic Scriptures scroll to the top, Christian Greek Scriptures scroll to the bottom. Toggle on or off per user.
+**Auto-scroll** — When enabled in Settings → Training, the app automatically scrolls at the start of each question: Hebrew-Aramaic Scriptures scroll to the top, Christian Greek Scriptures scroll to the bottom. Toggle on or off per user.
 
 **Responsive layout** — In landscape mode the topbar compresses to a single row, giving more space to the book grid. In portrait mode the topbar uses two rows with more detail.
 
@@ -99,13 +99,16 @@ It shows how many books the algorithm suggests you review right now. This includ
 In Quiz Mode, yes. Answers within the mastery speed (default 5 seconds) count toward your score and streak. Faster answers make the book come back less often (you know it well). Slower answers or wrong answers make the book come back sooner. In Study Mode, speed does not matter.
 
 **What do Relaxed, Balanced, and Intensive mean?**
-This controls how often books come back for review, which directly affects how fast Due rises between sessions. Relaxed means longer intervals — Due rises slowly, sessions are shorter but less frequent. Intensive means shorter intervals — Due rises faster, you practice more often but learn faster. Balanced is recommended for most learners. You can change this anytime in Settings → Quiz.
+This controls how often books come back for review, which directly affects how fast Due rises between sessions. Relaxed means longer intervals — Due rises slowly, sessions are shorter but less frequent. Intensive means shorter intervals — Due rises faster, you practice more often but learn faster. Balanced is recommended for most learners. You can change this anytime in Settings → Training.
 
 **What happens when I tap the wrong book?**
 In both Quiz Mode and Study Mode, the app automatically scrolls to the correct book which lights up in blue. All other books turn orange. You must tap the blue book to continue — this reinforces learning by making you actively confirm the correct location.
 
+**What is the difference between Focused and Random book selection in Study Mode?**
+With Focused (the default), books you struggle with in Quiz Mode appear more often in Study Mode — based on their FSRS stability score. Books you know well still appear occasionally. Books you have never seen get a medium weight. With Random, every book has an equal chance of appearing. You can change this in Settings → Training.
+
 **What is auto-scroll?**
-When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures scroll to the top of the grid, Christian Greek Scriptures scroll to the bottom. This gives a subtle positional hint. Toggle it on or off in Settings → Quiz.
+When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures scroll to the top of the grid, Christian Greek Scriptures scroll to the bottom. This gives a subtle positional hint. Toggle it on or off in Settings → Training.
 
 **What happens if I use a hint?**
 Nothing negative. The hint shows which color group the book belongs to, helping you find the right area in the grid. The hint appears as an overlay — tap it to close. There is no penalty for using hints. If you needed the hint to find the book, you will naturally be slower, and the algorithm picks that up automatically.
@@ -120,10 +123,10 @@ Yes, in your browser's local storage. But it will be lost if you clear your brow
 Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name in the top left to switch users or create a new one.
 
 **What is the gold line at the bottom of some book cells?**
-That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Quiz → "Mastered books".
+That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Training → "Mastered books".
 
 **I'm faster/slower than average. Should I change any settings?**
-Yes. Adjust the mastery speed in Settings → Quiz. Lower it (e.g. 3–5 seconds) if you find it too easy. Raise it (e.g. 8–10 seconds) if you're often correct but marked as "too slow". The algorithm adapts to whatever threshold you set.
+Yes. Adjust the mastery speed in Settings → Training. Lower it (e.g. 3–5 seconds) if you find it too easy. Raise it (e.g. 8–10 seconds) if you're often correct but marked as "too slow". The algorithm adapts to whatever threshold you set.
 
 **Why are the abbreviations different from what I'm used to?**
 All abbreviations match the JW Library Study Bible exactly. If you notice a difference, it may be because other Bible translations use slightly different abbreviations.
