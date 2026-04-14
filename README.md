@@ -72,37 +72,40 @@ The 66 books are divided into 8 groups, matching the NWT Study Bible:
 
 ## Example training schedules
 
-**Complete beginner — relaxed pace**
-Practice 2-3 times per week, 5-10 minutes each. Start with Study Mode on Pentateuch + Gospels (9 books). Once comfortable, switch to Quiz Mode with those groups. Add Historical books when ready. No rush — in a few months you'll know them all.
+**Recommended starting point for most people**
+Set Learning Pace to Balanced. Start with Study Mode on Pentateuch + Gospels (9 books) to build a mental map. Once you can find them reliably, switch to Quiz Mode. Add more groups as you feel confident. Aim to train until Due reaches 0 each session — sessions get shorter as you master more books.
 
-**Complete beginner — focused pace**
-Practice daily, 10-15 minutes. Start with Study Mode on one group at a time. After each study session, switch to Quiz Mode. Work through groups in order: Pentateuch → Historical → Poetry → Prophets → Gospels → Acts → Letters → Revelation.
+**Complete beginner**
+Start with Study Mode on one or two groups. Practice daily if possible, 10–15 minutes. After each study session, switch to Quiz Mode with the same groups. Work through groups in order: Pentateuch → Gospels → Historical → Poetry → Acts → Letters → Prophets → Revelation. Set Learning Pace to Balanced.
 
-**Highly motivated — fastest progress**
-Set Learning Pace to Intensive. Practice 3-4 times per day in short bursts (10-15 minutes each): morning, lunch, afternoon, evening. Start with Study Mode on all groups to build a mental map of the grid. Then switch to Quiz Mode exclusively. When a session feels easy, challenge yourself by lowering the mastery speed threshold in Settings.
+**Fast learner / highly motivated**
+Set Learning Pace to Intensive. Start with Study Mode on all 66 books to build a full mental map, then switch to Quiz Mode exclusively. Train until Due reaches 0 each session. With Intensive, Due rises faster — short sessions multiple times a day work well.
 
 **Already know the basics — strengthen weak spots**
-Jump straight into Quiz Mode with all 66 books. After a few sessions, the FSRS algorithm will identify which books you struggle with and show them more often. Focus on the Prophets group separately if needed — most people find those 17 books the hardest.
+Jump straight into Quiz Mode with all 66 books. After a few sessions, the FSRS algorithm will identify which books you struggle with and show them more often. Focus on the Prophets group separately in Study Mode if needed — most people find those 17 books the hardest.
 
-**Maintaining your knowledge**
-Open the app once or twice a week for a quick Quiz session. The FSRS algorithm will only show books you're about to forget. Sessions will be short once you've mastered most books.
-
-**Busy schedule / unpredictable free time**
-Use the app whenever you have a spare moment — waiting room, lunch break, commute. Even 2 minutes helps. Set Learning Pace to Relaxed. There is no minimum, no daily requirement, and no penalty for skipping days or weeks.
+**Busy schedule / maintaining your knowledge**
+Use the app whenever you have a spare moment — waiting room, lunch break, commute. Even 2 minutes helps. Set Learning Pace to Relaxed so Due rises slowly and sessions stay short. There is no minimum, no daily requirement, and no penalty for skipping days or weeks.
 
 ## FAQ
 
 **What is the difference between Study Mode and Quiz Mode?**
 Study Mode is for learning without pressure — pick one or more groups, practice at your own pace, and the correct answer lights up when you tap wrong. Quiz Mode tests your speed and tracks your progress over time using spaced repetition. Use Study Mode to learn, Quiz Mode to master.
 
-**What does "Ready to practice" mean on the home screen?**
-It shows how many books the algorithm suggests you review. This includes books you haven't seen yet and books where the review interval has passed. It is not a daily target — just a guide for when you feel like practicing.
+**What does "Ready to practice" (Due) mean on the home screen?**
+It shows how many books the algorithm suggests you review right now. This includes books you haven't seen yet and books where the review interval has passed. If you have time, it is ideal to train until Due reaches 0 — but there is no obligation. After training, Due will gradually rise again as review intervals expire. How quickly it rises depends on your Learning Pace setting: Intensive brings books back sooner, Relaxed keeps them away longer.
 
 **Does it matter how fast I tap?**
 In Quiz Mode, yes. Answers within the mastery speed (default 5 seconds) count toward your score and streak. Faster answers make the book come back less often (you know it well). Slower answers or wrong answers make the book come back sooner. In Study Mode, speed does not matter.
 
 **What do Relaxed, Balanced, and Intensive mean?**
-This controls how often books come back for review. Relaxed means books come back less often — best if you practice occasionally. Intensive means books come back more frequently — best if you practice often. Balanced is recommended for most learners. You can change this anytime in Settings → Quiz.
+This controls how often books come back for review, which directly affects how fast Due rises between sessions. Relaxed means longer intervals — Due rises slowly, sessions are shorter but less frequent. Intensive means shorter intervals — Due rises faster, you practice more often but learn faster. Balanced is recommended for most learners. You can change this anytime in Settings → Quiz.
+
+**What happens when I tap the wrong book?**
+In both Quiz Mode and Study Mode, the app automatically scrolls to the correct book which lights up in blue. All other books turn orange. You must tap the blue book to continue — this reinforces learning by making you actively confirm the correct location.
+
+**What is auto-scroll?**
+When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures scroll to the top of the grid, Christian Greek Scriptures scroll to the bottom. This gives a subtle positional hint. Toggle it on or off in Settings → Quiz.
 
 **What happens if I use a hint?**
 Nothing negative. The hint shows which color group the book belongs to, helping you find the right area in the grid. The hint appears as an overlay — tap it to close. There is no penalty for using hints. If you needed the hint to find the book, you will naturally be slower, and the algorithm picks that up automatically.
@@ -120,7 +123,7 @@ Yes. The app supports up to 10 user profiles, each with their own progress, sett
 That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Quiz → "Mastered books".
 
 **I'm faster/slower than average. Should I change any settings?**
-Yes. Adjust the mastery speed in Settings → Quiz. The default is 5 seconds. If you find it too easy, lower it (e.g. 3 seconds). If you're often correct but marked as "too slow", raise it (e.g. 7 or 8 seconds). The algorithm adapts to whatever threshold you set.
+Yes. Adjust the mastery speed in Settings → Quiz. Lower it (e.g. 3–5 seconds) if you find it too easy. Raise it (e.g. 8–10 seconds) if you're often correct but marked as "too slow". The algorithm adapts to whatever threshold you set.
 
 **Why are the abbreviations different from what I'm used to?**
 All abbreviations match the JW Library Study Bible exactly. If you notice a difference, it may be because other Bible translations use slightly different abbreviations.
