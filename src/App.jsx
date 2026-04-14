@@ -11,7 +11,7 @@ import './App.css';
 
 export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
-  quiz: { masteryMs: 5000, learningPace: 'balanced' },
+  quiz: { masteryMs: 5000, learningPace: 'balanced', autoScroll: true },
   display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
   study: { selectedGroups: [] },
 };
@@ -184,6 +184,8 @@ function App() {
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],
       fsrsCards: userData.fsrsCards || {},
+      bestTimes: userData.bestTimes || {},
+      lastActive: userData.lastActive || 0,
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
@@ -294,7 +296,7 @@ function App() {
 
           {view === 'settings' && (
             <Settings
-              config={{ grid: config.grid, quiz: config.quiz, display: config.display, t }}
+              config={{ grid: config.grid, quiz: config.quiz, display: config.display, study: config.study, t }}
               onSave={saveConfig}
               onBack={() => setView('menu')}
               currentUser={currentUser}

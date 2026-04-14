@@ -24,6 +24,11 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
   );
   const [started, setStarted] = useState(false);
   const [targetBook, setTargetBook] = useState(null);
+
+  // Sync when savedGroups changes (e.g. after import)
+  useEffect(() => {
+    setSelectedGroups(new Set(savedGroups || []));
+  }, [JSON.stringify(savedGroups)]);
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [correctBookId, setCorrectBookId] = useState(null);
@@ -105,9 +110,16 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack }) {
     setFeedback(null);
     setCorrectBookId(null);
     if (config.quiz.autoScroll !== false) {
+      // OT book: scroll to top, NT book: scroll to bottom
       setTimeout(() => {
-        document.querySelector(`[data-book-id="${selected.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+        const el = scrollRef.current;
+        if (!el) return;
+        if (selected.testament === 'OT') {
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+      }, 400);
     } else {
       scrollRef.current?.scrollTo(0, 0);
       window.scrollTo(0, 0);

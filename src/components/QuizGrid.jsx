@@ -130,10 +130,17 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     setFeedback(null);
     setHintVisible(false);
     if (config.quiz.autoScroll !== false) {
-      // Scroll to target book after short delay so DOM updates first
+      // Scroll after DOM updates and new book name is visible
+      // OT book: scroll to top, NT book: scroll to bottom
       setTimeout(() => {
-        document.querySelector(`[data-book-id="${selected.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+        const el = scrollRef.current;
+        if (!el) return;
+        if (selected.testament === 'OT') {
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+      }, 400);
     } else {
       scrollRef.current?.scrollTo(0, 0);
       window.scrollTo(0, 0);

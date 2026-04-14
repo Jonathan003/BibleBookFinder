@@ -38,10 +38,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           grid: config.grid,
           quiz: config.quiz,
           display: config.display,
+          study: config.study,
         },
+        bestTimes: currentUser.bestTimes || {},
+        lastActive: currentUser.lastActive || 0,
       }
     };
-    const filename = `biblefinder-${currentUser.name.replace(/\s+/g, '-').toLowerCase()}-backup.json`;
+    const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;
     const json = JSON.stringify(exportData, null, 2);
     const file = new File([json], filename, { type: 'application/json' });
 

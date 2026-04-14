@@ -8,23 +8,33 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Quiz Mode (FSRS spaced repetition)** — A book name appears and you tap its position in the grid as fast as you can. The app uses the FSRS algorithm to track your progress per book across sessions. Books you struggle with come back sooner, books you've mastered appear less often. Score only counts for answers within the mastery speed threshold. Feedback (correct, too slow, wrong) appears inline in the book name bar — stats remain visible at all times.
 
-**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the correct one lights up in blue so you can see where it is. Hints are always free.
+**Study Mode (group-based)** — Choose one or more book groups to practice with checkboxes, then tap Start. No timer, no score — just learning. When you tap the wrong book, the app scrolls to the correct book which lights up in blue — tap it to continue. Hints are always free. Your group selection is saved per user and restored next time.
 
 **Spaced repetition (FSRS)** — Long-term per-book tracking powered by the Free Spaced Repetition Scheduler algorithm. Your progress is saved across sessions. The home screen shows how many books are ready to practice.
+
+**Personal records** — In Quiz Mode, the app tracks your best response time per book. When you beat your previous best, you see a "⚡ New record!" notification. Personal records are included in the export/import backup.
+
+**Session summary** — When you tap Back in Quiz Mode after answering at least one question, a summary screen shows books reviewed, time spent, correct answers, and new personal records. Tap "Keep going" to continue or "Done" to return to the menu.
+
+**Milestones** — When you master your 10th, 20th, 33rd (halfway through all 66), 39th (all Hebrew-Aramaic Scriptures), 50th, or 66th book, a celebration message appears.
+
+**Welcome back** — If you haven't opened the app for more than 24 hours, a friendly welcome message appears on the home screen. No guilt, no streaks — just a warm nudge to pick up where you left off.
 
 **Learning pace** — Choose between Relaxed, Balanced, or Intensive in Settings. This controls how often books come back for review. The app adapts to your schedule — practice as much or as little as you want, whenever you want. There is no daily requirement and no penalty for skipping days or weeks.
 
 **Mastery indicator** — Books you've mastered show a gold accent line at the bottom of the cell in Quiz Mode. Toggle this on or off in Settings.
 
-**Hints** — Toggle the hint button to see the book's color group and NWT description (e.g. "Prophetic books (17 books) — Prophecies, or predictions, concerning God's people").
+**Hints** — Toggle the hint button 💡 to see the book's color group and NWT description (e.g. "Prophetic books (17 books) — Prophecies, or predictions, concerning God's people"). The hint appears as an overlay — tap it to close. The grid never shifts.
 
-**Multi-user** — Supports up to 10 user profiles, each with their own avatar, progress, FSRS data, quiz history, and settings.
+**Multi-user** — Supports up to 10 user profiles, each with their own avatar, progress, FSRS data, quiz history, personal records, and settings.
 
-**Export / Import** — Back up your progress and settings as a JSON file from the Data tab in Settings. Import on another device to restore everything.
+**Export / Import** — Back up your full progress as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. The backup includes FSRS data, personal records, quiz history, all settings including study group selection, and last activity. Import on another device to restore everything. Name and avatar are not overwritten on import.
 
 **Bilingual** — Dutch and English, switchable from the header.
 
 **Smart abbreviations** — In portrait mode, the app automatically detects if full book names fit in the grid cells. If not, all cells switch to abbreviations together. You can override this in Settings (Auto / Always / Never). Landscape mode always shows full names.
+
+**Auto-scroll** — When enabled in Settings → Quiz, the app automatically scrolls to the target book on each new question: Hebrew-Aramaic Scriptures scroll to the top, Christian Greek Scriptures scroll to the bottom. Toggle on or off per user.
 
 **Responsive layout** — In landscape mode the topbar compresses to a single row, giving more space to the book grid. In portrait mode the topbar uses two rows with more detail.
 
