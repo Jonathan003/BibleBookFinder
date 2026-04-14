@@ -133,6 +133,16 @@ Yes. After opening the app once, it works offline as a PWA (Progressive Web App)
 
 ## Getting started
 
+**Just want to use the app?**
+Open [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app) in your browser. No installation needed.
+
+To install on your phone: open the app in Chrome, tap the browser menu (three dots), and select "Add to Home Screen" or "Install". This installs the app as a PWA on your home screen and works offline.
+
+**Want to run the code locally (for developers)?**
+This requires [Node.js](https://nodejs.org) and [Git](https://git-scm.com) installed on your PC.
+
+`git clone` downloads a full copy of the source code from GitHub to your PC:
+
 ```bash
 git clone https://github.com/Jonathan003/BibleBookFinder.git
 cd BibleBookFinder
@@ -140,9 +150,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
-
-To install on your phone: open the app in Chrome or Safari, tap the browser menu, and select "Add to Home Screen".
+Open `http://localhost:5173` in your browser. Any changes you make to the code are instantly visible.
 
 ## Deployment
 
