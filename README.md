@@ -2,7 +2,7 @@
 
 An interactive quiz and study app to help you learn the location of all 66 Bible books. Inspired by the book grid in the JW Library Study Bible app, with group descriptions sourced from the NWT "The 66 Books of the Bible" article.
 
-🔗 **Live app:** [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app)
+🔗 **Live app:** [jonathan003.github.io/BibleBookFinder](https://jonathan003.github.io/BibleBookFinder/) — also available at [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app)
 
 ## Features
 
@@ -26,7 +26,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Hints** — Toggle the hint button 💡 to see the book's color group and NWT description (e.g. "Prophetic books (17 books) — Prophecies, or predictions, concerning God's people"). The hint appears as an overlay — tap it to close. The grid never shifts.
 
-**Multi-user** — Supports up to 10 user profiles, each with their own avatar, progress, FSRS data, quiz history, personal records, and settings.
+**Multi-user** — Supports up to 10 user profiles. Each user gets a unique color avatar based on their name. Every profile has its own progress, FSRS data, quiz history, personal records, and settings. Tap your name in the top left to switch users or add a new one.
 
 **Export / Import** — Back up your full progress as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. The backup includes FSRS data, personal records, quiz history, all settings including study group selection, and last activity. Import on another device to restore everything. Name and avatar are not overwritten on import.
 
@@ -117,10 +117,10 @@ Nothing negative. The hint shows which color group the book belongs to, helping 
 Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off. The algorithm adjusts automatically.
 
 **Is my progress saved?**
-Yes, in your browser's local storage. But it will be lost if you clear your browser data/cache or switch to a different device. Use the Export function in Settings → Data to create a backup file you can import on any device.
+Yes, in your browser's local storage — separately per user profile. However, all progress for all users on a device will be lost if someone clears the browser data/cache, uninstalls the browser, or resets the device. This is especially important if multiple family members share the same device. Use the Export function in Settings → Data regularly to create a personal backup file. You can import it on any device to restore your progress.
 
 **Can multiple people use the app on the same device?**
-Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name in the top left to switch users or create a new one.
+Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name/avatar in the top left to switch users or create a new one. Each user gets a unique color avatar. Important: if the browser data is cleared, all users on that device lose their progress — so each person should make their own backup via Settings → Data.
 
 **What is the gold line at the bottom of some book cells?**
 That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Training → "Mastered books".
@@ -137,7 +137,7 @@ Yes. After opening the app once, it works offline as a PWA (Progressive Web App)
 ## Getting started
 
 **Just want to use the app?**
-Open [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app) in your browser. No installation needed. If the Netlify site is unavailable, the app can also be hosted on GitHub Pages at no cost and with no build limits.
+Open [jonathan003.github.io/BibleBookFinder](https://jonathan003.github.io/BibleBookFinder/) in your browser. No installation needed. The app is also available at [biblebookfinder.netlify.app](https://biblebookfinder.netlify.app) (may be temporarily unavailable if the monthly build limit is reached — resets on the 1st of each month).
 
 To install on your phone: open the app in Chrome, tap the browser menu (three dots), and select "Add to Home Screen" or "Install". This installs the app as a PWA on your home screen and works offline.
 
@@ -157,7 +157,7 @@ Open `http://localhost:5173` in your browser. Any changes you make to the code a
 
 ## Deployment
 
-The app can be hosted on **Netlify** or **GitHub Pages** — both support auto-deploy on push. The `netlify.toml` and Vite config are already set up. See the Getting started section for setup instructions.
+The app is hosted on **GitHub Pages** (primary) with auto-deploy via GitHub Actions on every push to `main`. Also hosted on **Netlify** as a backup (free plan, 300 build credits/month). The `.github/workflows/deploy.yml`, `netlify.toml`, and Vite `base` config are already set up.
 
 ## Tech stack
 

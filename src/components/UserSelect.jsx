@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import { getUsers, createUser, getUser, updateUser } from '../users';
-import { avatarIcons, AvatarIcon } from './Icons';
+import { InitialAvatar } from './Icons';
 import './UserSelect.css';
 
 export default function UserSelect({ onSelect }) {
   const [users, setUsers] = useState(getUsers());
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(avatarIcons[0]);
   const [error, setError] = useState('');
 
   const handleCreate = () => {
     if (!newName.trim()) return;
     const result = createUser(newName);
     if (result.error) { setError(result.error); return; }
-    // Set avatar on the new user
-    updateUser(result.user.id, { avatar: selectedAvatar });
     const updatedUser = getUser(result.user.id);
     setUsers(getUsers());
     setNewName('');
@@ -43,18 +40,7 @@ export default function UserSelect({ onSelect }) {
           <>
             {showAdd ? (
               <div className="add-user-form">
-                <div className="avatar-picker">
-                  {avatarIcons.map(icon => (
-                    <button
-                      key={icon}
-                      className={`avatar-option ${selectedAvatar === icon ? 'selected' : ''}`}
-                      onClick={() => setSelectedAvatar(icon)}
-                    >
-                      <AvatarIcon name={icon} size={28} />
-                    </button>
-                  ))}
-                </div>
-                <div className="name-input-group">
+<div className="name-input-group">
                   <input
                     type="text"
                     placeholder="Je naam..."
@@ -99,7 +85,7 @@ function UserCard({ user, onSelect, onRefresh }) {
   return (
     <div className="user-card">
       <button className="user-card-main" onClick={() => onSelect(user)}>
-        <div className="user-avatar"><AvatarIcon name={user.avatar || 'book'} size={36} /></div>
+        <div className="user-avatar"><InitialAvatar name={user.name} size={36} /></div>
         <div className="user-info">
           <span className="user-name">{user.name}</span>
           <div className="user-progress">
