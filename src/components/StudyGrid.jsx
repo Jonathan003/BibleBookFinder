@@ -239,7 +239,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     );
   }
 
-  const BookCell = ({ book }) => {
+  const renderBookCell = (book) => {
     const isTarget = book.id === targetBook?.id;
     const isCorrectReveal = book.id === correctBookId;
     const showCorrect = feedback === 'correct' && isTarget;
@@ -252,12 +252,13 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     let bgColor = colors.normal;
 
     if (showCorrect) bgColor = '#3b82f6';
-    else if (isCorrectReveal) bgColor = '#3b82f6'; // Show correct answer in blue
+    else if (isCorrectReveal) bgColor = '#3b82f6';
     else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
     else if (showWrong) bgColor = '#f97316';
 
     return (
       <button
+        key={book.id}
         className={`book-cell ${showCorrect ? 'correct' : ''} ${book.id === revealBookId ? 'reveal' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
@@ -315,14 +316,14 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
           <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
-            {otBooks.map(book => <BookCell key={book.id} book={book} />)}
+            {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section">
           <h3 className="section-title">{t.greekSection}</h3>
           <div className="book-grid" style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
-            {ntBooks.map(book => <BookCell key={book.id} book={book} />)}
+            {ntBooks.map(renderBookCell)}
           </div>
         </div>
       </div>
