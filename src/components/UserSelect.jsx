@@ -32,7 +32,7 @@ export default function UserSelect({ onSelect }) {
       <div className="user-list">
         {users.length === 0 && <p className="no-users">Nog geen gebruikers. Voeg jezelf toe!</p>}
 
-        {users.map(user => (
+        {[...users].sort((a, b) => a.name.localeCompare(b.name)).map(user => (
           <UserCard key={user.id} user={user} onSelect={onSelect} onRefresh={() => setUsers(getUsers())} />
         ))}
 
