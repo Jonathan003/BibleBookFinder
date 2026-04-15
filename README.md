@@ -120,6 +120,9 @@ When enabled, the app scrolls automatically at the start of each question: Hebre
 **What happens if I use a hint?**
 Nothing negative. The hint shows which color group the book belongs to, helping you find the right area in the grid. The hint appears as an overlay — tap it to close. There is no penalty for using hints. If you needed the hint to find the book, you will naturally be slower, and the algorithm picks that up automatically.
 
+**Can I pause a quiz session?**
+Yes. Tap "← Back" to see your session summary, then tap "Keep going" to resume where you left off. Your score, streak, and session stats are preserved. There is no separate pause button — the Back/Keep going flow works the same way. Only your per-book response time matters for the algorithm, not how long the overall session takes.
+
 **What happens if I don't use the app for a while?**
 Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off. The algorithm adjusts automatically.
 
