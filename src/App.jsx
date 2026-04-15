@@ -9,10 +9,13 @@ import QuizGrid from './components/QuizGrid';
 import Settings from './components/Settings';
 import './App.css';
 
+// Auto-detect language: Dutch for nl-speaking browsers, English for everyone else
+const detectedLang = typeof navigator !== 'undefined' && navigator.language?.startsWith('nl') ? 'nl' : 'en';
+
 export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
   quiz: { masteryMs: 5000, learningPace: 'balanced', autoScroll: true },
-  display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
+  display: { lang: detectedLang, highlightFound: true, abbreviations: 'auto' },
   study: { selectedGroups: [], bookSelection: 'focused' },
 };
 
