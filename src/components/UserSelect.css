@@ -6,6 +6,13 @@
   padding: 2rem 1.5rem;
   background: var(--bg-primary);
   overflow-y: auto;
+  position: relative;
+}
+
+.user-select-lang {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 .user-select-header {

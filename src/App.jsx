@@ -195,7 +195,10 @@ function App() {
     return (
       <ConfigContext.Provider value={{ config, lang, t }}>
         <div className="app">
-          <UserSelect onSelect={handleUserSelect} />
+          <UserSelect onSelect={handleUserSelect} onToggleLang={() => {
+            const newLang = lang === 'nl' ? 'en' : 'nl';
+            setConfig(c => ({ ...c, display: { ...c.display, lang: newLang } }));
+          }} />
         </div>
       </ConfigContext.Provider>
     );

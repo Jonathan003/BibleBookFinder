@@ -119,6 +119,13 @@ export const translations = {
   nl: {
     title: 'Bijbelboek Zoeker',
     subtitle: 'Leer waar de boeken zich bevinden',
+    // UserSelect screen
+    noUsers: 'Nog geen gebruikers. Voeg jezelf toe!',
+    namePlaceholder: 'Je naam...',
+    addBtn: 'Toevoegen',
+    addUser: 'Gebruiker toevoegen',
+    deleteTitle: 'Verwijderen',
+    confirmDelete: 'Zeker?',
     studyMode: 'Studie Modus',
     quizMode: 'Quiz Modus',
     score: 'Score',
@@ -235,6 +242,13 @@ export const translations = {
   en: {
     title: 'Bible Book Finder',
     subtitle: 'Learn where the books are located',
+    // UserSelect screen
+    noUsers: 'No users yet. Add yourself!',
+    namePlaceholder: 'Your name...',
+    addBtn: 'Add',
+    addUser: 'Add user',
+    deleteTitle: 'Delete',
+    confirmDelete: 'Sure?',
     studyMode: 'Study Mode',
     quizMode: 'Quiz Mode',
     score: 'Score',

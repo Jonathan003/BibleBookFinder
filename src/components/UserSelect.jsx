@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { getUsers, createUser, getUser, updateUser } from '../users';
+import { useAppConfig } from '../App';
 import { InitialAvatar } from './Icons';
 import './UserSelect.css';
 
-export default function UserSelect({ onSelect }) {
+export default function UserSelect({ onSelect, onToggleLang }) {
+  const { t, lang } = useAppConfig();
   const [users, setUsers] = useState(getUsers());
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
@@ -24,16 +26,19 @@ export default function UserSelect({ onSelect }) {
 
   return (
     <div className="user-select">
+      <button className="lang-btn user-select-lang" onClick={onToggleLang}>
+        {lang === 'nl' ? 'NL' : 'EN'}
+      </button>
       <div className="user-select-header">
-        <h1>Bijbelboek Zoeker</h1>
-        <p className="subtitle">Leer waar de boeken zich bevinden</p>
+        <h1>{t.title}</h1>
+        <p className="subtitle">{t.subtitle}</p>
       </div>
 
       <div className="user-list">
-        {users.length === 0 && <p className="no-users">Nog geen gebruikers. Voeg jezelf toe!</p>}
+        {users.length === 0 && <p className="no-users">{t.noUsers}</p>}
 
         {[...users].sort((a, b) => a.name.localeCompare(b.name)).map(user => (
-          <UserCard key={user.id} user={user} onSelect={onSelect} onRefresh={() => setUsers(getUsers())} />
+          <UserCard key={user.id} user={user} onSelect={onSelect} onRefresh={() => setUsers(getUsers())} t={t} />
         ))}
 
         {users.length < 10 && (
@@ -43,14 +48,14 @@ export default function UserSelect({ onSelect }) {
 <div className="name-input-group">
                   <input
                     type="text"
-                    placeholder="Je naam..."
+                    placeholder={t.namePlaceholder}
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                     autoFocus
                     maxLength={20}
                   />
-                  <button className="btn-create" onClick={handleCreate}>Toevoegen</button>
+                  <button className="btn-create" onClick={handleCreate}>{t.addBtn}</button>
                   <button className="btn-cancel" onClick={() => { setShowAdd(false); setError(''); }}>✕</button>
                 </div>
                 {error && <p className="error-msg">{error}</p>}
@@ -58,7 +63,7 @@ export default function UserSelect({ onSelect }) {
             ) : (
               <button className="add-user-btn" onClick={() => setShowAdd(true)}>
                 <span className="plus">+</span>
-                <span>Gebruiker toevoegen</span>
+                <span>{t.addUser}</span>
               </button>
             )}
           </>
@@ -68,7 +73,7 @@ export default function UserSelect({ onSelect }) {
   );
 }
 
-function UserCard({ user, onSelect, onRefresh }) {
+function UserCard({ user, onSelect, onRefresh, t }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDelete = () => {
@@ -96,8 +101,8 @@ function UserCard({ user, onSelect, onRefresh }) {
           </div>
         </div>
       </button>
-      <button className="delete-btn" onClick={handleDelete} title="Verwijderen">
-        {confirmDelete ? 'Zeker?' : (
+      <button className="delete-btn" onClick={handleDelete} title={t.deleteTitle}>
+        {confirmDelete ? t.confirmDelete : (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
