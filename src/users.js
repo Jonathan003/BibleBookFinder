@@ -11,21 +11,25 @@ function saveUsers(users) {
 }
 
 export function createUser(name) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { error: 'empty' };
+  }
   const users = getUsers();
   if (users.length >= 10) {
-    return { error: 'Max 10 users reached' };
+    return { error: 'maxUsers' };
   }
-  if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) {
-    return { error: 'Name already exists' };
+  if (users.find(u => u.name.toLowerCase() === trimmed.toLowerCase())) {
+    return { error: 'duplicate' };
   }
   
   const newUser = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    name: name.trim(),
+    name: trimmed,
     createdAt: Date.now(),
     foundBooks: [],
     bestStreak: 0,
-    quizHistory: [], // { date, correct, total, avgTime }
+    quizHistory: [],
     settings: {
       lang: 'nl',
     }

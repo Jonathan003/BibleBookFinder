@@ -14,7 +14,11 @@ export default function UserSelect({ onSelect, onToggleLang }) {
   const handleCreate = () => {
     if (!newName.trim()) return;
     const result = createUser(newName);
-    if (result.error) { setError(result.error); return; }
+    if (result.error) {
+      const errorMessages = { maxUsers: t.errorMaxUsers, duplicate: t.errorDuplicate };
+      setError(errorMessages[result.error] || result.error);
+      return;
+    }
     const updatedUser = getUser(result.user.id);
     setUsers(getUsers());
     setNewName('');
