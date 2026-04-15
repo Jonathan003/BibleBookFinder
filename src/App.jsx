@@ -146,7 +146,7 @@ function App() {
     if (!window.confirm(lang === 'nl'
       ? 'Weet je zeker dat je je voortgang wilt wissen?'
       : 'Are you sure you want to reset your progress?')) return;
-    updateUserData({ foundBooks: [], bestStreak: 0, quizHistory: [], fsrsCards: {} });
+    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {} });
   };
 
   const share = () => {
@@ -178,7 +178,6 @@ function App() {
     if (!currentUser || !userData) return;
     const restoredConfig = mergeConfig(userData.settings);
     updateUserData({
-      foundBooks: userData.foundBooks || [],
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],
       fsrsCards: userData.fsrsCards || {},

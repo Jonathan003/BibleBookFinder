@@ -30,8 +30,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       user: {
         id: currentUser.id,
         name: currentUser.name,
-        avatar: currentUser.avatar || 'book',
-        foundBooks: currentUser.foundBooks || [],
         bestStreak: currentUser.bestStreak || 0,
         quizHistory: currentUser.quizHistory || [],
         fsrsCards: currentUser.fsrsCards || {},

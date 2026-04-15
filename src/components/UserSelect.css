@@ -174,35 +174,6 @@
   border-radius: 12px;
 }
 
-.avatar-picker {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 0.85rem;
-}
-
-.avatar-option {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tile);
-  border-radius: 50%;
-  transition: all 0.2s;
-  color: var(--text-primary);
-}
-
-.avatar-option svg { width: 22px; height: 22px; }
-
-.avatar-option.selected,
-.avatar-option:hover {
-  background: var(--accent);
-  color: white;
-  transform: scale(1.1);
-}
-
 .name-input-group {
   display: flex;
   gap: 0.4rem;

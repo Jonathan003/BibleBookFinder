@@ -47,11 +47,15 @@ export function createUser(name) {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     name: trimmed,
     createdAt: Date.now(),
-    foundBooks: [],
     bestStreak: 0,
     quizHistory: [],
+    fsrsCards: {},
+    bestTimes: {},
     settings: {
-      lang: 'nl',
+      grid: { portrait: 6, landscape: 5, orientation: 'auto' },
+      quiz: { masteryMs: 5000, learningPace: 'balanced', autoScroll: true },
+      display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
+      study: { selectedGroups: [], bookSelection: 'focused' },
     }
   };
   
