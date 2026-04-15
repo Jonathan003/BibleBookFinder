@@ -4,6 +4,7 @@
   flex-direction: column;
   align-items: center;
   padding: 2rem 1.5rem;
+  padding-top: calc(2rem + env(safe-area-inset-top, 0px));
   background: var(--bg-primary);
   overflow-y: auto;
   position: relative;
@@ -11,7 +12,7 @@
 
 .user-select-lang {
   position: absolute;
-  top: 1rem;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
   right: 1rem;
 }
 
