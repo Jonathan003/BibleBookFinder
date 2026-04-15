@@ -20,16 +20,11 @@ const ALL_GROUP_IDS = ['law', 'history', 'poetry', 'prophets', 'gospels', 'acts'
 
 export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards }) {
   const { config, t, lang } = useAppConfig();
-  const [selectedGroups, setSelectedGroups] = useState(
-    () => new Set(savedGroups || [])
-  );
+  // Derived from prop — no local copy, no sync effect needed
+  const selectedGroups = useMemo(() => new Set(savedGroups || []), [savedGroups]);
   const [started, setStarted] = useState(false);
   const [targetBook, setTargetBook] = useState(null);
 
-  // Sync when savedGroups changes (e.g. after import)
-  useEffect(() => {
-    setSelectedGroups(new Set(savedGroups || []));
-  }, [savedGroups]);
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [correctBookId, setCorrectBookId] = useState(null);
@@ -108,13 +103,6 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   // pickRandomBook without needing it as a dependency (avoids stale closures)
   pickerRef.current = pickRandomBook;
 
-  // Auto-save group selection whenever it changes
-  useEffect(() => {
-    if (!started) {
-      onSaveGroups([...selectedGroups]);
-    }
-  }, [selectedGroups]);
-
   useEffect(() => {
     if (started) {
       pickerRef.current();
@@ -165,19 +153,18 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
 
   const toggleGroup = (groupId) => {
-    setSelectedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(groupId)) next.delete(groupId);
-      else next.add(groupId);
-      return next;
-    });
+    const current = savedGroups || [];
+    const newGroups = current.includes(groupId)
+      ? current.filter(g => g !== groupId)
+      : [...current, groupId];
+    onSaveGroups(newGroups);
   };
 
   const toggleAll = () => {
     if (selectedGroups.size === ALL_GROUP_IDS.length) {
-      setSelectedGroups(new Set());
+      onSaveGroups([]);
     } else {
-      setSelectedGroups(new Set(ALL_GROUP_IDS));
+      onSaveGroups([...ALL_GROUP_IDS]);
     }
   };
 

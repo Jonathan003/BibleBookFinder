@@ -278,7 +278,7 @@ function App() {
           {view === 'study' && (
             <StudyGrid
               fsrsCards={fsrsCards}
-              savedGroups={config.study?.selectedGroups || []}
+              savedGroups={config.study.selectedGroups}
               onSaveGroups={(groups) => saveConfig({
                 ...config,
                 study: { ...config.study, selectedGroups: groups }
