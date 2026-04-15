@@ -28,7 +28,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Multi-user** — Supports up to 10 user profiles. Each user gets a unique color avatar based on their name. Every profile has its own progress, FSRS data, quiz history, personal records, and settings. Tap your name in the top left to switch users or add a new one.
 
-**Backup** — Create a full backup of your data as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. Restore it on any device to pick up where you left off. Name and avatar are not overwritten on restore.
+**Backup** — Create a full backup of your data as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. Restore it on any device to pick up where you left off. Your name is not overwritten on restore.
 
 A backup contains:
 - FSRS spaced repetition data (per-book learning progress)
