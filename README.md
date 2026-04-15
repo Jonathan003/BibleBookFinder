@@ -12,7 +12,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Spaced repetition (FSRS)** — Long-term per-book tracking powered by the Free Spaced Repetition Scheduler algorithm. Your progress is saved across sessions. The home screen shows how many books are ready to practice.
 
-**Personal records** — In Quiz Mode, the app tracks your best response time per book. When you beat your previous best, you see a "⚡ New record!" notification. Personal records are included in the export/import backup.
+**Personal records** — In Quiz Mode, the app tracks your best response time per book. When you beat your previous best, you see a "⚡ New record!" notification. Personal records are included in the backup.
 
 **Session summary** — When you tap Back in Quiz Mode after answering at least one question, a summary screen shows books reviewed, time spent, correct answers, and new personal records. Tap "Keep going" to continue or "Done" to return to the menu.
 
@@ -28,9 +28,16 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Multi-user** — Supports up to 10 user profiles. Each user gets a unique color avatar based on their name. Every profile has its own progress, FSRS data, quiz history, personal records, and settings. Tap your name in the top left to switch users or add a new one.
 
-**Export / Import** — Back up your full progress as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. The backup includes FSRS data, personal records, quiz history, all settings including study group selection, and last activity. Import on another device to restore everything. Name and avatar are not overwritten on import.
+**Backup** — Create a full backup of your data as a JSON file (e.g. `biblebookfinder-Jonathan-backup.json`) from the Data tab in Settings. Restore it on any device to pick up where you left off. Name and avatar are not overwritten on restore.
 
-**Bilingual** — Dutch and English, switchable from the header.
+A backup contains:
+- FSRS spaced repetition data (per-book learning progress)
+- Personal best times per book
+- Quiz session history
+- All settings (grid columns, mastery speed, learning pace, abbreviations, auto-scroll, book selection mode, study group selection)
+- Last activity timestamp
+
+**Bilingual** — Dutch and English, switchable from the header and the user select screen.
 
 **Smart abbreviations** — In portrait mode, the app automatically detects if full book names fit in the grid cells. If not, all cells switch to abbreviations together. You can override this in Settings (Auto / Always / Never). Landscape mode always shows full names.
 
@@ -117,10 +124,10 @@ Nothing negative. The hint shows which color group the book belongs to, helping 
 Nothing bad. There is no penalty for taking a break — whether it's a few days, weeks, or months. When you come back, the app will show more books as "Ready to practice" because some review intervals have passed. Just pick up where you left off. The algorithm adjusts automatically.
 
 **Is my progress saved?**
-Yes, in your browser's local storage — separately per user profile. However, all progress for all users on a device will be lost if someone clears the browser data/cache, uninstalls the browser, or resets the device. This is especially important if multiple family members share the same device. Use the Export function in Settings → Data regularly to create a personal backup file. You can import it on any device to restore your progress.
+Yes, in your browser's local storage — separately per user profile. However, all progress for all users on a device will be lost if someone clears the browser data/cache, uninstalls the browser, or resets the device. This is especially important if multiple family members share the same device. Use the Create Backup function in Settings → Data regularly. You can restore it on any device to get your progress back.
 
 **Can multiple people use the app on the same device?**
-Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name/avatar in the top left to switch users or create a new one. Each user gets a unique color avatar. Important: if the browser data is cleared, all users on that device lose their progress — so each person should make their own backup via Settings → Data.
+Yes. The app supports up to 10 user profiles, each with their own progress, settings, and FSRS data. Tap your name/avatar in the top left to switch users or create a new one. Each user gets a unique color avatar. Important: if the browser data is cleared, all users on that device lose their progress — so each person should create their own backup via Settings → Data.
 
 **What is the gold line at the bottom of some book cells?**
 That indicates a mastered book — the FSRS algorithm considers it stable in your memory. You can turn this indicator on or off in Settings → Training → "Mastered books".

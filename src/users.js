@@ -7,7 +7,27 @@ export function getUsers() {
 }
 
 function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  try {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  } catch (e) {
+    // Detect active language from current user's settings
+    const currentId = localStorage.getItem(CURRENT_USER_KEY);
+    const currentUser = currentId && users.find(u => u.id === currentId);
+    const isNL = currentUser?.settings?.display?.lang !== 'en';
+
+    alert(isNL
+      ? '⚠️ Je voortgang kon niet worden opgeslagen. De opslagruimte van je browser is vol.\n\n' +
+        'Wat je kunt doen:\n' +
+        '1. Ga naar Instellingen → Data → Maak back-up\n' +
+        '2. Wis je browsergegevens (cache en sitedata)\n' +
+        '3. Open de app opnieuw en herstel je back-up'
+      : '⚠️ Your progress could not be saved. Your browser storage is full.\n\n' +
+        'What you can do:\n' +
+        '1. Go to Settings → Data → Create Backup\n' +
+        '2. Clear your browser data (cache and site data)\n' +
+        '3. Reopen the app and restore your backup'
+    );
+  }
 }
 
 export function createUser(name) {
