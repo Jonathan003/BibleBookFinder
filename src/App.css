@@ -66,6 +66,23 @@
   color: var(--text-secondary);
 }
 
+.help-btn {
+  padding: 0.4rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.help-btn:hover {
+  background: var(--border);
+}
+
 .settings-btn {
   padding: 0.4rem;
   background: var(--bg-primary);

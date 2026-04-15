@@ -1,0 +1,142 @@
+.help-page {
+  padding: 1rem 1.5rem 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .help-page { max-width: 600px; }
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.help-header h2 {
+  font-size: 1.3rem;
+}
+
+.help-section {
+  margin-bottom: 1.5rem;
+}
+
+.help-section h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+}
+
+/* Steps card */
+.steps-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+}
+
+.step {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.step-icon {
+  flex-shrink: 0;
+}
+
+/* Approach */
+.approach {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.approach-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.approach-icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+}
+
+.approach-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Study Mode intro */
+.study-intro {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem;
+}
+
+.study-steps-intro {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+/* Accordion */
+.accordion {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+
+.accordion-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 0;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  gap: 0.75rem;
+  line-height: 1.35;
+}
+
+.accordion-question {
+  flex: 1;
+}
+
+.accordion-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  width: 1.5rem;
+  text-align: center;
+}
+
+.accordion-body {
+  padding: 0 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
