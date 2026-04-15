@@ -155,9 +155,9 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
       setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
 
-      const isWithinTime = timeTaken <= config.quiz.masteryMs;
+      const isMastered = timeTaken <= config.quiz.masteryMs;
       const rating = ratingFromSpeed(timeTaken, config.quiz.masteryMs);
-      setFeedback(isWithinTime ? 'correct' : 'slow');
+      setFeedback(isMastered ? 'correct' : 'slow');
 
       // Update FSRS card
       const currentCard = fsrsCards[targetBook.id]
@@ -168,11 +168,11 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
 
       // Score only counts if within time limit
       setScore(prev => ({
-        correct: isWithinTime ? prev.correct + 1 : prev.correct,
+        correct: isMastered ? prev.correct + 1 : prev.correct,
         total: prev.total + 1
       }));
 
-      if (isWithinTime) {
+      if (isMastered) {
         const newStreak = streak + 1;
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);

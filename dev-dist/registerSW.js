@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/BibleBookFinder/dev-sw.js?dev-sw', { scope: '/BibleBookFinder/', type: 'classic' })
