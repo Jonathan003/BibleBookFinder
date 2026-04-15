@@ -149,19 +149,42 @@ function App() {
     updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {} });
   };
 
-  const share = () => {
+  const share = async () => {
     if (!currentUser) return;
     const text = (lang === 'nl'
       ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst in de Bijbelboek Zoeker quiz!`
       : `I mastered ${stats.mastered} out of 66 Bible books in the Bible Book Finder quiz!`
     );
-    if (navigator.share) {
-      navigator.share({ title: 'Bible Book Finder', text, url: window.location.href });
-    } else {
-      navigator.clipboard.writeText(text + ' ' + window.location.href);
-      setShareFeedback(lang === 'nl' ? 'Gekopieerd!' : 'Copied!');
-      setTimeout(() => setShareFeedback(''), 2500);
+    const fullText = text + ' ' + window.location.href;
+
+    // Native share on mobile only (desktop share dialogs are clunky)
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({ title: 'Bible Book Finder', text, url: window.location.href });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user cancelled
+        // Share failed — fall through to clipboard
+      }
     }
+
+    // Clipboard fallback
+    try {
+      await navigator.clipboard.writeText(fullText);
+    } catch {
+      // Clipboard API blocked — legacy fallback
+      const ta = document.createElement('textarea');
+      ta.value = fullText;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setShareFeedback(lang === 'nl' ? 'Gekopieerd!' : 'Copied!');
+    setTimeout(() => setShareFeedback(''), 2500);
   };
 
   const t = translations[lang];
@@ -266,11 +289,11 @@ function App() {
                   <span className="btn-icon">🔗</span>
                   <span>{t.share}</span>
                 </button>
-                {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
                 <button className="btn reset-btn" onClick={resetProgress}>
                   <span className="btn-icon">🗑️</span>
                   <span>{t.resetProgress}</span>
                 </button>
+                {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
               </div>
             </div>
           )}
