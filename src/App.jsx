@@ -178,8 +178,6 @@ function App() {
     if (!currentUser || !userData) return;
     const restoredConfig = mergeConfig(userData.settings);
     updateUserData({
-      name: userData.name || currentUser.name,
-      avatar: userData.avatar || currentUser.avatar,
       foundBooks: userData.foundBooks || [],
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],
