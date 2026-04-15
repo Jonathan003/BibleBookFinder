@@ -82,7 +82,6 @@ function UserCard({ user, onSelect, onRefresh, t }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDelete = () => {
-    if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return; }
     import('../users').then(({ deleteUser }) => {
       deleteUser(user.id);
       onRefresh();
@@ -95,26 +94,38 @@ function UserCard({ user, onSelect, onRefresh, t }) {
 
   return (
     <div className="user-card">
-      <button className="user-card-main" onClick={() => onSelect(user)}>
-        <div className="user-avatar"><InitialAvatar name={user.name} size={36} /></div>
-        <div className="user-info">
-          <span className="user-name">{user.name}</span>
-          <div className="user-progress">
-            <div className="progress-bar-mini">
-              <div className="progress-fill-mini" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="progress-text">{masteredCount}/66</span>
+      {confirmDelete ? (
+        <div className="delete-confirm-panel">
+          <span className="delete-confirm-msg">
+            {t.confirmDeleteMsg.replace('{name}', user.name)}
+          </span>
+          <div className="delete-confirm-buttons">
+            <button className="btn-confirm-delete" onClick={handleDelete}>{t.confirmDelete}</button>
+            <button className="btn-cancel-delete" onClick={() => setConfirmDelete(false)}>{t.cancelDelete}</button>
           </div>
         </div>
-      </button>
-      <button className="delete-btn" onClick={handleDelete} title={t.deleteTitle}>
-        {confirmDelete ? t.confirmDelete : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-        )}
-      </button>
+      ) : (
+        <>
+          <button className="user-card-main" onClick={() => onSelect(user)}>
+            <div className="user-avatar"><InitialAvatar name={user.name} size={36} /></div>
+            <div className="user-info">
+              <span className="user-name">{user.name}</span>
+              <div className="user-progress">
+                <div className="progress-bar-mini">
+                  <div className="progress-fill-mini" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="progress-text">{masteredCount}/66</span>
+              </div>
+            </div>
+          </button>
+          <button className="delete-btn" onClick={() => setConfirmDelete(true)} title={t.deleteTitle}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   );
 }
