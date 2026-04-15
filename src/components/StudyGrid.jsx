@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
+import { useGridLayout } from '../useGridLayout';
 import './QuizGrid.css';
 
 const GROUPS = [
@@ -53,51 +54,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     return () => window.removeEventListener('resize', measure);
   }, [targetBook]);
 
-  // Reactive orientation
-  const [isLandscape, setIsLandscape] = useState(
-    () => window.matchMedia('(orientation: landscape)').matches
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia('(orientation: landscape)');
-    const handler = (e) => setIsLandscape(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  let orientation = config.grid.orientation;
-  if (orientation === 'auto') {
-    orientation = isLandscape ? 'landscape' : 'portrait';
-  }
-  const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
-
-  // Smart abbreviation detection
-  const gridRef = useRef(null);
-  const [autoAbbr, setAutoAbbr] = useState(false);
-  const abbrMode = config.display.abbreviations || 'auto';
-
-  const longestNameLength = useMemo(() => {
-    return bibleBooks.reduce((max, book) => {
-      const name = lang === 'nl' ? book.nl : book.en;
-      return Math.max(max, name.length);
-    }, 0);
-  }, [lang]);
-
-  useEffect(() => {
-    if (abbrMode !== 'auto') return;
-    const checkFit = () => {
-      const el = gridRef.current;
-      if (!el) return;
-      const cellWidth = el.offsetWidth / activeColumns;
-      const maxChars = Math.floor((cellWidth - 20) / 7.5);
-      setAutoAbbr(longestNameLength > maxChars);
-    };
-    const timer = setTimeout(checkFit, 50);
-    window.addEventListener('resize', checkFit);
-    return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
-  }, [abbrMode, activeColumns, longestNameLength, started]);
-
-  const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
+  const { orientation, activeColumns, useAbbreviations, gridRef } = useGridLayout([started]);
 
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
