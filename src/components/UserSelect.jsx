@@ -84,8 +84,9 @@ function UserCard({ user, onSelect, onRefresh, t }) {
     });
   };
 
-  const foundCount = (user.foundBooks || []).length;
-  const progress = Math.round((foundCount / 66) * 100);
+  const fsrsCards = user.fsrsCards || {};
+  const masteredCount = Object.values(fsrsCards).filter(c => c.stability > 7).length;
+  const progress = Math.round((masteredCount / 66) * 100);
 
   return (
     <div className="user-card">
@@ -97,7 +98,7 @@ function UserCard({ user, onSelect, onRefresh, t }) {
             <div className="progress-bar-mini">
               <div className="progress-fill-mini" style={{ width: `${progress}%` }} />
             </div>
-            <span className="progress-text">{foundCount}/66</span>
+            <span className="progress-text">{masteredCount}/66</span>
           </div>
         </div>
       </button>
