@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'Bible Book Finder',
         short_name: 'BibleFinder',
         description: 'Learn where Bible books are located — interactive quiz game',
-        theme_color: '#1a1a2e',
-        background_color: '#1a1a2e',
+        theme_color: '#7C3AED',
+        background_color: '#7C3AED',
         display: 'standalone',
         orientation: 'any',
         icons: [
