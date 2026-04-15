@@ -29,7 +29,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   // Sync when savedGroups changes (e.g. after import)
   useEffect(() => {
     setSelectedGroups(new Set(savedGroups || []));
-  }, [JSON.stringify(savedGroups)]);
+  }, [savedGroups]);
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [correctBookId, setCorrectBookId] = useState(null);
@@ -104,6 +104,8 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     }
   }, [selectedGroups, config.quiz.autoScroll]);
 
+  // Latest-ref pattern: effects and timeouts always call the current
+  // pickRandomBook without needing it as a dependency (avoids stale closures)
   pickerRef.current = pickRandomBook;
 
   // Auto-save group selection whenever it changes
