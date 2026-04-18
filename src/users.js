@@ -51,12 +51,6 @@ export function createUser(name) {
     quizHistory: [],
     fsrsCards: {},
     bestTimes: {},
-    settings: {
-      grid: { portrait: 6, landscape: 5, orientation: 'auto' },
-      quiz: { masteryMs: 5000, learningPace: 'balanced', autoScroll: true },
-      display: { lang: 'nl', highlightFound: true, abbreviations: 'auto' },
-      study: { selectedGroups: [], bookSelection: 'focused' },
-    }
   };
   
   users.push(newUser);

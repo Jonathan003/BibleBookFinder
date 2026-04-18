@@ -36,6 +36,10 @@ const helpContent = {
     faqTitle: 'Veelgestelde vragen',
     faq: [
       {
+        q: 'Wat is het verschil tussen Studie Modus en Quiz Modus?',
+        a: 'Studie Modus is om te leren zonder druk — kies groepen, oefen op je eigen tempo. Bij een fout antwoord licht het juiste boek blauw op. Quiz Modus test je snelheid en houdt je voortgang bij met herhaalritmes. Gebruik Studie om te leren, Quiz om te beheersen. Je kunt ook maar één modus gebruiken.',
+      },
+      {
         q: 'Hoe pas ik het rooster aan mijn Bijbel-app aan?',
         a: 'Open je Bijbel-app en kijk hoe het boekenrooster eruitziet. Pas dan de grid-instellingen aan zodat ze overeenkomen — zo oefen je dezelfde indeling die je dagelijks ziet.',
       },
@@ -44,36 +48,12 @@ const helpContent = {
         a: 'De 17 profetische boeken zijn voor de meesten het lastigst — ze liggen dicht bij elkaar in het rooster. Extra oefening op deze groep helpt het meest.',
       },
       {
-        q: 'Hoe bereid ik me voor op vergaderingen?',
-        a: 'Selecteer in Studie Modus de groep(en) die bij het wekelijkse Bijbelleesprogramma horen. Zo oefen je precies de boeken die aan bod komen.',
-      },
-      {
-        q: 'Wat is het verschil tussen Studie Modus en Quiz Modus?',
-        a: 'Studie Modus is om te leren zonder druk — kies groepen, oefen op je eigen tempo. Bij een fout antwoord licht het juiste boek blauw op. Quiz Modus test je snelheid en houdt je voortgang bij met herhaalritmes. Gebruik Studie om te leren, Quiz om te beheersen. Je kunt ook maar één modus gebruiken.',
-      },
-      {
-        q: 'Wat betekent "Klaar om te oefenen" op het startscherm?',
-        a: 'Het toont hoeveel boeken het algoritme voorstelt om nu te herhalen — boeken die je nog niet hebt gezien en boeken waarvan het herhaalinterval is verlopen. Ideaal is om te oefenen tot het op 0 staat, maar er is geen verplichting.',
-      },
-      {
         q: 'Maakt het uit hoe snel ik tik?',
         a: 'In Quiz Modus wel. Antwoorden binnen de snelheidslimiet tellen mee voor je score en streak. Snellere antwoorden zorgen dat het boek minder snel terugkomt. Langzamere of foute antwoorden brengen het boek sneller terug. In Studie Modus maakt snelheid niet uit.',
       },
       {
-        q: 'Wat betekenen Ontspannen, Gebalanceerd en Intensief?',
-        a: 'Dit bepaalt hoe snel boeken terugkomen voor herhaling. Ontspannen = langere intervallen, kortere sessies. Intensief = kortere intervallen, vaker oefenen maar sneller leren. Je kunt dit altijd wijzigen via Instellingen.',
-      },
-      {
         q: 'Wat gebeurt er als ik op het verkeerde boek tik?',
         a: 'De app scrollt automatisch naar het juiste boek dat blauw oplicht. Alle andere boeken worden oranje. Je moet op het blauwe boek tikken om verder te gaan — dit versterkt het leren.',
-      },
-      {
-        q: 'Wat is het verschil tussen Gericht en Willekeurig?',
-        a: 'Met Gericht (de standaard) verschijnen boeken waar je moeite mee hebt vaker in Studie Modus. Met Willekeurig heeft elk boek een gelijke kans. Te wijzigen via Instellingen.',
-      },
-      {
-        q: 'Wat doet auto-scroll?',
-        a: 'Wanneer ingeschakeld scrollt de app automatisch bij elke vraag: Hebreeuwse Geschriften naar boven, Griekse Geschriften naar beneden. Dit geeft een subtiele positiehint.',
       },
       {
         q: 'Wat gebeurt er als ik een hint gebruik?',
@@ -84,24 +64,48 @@ const helpContent = {
         a: 'Ja. Tik op "← Terug" om je sessie-samenvatting te zien. Van daaruit kun je doorgaan, instellingen wijzigen, of de sessie beëindigen. Je score en streak blijven bewaard.',
       },
       {
-        q: 'Wat als ik de app lang niet gebruik?',
-        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt staan er meer boeken als "Klaar om te oefenen". Pak gewoon op waar je gebleven was.',
+        q: 'Wat betekenen Ontspannen, Gebalanceerd en Intensief?',
+        a: 'Dit bepaalt hoe snel boeken terugkomen voor herhaling. Ontspannen = langere intervallen, kortere sessies. Intensief = kortere intervallen, vaker oefenen maar sneller leren. Je kunt dit altijd wijzigen via Instellingen.',
       },
       {
-        q: 'Wordt mijn voortgang opgeslagen?',
-        a: 'Ja, in de lokale opslag van je browser — apart per gebruiker. Maar alle voortgang gaat verloren als iemand de browserdata wist. Maak regelmatig een backup via Instellingen → Data.',
+        q: 'Wat is het verschil tussen Gericht en Willekeurig?',
+        a: 'Met Gericht (de standaard) verschijnen boeken waar je moeite mee hebt vaker in Studie Modus. Met Willekeurig heeft elk boek een gelijke kans. Te wijzigen via Instellingen.',
       },
       {
-        q: 'Wat is de gouden lijn onder sommige boeken?',
-        a: 'Dat geeft aan dat je het boek beheerst — het algoritme beschouwt het als stabiel in je geheugen. Aan of uit te zetten via Instellingen.',
+        q: 'Wat doet auto-scroll?',
+        a: 'Wanneer ingeschakeld scrollt de app automatisch bij elke vraag: Hebreeuwse Geschriften naar boven, Griekse Geschriften naar beneden. Dit geeft een subtiele positiehint.',
       },
       {
         q: 'Ik ben sneller/langzamer dan gemiddeld. Moet ik iets aanpassen?',
         a: 'Ja. Pas de snelheidslimiet aan via Instellingen → Training. Verlaag het als het te makkelijk is, verhoog het als je vaak correct bent maar als "te traag" wordt gemarkeerd.',
       },
       {
+        q: 'Wat betekent "Klaar om te oefenen" op het startscherm?',
+        a: 'Het toont hoeveel boeken het algoritme voorstelt om nu te herhalen — boeken die je nog niet hebt gezien en boeken waarvan het herhaalinterval is verlopen. Ideaal is om te oefenen tot het op 0 staat, maar er is geen verplichting.',
+      },
+      {
+        q: 'Wat is de gouden lijn onder sommige boeken?',
+        a: 'Dat geeft aan dat je het boek beheerst — het algoritme beschouwt het als stabiel in je geheugen. Aan of uit te zetten via Instellingen.',
+      },
+      {
+        q: 'Wordt mijn voortgang opgeslagen?',
+        a: 'Ja, in de lokale opslag van je browser — apart per gebruiker. Maar alle voortgang gaat verloren als iemand de browserdata wist. Maak regelmatig een backup via Instellingen → Data.',
+      },
+      {
+        q: 'Wat als ik de app lang niet gebruik?',
+        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt staan er meer boeken als "Klaar om te oefenen". Pak gewoon op waar je gebleven was.',
+      },
+      {
         q: 'Kan ik dit offline gebruiken?',
         a: 'Ja. Na de eerste keer openen werkt de app offline als PWA. Installeer het op je telefoon via "Zet op beginscherm" voor de beste ervaring.',
+      },
+      {
+        q: 'Hoe bereid ik me voor op vergaderingen?',
+        a: 'Selecteer in Studie Modus de groep(en) die bij het wekelijkse Bijbelleesprogramma horen. Zo oefen je precies de boeken die aan bod komen.',
+      },
+      {
+        q: 'Wat doet de Delen-knop?',
+        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app. Als je je snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset), toont het bericht ook je snelheid — bijv. "33 van 66 (10s)". Als je de snelheid tussentijds hebt aangepast, wordt de snelheid weggelaten omdat het resultaat dan een mix is van verschillende snelheden.',
       },
     ],
   },
@@ -138,6 +142,10 @@ const helpContent = {
     faqTitle: 'Frequently asked questions',
     faq: [
       {
+        q: 'What is the difference between Study Mode and Quiz Mode?',
+        a: 'Study Mode is for learning without pressure — pick groups, practice at your own pace. When you tap wrong, the correct book lights up blue. Quiz Mode tests your speed and tracks progress with spaced repetition. Use Study to learn, Quiz to master. You can also use just one mode.',
+      },
+      {
         q: 'How do I adjust the grid to match my Bible app?',
         a: 'Open your Bible app and check how the book grid looks. Then adjust the grid settings to match — this way you practice the same layout you see every day.',
       },
@@ -146,36 +154,12 @@ const helpContent = {
         a: 'The 17 prophetic books are the toughest for most people — they sit close together in the grid. Extra practice on this group helps the most.',
       },
       {
-        q: 'How do I prepare for meetings?',
-        a: 'In Study Mode, select the group(s) that match the weekly Bible reading program. This way you practice exactly the books that will come up.',
-      },
-      {
-        q: 'What is the difference between Study Mode and Quiz Mode?',
-        a: 'Study Mode is for learning without pressure — pick groups, practice at your own pace. When you tap wrong, the correct book lights up blue. Quiz Mode tests your speed and tracks progress with spaced repetition. Use Study to learn, Quiz to master. You can also use just one mode.',
-      },
-      {
-        q: 'What does "Ready to practice" mean on the home screen?',
-        a: 'It shows how many books the algorithm suggests you review now — unseen books and books whose review interval has passed. Ideally train until it reaches 0, but there is no obligation.',
-      },
-      {
         q: 'Does it matter how fast I tap?',
         a: 'In Quiz Mode, yes. Answers within the mastery speed threshold count toward your score and streak. Faster answers make the book come back less often. Slower or wrong answers bring it back sooner. In Study Mode, speed does not matter.',
       },
       {
-        q: 'What do Relaxed, Balanced, and Intensive mean?',
-        a: 'This controls how often books come back for review. Relaxed means longer intervals and shorter sessions. Intensive means shorter intervals — you practice more often but learn faster. You can change this anytime in Settings.',
-      },
-      {
         q: 'What happens when I tap the wrong book?',
         a: 'The app scrolls to the correct book which lights up blue. All other books turn orange. You must tap the blue book to continue — this reinforces learning.',
-      },
-      {
-        q: 'What is the difference between Focused and Random?',
-        a: 'With Focused (the default), books you struggle with appear more often in Study Mode. With Random, every book has an equal chance. You can change this in Settings.',
-      },
-      {
-        q: 'What is auto-scroll?',
-        a: 'When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures to the top, Christian Greek Scriptures to the bottom. This gives a subtle positional hint.',
       },
       {
         q: 'What happens if I use a hint?',
@@ -186,24 +170,48 @@ const helpContent = {
         a: 'Yes. Tap "← Back" to see your session summary. From there you can resume, change settings, or end the session. Your score and streak are preserved.',
       },
       {
-        q: "What happens if I don't use the app for a while?",
-        a: 'Nothing bad. There is no penalty for taking a break. When you come back, more books will show as "Ready to practice". Just pick up where you left off.',
+        q: 'What do Relaxed, Balanced, and Intensive mean?',
+        a: 'This controls how often books come back for review. Relaxed means longer intervals and shorter sessions. Intensive means shorter intervals — you practice more often but learn faster. You can change this anytime in Settings.',
       },
       {
-        q: 'Is my progress saved?',
-        a: "Yes, in your browser's local storage — separately per user. But all progress is lost if someone clears the browser data. Create regular backups via Settings → Data.",
+        q: 'What is the difference between Focused and Random?',
+        a: 'With Focused (the default), books you struggle with appear more often in Study Mode. With Random, every book has an equal chance. You can change this in Settings.',
       },
       {
-        q: 'What is the gold line at the bottom of some book cells?',
-        a: 'That indicates a mastered book — the algorithm considers it stable in your memory. Toggle it on or off in Settings.',
+        q: 'What is auto-scroll?',
+        a: 'When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures to the top, Christian Greek Scriptures to the bottom. This gives a subtle positional hint.',
       },
       {
         q: "I'm faster/slower than average. Should I change any settings?",
         a: 'Yes. Adjust the mastery speed in Settings → Training. Lower it if too easy, raise it if you are often correct but marked as "too slow".',
       },
       {
+        q: 'What does "Ready to practice" mean on the home screen?',
+        a: 'It shows how many books the algorithm suggests you review now — unseen books and books whose review interval has passed. Ideally train until it reaches 0, but there is no obligation.',
+      },
+      {
+        q: 'What is the gold line at the bottom of some book cells?',
+        a: 'That indicates a mastered book — the algorithm considers it stable in your memory. Toggle it on or off in Settings.',
+      },
+      {
+        q: 'Is my progress saved?',
+        a: "Yes, in your browser's local storage — separately per user. But all progress is lost if someone clears the browser data. Create regular backups via Settings → Data.",
+      },
+      {
+        q: "What happens if I don't use the app for a while?",
+        a: 'Nothing bad. There is no penalty for taking a break. When you come back, more books will show as "Ready to practice". Just pick up where you left off.',
+      },
+      {
         q: 'Can I use this offline?',
         a: 'Yes. After opening the app once, it works offline as a PWA. Install it on your phone via "Add to Home Screen" for the best experience.',
+      },
+      {
+        q: 'How do I prepare for meetings?',
+        a: 'In Study Mode, select the group(s) that match the weekly Bible reading program. This way you practice exactly the books that will come up.',
+      },
+      {
+        q: 'What does the Share button do?',
+        a: 'The Share button shares your progress as text with a link to the app. If you haven\'t changed your mastery speed since you started (or since your last reset), the message also shows your speed — e.g. "33 of 66 (10s)". If you changed the speed in between, it is left out because the result is a mix of different speeds.',
       },
     ],
   },

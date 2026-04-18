@@ -41,6 +41,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         },
         bestTimes: currentUser.bestTimes || {},
         lastActive: currentUser.lastActive || 0,
+        masteryMsAtStart: currentUser.masteryMsAtStart || null,
       }
     };
     const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;

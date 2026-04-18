@@ -97,6 +97,12 @@ function App() {
     const userConfig = mergeConfig(user.settings);
     setConfig(userConfig);
 
+    // Set masteryMsAtStart for fresh users (no FSRS data yet)
+    if (user.masteryMsAtStart == null && (!user.fsrsCards || Object.keys(user.fsrsCards).length === 0)) {
+      updateUser(user.id, { masteryMsAtStart: userConfig.quiz.masteryMs });
+      user.masteryMsAtStart = userConfig.quiz.masteryMs;
+    }
+
     // Welcome back detection
     const now = Date.now();
     const lastActive = user.lastActive || 0;
@@ -151,14 +157,18 @@ function App() {
     if (!window.confirm(lang === 'nl'
       ? 'Weet je zeker dat je je voortgang wilt wissen?'
       : 'Are you sure you want to reset your progress?')) return;
-    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {} });
+    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {}, masteryMsAtStart: config.quiz.masteryMs });
   };
 
   const share = async () => {
     if (!currentUser) return;
+    const speedMs = config.quiz.masteryMs;
+    const speedUnchanged = currentUser.masteryMsAtStart != null && currentUser.masteryMsAtStart === speedMs;
+    const speedStr = speedUnchanged ? ` (${(speedMs / 1000).toFixed(speedMs % 1000 ? 1 : 0)}s)` : '';
+
     const text = (lang === 'nl'
-      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst in de Bijbelboek Zoeker quiz!`
-      : `I mastered ${stats.mastered} out of 66 Bible books in the Bible Book Finder quiz!`
+      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${speedStr} in de Bijbelboek Zoeker quiz!`
+      : `I mastered ${stats.mastered} out of 66 Bible books${speedStr} in the Bible Book Finder quiz!`
     );
     const fullText = text + ' ' + window.location.href;
 
@@ -211,6 +221,7 @@ function App() {
       fsrsCards: userData.fsrsCards || {},
       bestTimes: userData.bestTimes || {},
       lastActive: userData.lastActive || 0,
+      masteryMsAtStart: userData.masteryMsAtStart || null,
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
