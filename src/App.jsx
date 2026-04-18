@@ -52,8 +52,28 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
+  // Quiz phase: null = no active quiz, 'playing' = answering questions,
+  // 'paused' = summary/pause screen shown. When non-null, QuizGrid is
+  // kept mounted even across Settings/Help detours so its session state
+  // (score, response times, best-streak progress) survives the round trip.
+  const [quizPhase, setQuizPhase] = useState(null);
 
   const lang = config.display.lang;
+
+  // "Focus mode" = the user is actively doing a task; the header should
+  // show only the language toggle to reduce distraction. From the summary
+  // screen (a deliberate pause) or from Settings/Help, full nav returns.
+  const inFocusMode =
+    (view === 'quiz' && quizPhase === 'playing') ||
+    view === 'study';
+
+  // Keep <html lang> in sync with the active app language so screen
+  // readers pronounce content correctly when the user toggles NL/EN.
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   // Load current user on mount + migrate old global config if present
   useEffect(() => {
@@ -94,7 +114,25 @@ function App() {
   const handleUserSelect = (user) => {
     setCurrentUserState(user);
     persistCurrentUser(user.id);
-    const userConfig = mergeConfig(user.settings);
+    // Always return to the menu on user switch. Without this, switching
+    // user while Quiz/Study/Settings was open would drop the new user
+    // straight into that screen with the previous user's state.
+    setView('menu');
+    setPreviousView(null);
+    setQuizPhase(null);
+
+    // Fresh user with no settings yet: inherit whatever lang was active
+    // on the UserSelect screen (the module-scope `detectedLang` would
+    // otherwise snap things back to the browser default), then persist
+    // so this never has to happen again.
+    let userConfig;
+    if (user.settings) {
+      userConfig = mergeConfig(user.settings);
+    } else {
+      userConfig = mergeConfig({ display: { lang: config.display.lang } });
+      updateUser(user.id, { settings: userConfig });
+      user.settings = userConfig;
+    }
     setConfig(userConfig);
 
     // Set masteryMsAtStart for fresh users (no FSRS data yet)
@@ -114,39 +152,46 @@ function App() {
     updateUser(user.id, { lastActive: now });
   };
 
-  const updateUserData = useCallback((updates) => {
-    if (!currentUser) return;
-    const updated = { ...currentUser, ...updates };
-    updateUser(currentUser.id, updates);
-    setCurrentUserState(updated);
-  }, [currentUser]);
+  // Stable functional updater. Accepts either an object of updates or a
+  // function `prev => updates`. Returning `null` from the function signals
+  // "no change" and skips the write entirely. This callback never changes
+  // identity, which in turn keeps the downstream FSRS/streak/time
+  // callbacks stable across the whole quiz session.
+  const updateUserData = useCallback((updatesOrFn) => {
+    setCurrentUserState(prev => {
+      if (!prev) return prev;
+      const updates = typeof updatesOrFn === 'function' ? updatesOrFn(prev) : updatesOrFn;
+      if (!updates || Object.keys(updates).length === 0) return prev;
+      updateUser(prev.id, updates);
+      return { ...prev, ...updates };
+    });
+  }, []);
 
   // FSRS card management
   const updateFsrsCard = useCallback((bookId, cardData) => {
-    if (!currentUser) return;
-    const fsrsCards = { ...(currentUser.fsrsCards || {}), [bookId]: cardData };
-    updateUserData({ fsrsCards });
-  }, [currentUser, updateUserData]);
+    updateUserData(prev => ({
+      fsrsCards: { ...(prev.fsrsCards || {}), [bookId]: cardData }
+    }));
+  }, [updateUserData]);
 
   const updateBestStreak = useCallback((streak) => {
-    if (!currentUser) return;
-    const newBest = Math.max(currentUser.bestStreak || 0, streak);
-    if (newBest > (currentUser.bestStreak || 0)) {
-      updateUserData({ bestStreak: newBest });
-    }
-  }, [currentUser, updateUserData]);
+    updateUserData(prev => {
+      const currentBest = prev.bestStreak || 0;
+      return streak > currentBest ? { bestStreak: streak } : null;
+    });
+  }, [updateUserData]);
 
   const addQuizSession = useCallback((session) => {
-    if (!currentUser) return;
-    const history = [...(currentUser.quizHistory || []), { ...session, date: Date.now() }];
-    updateUserData({ quizHistory: history });
-  }, [currentUser, updateUserData]);
+    updateUserData(prev => ({
+      quizHistory: [...(prev.quizHistory || []), { ...session, date: Date.now() }]
+    }));
+  }, [updateUserData]);
 
   const updateBestTime = useCallback((bookId, ms) => {
-    if (!currentUser) return;
-    const bestTimes = { ...(currentUser.bestTimes || {}), [bookId]: ms };
-    updateUserData({ bestTimes });
-  }, [currentUser, updateUserData]);
+    updateUserData(prev => ({
+      bestTimes: { ...(prev.bestTimes || {}), [bookId]: ms }
+    }));
+  }, [updateUserData]);
 
   // FSRS-based stats
   const fsrsCards = currentUser?.fsrsCards || {};
@@ -221,7 +266,11 @@ function App() {
       fsrsCards: userData.fsrsCards || {},
       bestTimes: userData.bestTimes || {},
       lastActive: userData.lastActive || 0,
-      masteryMsAtStart: userData.masteryMsAtStart || null,
+      // Legacy backups (pre-masteryMsAtStart) would otherwise restore as
+      // null and the Share suffix would stay hidden. Fall back to the
+      // current masteryMs so a restored user immediately behaves like a
+      // freshly-reset user.
+      masteryMsAtStart: userData.masteryMsAtStart ?? config.quiz.masteryMs,
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
@@ -254,15 +303,26 @@ function App() {
             <p className="subtitle">{t.subtitle}</p>
           </div>
           <div className="header-right">
-            {view === 'menu' && (
-              <>
-                <button className="help-btn" onClick={() => setView('help')} title="Help">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </button>
-                <button className="settings-btn" onClick={() => setView('settings')} title="Instellingen">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
-              </>
+            {!inFocusMode && view !== 'help' && (
+              <button className="help-btn" onClick={() => {
+                // Smart back: only 'quiz' is remembered as referring view so
+                // Back from Help/Settings returns there (for session continuity
+                // with an active paused quiz). Menu-level chains like
+                // Menu→Help→Settings keep previousView null, so Back always
+                // goes straight home in one click — no back-stack stepping.
+                if (view === 'quiz') setPreviousView('quiz');
+                setView('help');
+              }} title="Help">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </button>
+            )}
+            {!inFocusMode && view !== 'settings' && (
+              <button className="settings-btn" onClick={() => {
+                if (view === 'quiz') setPreviousView('quiz');
+                setView('settings');
+              }} title={t.settingsTitle || 'Settings'}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
             )}
             <button className="lang-btn" onClick={() => {
               const newLang = lang === 'nl' ? 'en' : 'nl';
@@ -309,7 +369,10 @@ function App() {
                   <span className="btn-icon">📖</span>
                   <span>{t.studyMode}</span>
                 </button>
-                <button className="btn quiz-btn" onClick={() => setView('quiz')}>
+                <button className="btn quiz-btn" onClick={() => {
+                  setQuizPhase('playing');
+                  setView('quiz');
+                }}>
                   <span className="btn-icon">🎯</span>
                   <span>{t.quizMode}</span>
                 </button>
@@ -338,18 +401,23 @@ function App() {
             />
           )}
 
-          {view === 'quiz' && (
-            <QuizGrid
-              fsrsCards={fsrsCards}
-              updateFsrsCard={updateFsrsCard}
-              bestTimes={currentUser.bestTimes || {}}
-              updateBestTime={updateBestTime}
-              bestStreak={currentUser.bestStreak || 0}
-              setBestStreak={updateBestStreak}
-              addQuizSession={addQuizSession}
-              onBack={() => setView('menu')}
-              onSettings={() => { setPreviousView('quiz'); setView('settings'); }}
-            />
+          {quizPhase !== null && (
+            <div style={{ display: view === 'quiz' ? 'contents' : 'none' }}>
+              <QuizGrid
+                fsrsCards={fsrsCards}
+                updateFsrsCard={updateFsrsCard}
+                bestTimes={currentUser.bestTimes || {}}
+                updateBestTime={updateBestTime}
+                bestStreak={currentUser.bestStreak || 0}
+                setBestStreak={updateBestStreak}
+                addQuizSession={addQuizSession}
+                onBack={() => {
+                  setQuizPhase(null);
+                  setView('menu');
+                }}
+                onPhaseChange={setQuizPhase}
+              />
+            </div>
           )}
 
           {view === 'settings' && (
@@ -367,7 +435,11 @@ function App() {
           )}
 
           {view === 'help' && (
-            <Help onBack={() => setView('menu')} />
+            <Help onBack={() => {
+              const back = previousView || 'menu';
+              setPreviousView(null);
+              setView(back);
+            }} />
           )}
         </main>
       </div>

@@ -30,7 +30,7 @@ function saveUsers(users) {
   }
 }
 
-export function createUser(name) {
+export function createUser(name, initialSettings) {
   const trimmed = name.trim();
   if (!trimmed) {
     return { error: 'empty' };
@@ -42,7 +42,7 @@ export function createUser(name) {
   if (users.find(u => u.name.toLowerCase() === trimmed.toLowerCase())) {
     return { error: 'duplicate' };
   }
-  
+
   const newUser = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     name: trimmed,
@@ -51,8 +51,12 @@ export function createUser(name) {
     quizHistory: [],
     fsrsCards: {},
     bestTimes: {},
+    // Persist the lang (and any other setting) the user had active on the
+    // UserSelect screen so it isn't snapped back to the browser default
+    // on first login.
+    ...(initialSettings ? { settings: initialSettings } : {}),
   };
-  
+
   users.push(newUser);
   saveUsers(users);
   return { user: newUser };

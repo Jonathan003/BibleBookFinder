@@ -290,7 +290,7 @@
 
 .btn-import {
   background: rgba(16, 185, 129, 0.15);
-  color: var(--success);
+  color: var(--correct);
   display: flex;
   align-items: center;
   justify-content: center;

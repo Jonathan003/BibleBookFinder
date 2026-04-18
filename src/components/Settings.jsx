@@ -95,6 +95,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             if (data.user.settings.grid) setGrid(data.user.settings.grid);
             if (data.user.settings.quiz) setQuiz(data.user.settings.quiz);
             if (data.user.settings.display) setDisplay(data.user.settings.display);
+            if (data.user.settings.study) setStudy(data.user.settings.study);
           }
           setFeedback(t.importSuccess || 'Restored!');
           setTimeout(() => { setFeedback(''); onBack(); }, 1500);

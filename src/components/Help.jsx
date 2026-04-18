@@ -13,7 +13,7 @@ const helpContent = {
       },
       {
         icon: '🚀',
-        text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime snelheidslimiet (de standaard is 10 seconden) en zet het leertempo op Intensief. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
+        text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime snelheidslimiet (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
       },
       {
         icon: '🔄',
@@ -25,13 +25,13 @@ const helpContent = {
       },
     ],
     studyTitle: 'Studie Modus',
-    studyIntro: 'Als je het gevoel hebt dat je vlotter wordt en je wilt vrij leren zonder tijdsdruk, schakel dan over naar Studie Modus. Met Gerichte selectie richt die zich automatisch op je zwakste boeken (op basis van je Quiz Modus trainingsdata). Je kunt ook specifieke groepen selecteren om gericht te oefenen.',
+    studyIntro: 'Als je het gevoel hebt dat je vlotter wordt en je wilt vrij leren zonder tijdsdruk, schakel dan over naar Studie Modus. Met Gerichte selectie richt Studie Modus zich automatisch op je zwakste boeken (op basis van je Quiz Modus trainingsdata). Je kunt ook specifieke groepen selecteren om gericht te oefenen.',
     studyStepsIntro: 'In Studie Modus kun je bijvoorbeeld stap voor stap opbouwen:',
     studySteps: [
       { icon: '1️⃣', text: 'Begin met Pentateuch + Evangeliën (9 boeken) — de basis van beide testamenten.' },
       { icon: '2️⃣', text: 'Voeg Historische boeken toe (21 boeken totaal) — het verhaal van Israël.' },
       { icon: '3️⃣', text: 'Voeg Handelingen + Brieven toe (43 boeken totaal) — de christelijke gemeente.' },
-      { icon: '4️⃣', text: 'Tenslotte Profeten + Openbaring (alle 66 boeken) — het moeilijkste deel.' },
+      { icon: '4️⃣', text: 'Tenslotte Profeten + Poëtische boeken + Openbaring (alle 66 boeken) — het moeilijkste deel.' },
     ],
     faqTitle: 'Veelgestelde vragen',
     faq: [
@@ -57,7 +57,7 @@ const helpContent = {
       },
       {
         q: 'Wat gebeurt er als ik een hint gebruik?',
-        a: 'Niets negatiefs. De hint toont welke kleurgroep het boek heeft. Er is geen straf. Als je de hint nodig had, ben je automatisch langzamer, en het algoritme pikt dat op.',
+        a: 'Niets negatiefs. De hint toont de groep van het boek — de kleur, de groepsnaam (bijv. Pentateuch) en een korte beschrijving. Er is geen straf. Als je de hint nodig had, ben je automatisch langzamer, en het algoritme pikt dat op.',
       },
       {
         q: 'Kan ik een quiz pauzeren?',
@@ -73,7 +73,7 @@ const helpContent = {
       },
       {
         q: 'Wat doet auto-scroll?',
-        a: 'Wanneer ingeschakeld scrollt de app automatisch bij elke vraag: Hebreeuwse Geschriften naar boven, Griekse Geschriften naar beneden. Dit geeft een subtiele positiehint.',
+        a: 'Wanneer ingeschakeld scrollt de app automatisch bij elke vraag: Hebreeuwse Geschriften naar boven, Griekse Geschriften naar beneden. Dit geeft een subtiele positiehint. Wanneer je klaar bent voor de volledige uitdaging, zet auto-scroll uit — dan moet je zelf kiezen in welk testament het boek staat.',
       },
       {
         q: 'Ik ben sneller/langzamer dan gemiddeld. Moet ik iets aanpassen?',
@@ -119,7 +119,7 @@ const helpContent = {
       },
       {
         icon: '🚀',
-        text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous mastery speed (the default is 10 seconds) and set the learning pace to Intensive. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
+        text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous mastery speed (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
       },
       {
         icon: '🔄',
@@ -137,7 +137,7 @@ const helpContent = {
       { icon: '1️⃣', text: 'Start with Pentateuch + Gospels (9 books) — the foundation of both testaments.' },
       { icon: '2️⃣', text: 'Add Historical books (21 books total) — the story of Israel.' },
       { icon: '3️⃣', text: 'Add Acts + Letters (43 books total) — the Christian congregation.' },
-      { icon: '4️⃣', text: 'Finally add Prophets + Revelation (all 66 books) — the hardest section.' },
+      { icon: '4️⃣', text: 'Finally add Prophets + Poetic books + Revelation (all 66 books) — the hardest section.' },
     ],
     faqTitle: 'Frequently asked questions',
     faq: [
@@ -163,7 +163,7 @@ const helpContent = {
       },
       {
         q: 'What happens if I use a hint?',
-        a: 'Nothing negative. The hint shows which color group the book belongs to. There is no penalty. If you needed the hint, you will naturally be slower, and the algorithm picks that up automatically.',
+        a: 'Nothing negative. The hint shows the book\'s group — the color, the group name (e.g. Pentateuch), and a short description. There is no penalty. If you needed the hint, you will naturally be slower, and the algorithm picks that up automatically.',
       },
       {
         q: 'Can I pause a quiz session?',
@@ -179,7 +179,7 @@ const helpContent = {
       },
       {
         q: 'What is auto-scroll?',
-        a: 'When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures to the top, Christian Greek Scriptures to the bottom. This gives a subtle positional hint.',
+        a: 'When enabled, the app scrolls automatically at the start of each question: Hebrew-Aramaic Scriptures to the top, Christian Greek Scriptures to the bottom. This gives a subtle positional hint. When you\'re ready for the full challenge, turn auto-scroll off — then you have to decide which testament the book is in yourself.',
       },
       {
         q: "I'm faster/slower than average. Should I change any settings?",
@@ -217,15 +217,21 @@ const helpContent = {
   },
 };
 
-function AccordionItem({ question, answer }) {
+function AccordionItem({ question, answer, id }) {
   const [open, setOpen] = useState(false);
+  const bodyId = `faq-body-${id}`;
   return (
     <div className={`accordion-item ${open ? 'open' : ''}`}>
-      <button className="accordion-header" onClick={() => setOpen(!open)}>
+      <button
+        className="accordion-header"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={bodyId}
+      >
         <span className="accordion-question">{question}</span>
-        <span className="accordion-icon">{open ? '−' : '+'}</span>
+        <span className="accordion-icon" aria-hidden="true">{open ? '−' : '+'}</span>
       </button>
-      {open && <div className="accordion-body">{answer}</div>}
+      {open && <div id={bodyId} className="accordion-body">{answer}</div>}
     </div>
   );
 }
@@ -271,7 +277,7 @@ export default function Help({ onBack }) {
         <h3>{content.faqTitle}</h3>
         <div className="accordion">
           {content.faq.map((item, i) => (
-            <AccordionItem key={i} question={item.q} answer={item.a} />
+            <AccordionItem key={i} id={i} question={item.q} answer={item.a} />
           ))}
         </div>
       </section>

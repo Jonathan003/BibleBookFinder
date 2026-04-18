@@ -19,12 +19,13 @@ export function createBookCard() {
   return createEmptyCard(new Date());
 }
 
-// Convert response speed to FSRS rating (only for correct answers)
+// Convert response speed to FSRS rating (only for correct answers).
+// Correct-but-very-slow still gets Hard (not Again) — the user DID find
+// the right cell, just slowly, and we want that reflected in scheduling.
 export function ratingFromSpeed(timeTaken, masteryMs) {
-  if (timeTaken <= masteryMs * 0.4) return Rating.Easy;     // very fast
-  if (timeTaken <= masteryMs)       return Rating.Good;      // within time
-  if (timeTaken <= masteryMs * 2)   return Rating.Hard;      // slow but correct
-  return Rating.Hard;                                         // very slow but correct
+  if (timeTaken <= masteryMs * 0.4) return Rating.Easy;  // very fast
+  if (timeTaken <= masteryMs)       return Rating.Good;  // within time
+  return Rating.Hard;                                    // slow (or very slow) but correct
 }
 
 // Review a book and get updated card

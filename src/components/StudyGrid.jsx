@@ -28,7 +28,6 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [correctBookId, setCorrectBookId] = useState(null);
-  const [revealBookId, setRevealBookId] = useState(null);
   const [sessionCount, setSessionCount] = useState(0);
 
   const feedbackRef = useRef(false);
@@ -37,6 +36,21 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
+
+  // Track every setTimeout so they can be cancelled on unmount.
+  const timeoutsRef = useRef(new Set());
+  useEffect(() => () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current.clear();
+  }, []);
+  const schedule = (fn, ms) => {
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      fn();
+    }, ms);
+    timeoutsRef.current.add(id);
+    return id;
+  };
 
   useEffect(() => {
     const measure = () => {
@@ -84,7 +98,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     setCorrectBookId(null);
     if (config.quiz.autoScroll !== false) {
       // OT book: scroll to top, NT book: scroll to bottom
-      setTimeout(() => {
+      schedule(() => {
         const el = scrollRef.current;
         if (!el) return;
         if (selected.testament === 'OT') {
@@ -116,7 +130,6 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
       feedbackRef.current = false;
       setFeedback(null);
       setCorrectBookId(null);
-      setRevealBookId(null);
       pickerRef.current();
       return;
     }
@@ -127,7 +140,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
       setFeedback('correct');
       setHintVisible(false);
       setSessionCount(prev => prev + 1);
-      setTimeout(() => pickerRef.current(), 800);
+      schedule(() => pickerRef.current(), 800);
       return;
     }
 
@@ -136,10 +149,9 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
-    setTimeout(() => {
+    schedule(() => {
       document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 50);
-    setTimeout(() => setRevealBookId(targetBook.id), 650);
   };
 
   const handleHint = () => {
@@ -248,9 +260,10 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     return (
       <button
         key={book.id}
-        className={`book-cell ${showCorrect ? 'correct' : ''} ${book.id === revealBookId ? 'reveal' : ''} ${showWrong ? 'wrong' : ''}`}
+        className={`book-cell ${showCorrect ? 'correct' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
+        aria-label={lang === 'nl' ? book.nl : book.en}
         onClick={() => handleBookClick(book)}
         disabled={feedbackRef.current && book.id !== correctBookId}
       >

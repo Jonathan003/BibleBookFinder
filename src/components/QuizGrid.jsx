@@ -9,7 +9,7 @@ import {
 } from '../fsrs';
 import './QuizGrid.css';
 
-export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onSettings }) {
+export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onPhaseChange }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -24,7 +24,6 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
   const [correctBookId, setCorrectBookId] = useState(null);
-  const [revealBookId, setRevealBookId] = useState(null);
   const [sessionNewBests, setSessionNewBests] = useState(0);
   const [sessionStartTime] = useState(() => Date.now());
   const [showSummary, setShowSummary] = useState(false);
@@ -38,6 +37,62 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
+
+  // Track every setTimeout so they can be cancelled on unmount. Without
+  // this, tapping Back mid-session triggers a pending pickNextBook() or
+  // milestone timeout that fires on an unmounted component.
+  const timeoutsRef = useRef(new Set());
+  useEffect(() => () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current.clear();
+  }, []);
+  const schedule = (fn, ms) => {
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      fn();
+    }, ms);
+    timeoutsRef.current.add(id);
+    return id;
+  };
+
+  // Autosave on unmount: when the user navigates away (avatar tap,
+  // Settings, switching user, closing the quiz without tapping Done)
+  // save whatever partial session they have to quizHistory. This keeps
+  // the app's save model consistent — every action is persisted, just
+  // like FSRS/bestTime/bestStreak already do on each answer. The ref
+  // is updated on every render so the unmount cleanup reads current
+  // values (effect deps are stable, so the cleanup closure alone
+  // would capture stale initial-render values).
+  const sessionDataRef = useRef({ saved: false, snapshot: null });
+  sessionDataRef.current.snapshot = {
+    correct: score.correct,
+    total: score.total,
+    responseTimes,
+    masteredIds: sessionMasteredBooks,
+    hintedIds: sessionHintedBooks,
+    wrongIds: sessionWrongBooks,
+  };
+  useEffect(() => () => {
+    const { saved, snapshot } = sessionDataRef.current;
+    if (saved || !snapshot || snapshot.total <= 0) return;
+    const avgTime = snapshot.responseTimes.length > 0
+      ? Math.round(snapshot.responseTimes.reduce((a, b) => a + b, 0) / snapshot.responseTimes.length)
+      : 0;
+    addQuizSession({
+      correct: snapshot.correct,
+      total: snapshot.total,
+      avgTime,
+      masteredBookIds: [...snapshot.masteredIds],
+      hintedBookIds: [...snapshot.hintedIds],
+      wrongBookIds: [...snapshot.wrongIds],
+    });
+  }, [addQuizSession]);
+
+  // Report phase upward so App's header knows whether to show focus-mode
+  // (quiz actively playing) or full nav (summary/pause state).
+  useEffect(() => {
+    if (onPhaseChange) onPhaseChange(showSummary ? 'paused' : 'playing');
+  }, [showSummary, onPhaseChange]);
 
   // Measure prompt row height to perfectly position overlay
   useEffect(() => {
@@ -89,7 +144,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     if (config.quiz.autoScroll !== false) {
       // Scroll after DOM updates and new book name is visible
       // OT book: scroll to top, NT book: scroll to bottom
-      setTimeout(() => {
+      schedule(() => {
         const el = scrollRef.current;
         if (!el) return;
         if (selected.testament === 'OT') {
@@ -110,6 +165,9 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   }, [pickNextBook]);
 
   const finishSession = useCallback(() => {
+    // Mark as saved before triggering onBack so the unmount cleanup
+    // doesn't write a duplicate entry to quizHistory.
+    sessionDataRef.current.saved = true;
     if (score.total > 0) {
       const avgTime = responseTimes.length > 0
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
@@ -142,7 +200,6 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
       setFeedback(null);
       setResponseTime(null);
       setCorrectBookId(null);
-      setRevealBookId(null);
       pickNextBook();
       return;
     }
@@ -184,7 +241,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           updateBestTime(targetBook.id, timeTaken);
           setSessionNewBests(prev => prev + 1);
           setShowNewBest(true);
-          setTimeout(() => setShowNewBest(false), 1500);
+          schedule(() => setShowNewBest(false), 1500);
         }
 
         // Milestone check — did this book newly cross the mastered threshold?
@@ -214,14 +271,14 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
 
           if (msg) {
             setMilestone(msg);
-            setTimeout(() => setMilestone(null), 3000);
+            schedule(() => setMilestone(null), 3000);
           }
         }
       } else {
         setStreak(0);
       }
 
-      setTimeout(() => pickNextBook(), 800);
+      schedule(() => pickNextBook(), 800);
       return;
     }
 
@@ -229,10 +286,9 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
-    setTimeout(() => {
+    schedule(() => {
       document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 50);
-    setTimeout(() => setRevealBookId(targetBook.id), 650);
     setSessionWrongBooks(prev => new Set(prev).add(targetBook.id));
     setScore(prev => ({ ...prev, total: prev.total + 1 }));
     setStreak(0);
@@ -289,9 +345,10 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     return (
       <button
         key={book.id}
-        className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${book.id === revealBookId ? 'reveal' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
+        className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
+        aria-label={lang === 'nl' ? book.nl : book.en}
         onClick={() => handleBookClick(book)}
         disabled={feedbackRef.current && book.id !== correctBookId}
       >
@@ -332,11 +389,6 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           <button className="btn" onClick={() => { setShowSummary(false); setStartTime(Date.now()); }}>
             {t.keepGoing}
           </button>
-          {onSettings && (
-            <button className="btn settings-summary-btn" onClick={onSettings}>
-              ⚙️ {t.settingsTitle || 'Settings'}
-            </button>
-          )}
           <button className="btn quiz-btn" onClick={finishSession}>
             {t.done}
           </button>

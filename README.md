@@ -34,7 +34,7 @@ Open `http://localhost:5173/BibleBookFinder/` in your browser.
 
 ## Tech stack
 
-React 18, Vite 6, ts-fsrs (FSRS spaced repetition), CSS custom properties, localStorage, PWA with service worker (vite-plugin-pwa).
+React 19, Vite 6, ts-fsrs (FSRS spaced repetition), CSS custom properties, localStorage, PWA with service worker (vite-plugin-pwa).
 
 ## Deployment
 

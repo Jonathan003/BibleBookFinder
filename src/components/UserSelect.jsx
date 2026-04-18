@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getUsers, createUser, getUser } from '../users';
+import { getUsers, createUser, getUser, deleteUser } from '../users';
 import { useAppConfig } from '../App';
 import { isMastered } from '../fsrs';
 import { InitialAvatar } from './Icons';
@@ -14,7 +14,9 @@ export default function UserSelect({ onSelect, onToggleLang }) {
 
   const handleCreate = () => {
     if (!newName.trim()) return;
-    const result = createUser(newName);
+    // Pass current lang so a fresh account keeps whatever the user picked
+    // on this screen (not whatever the browser defaulted to).
+    const result = createUser(newName, { display: { lang } });
     if (result.error) {
       const errorMessages = { maxUsers: t.errorMaxUsers, duplicate: t.errorDuplicate };
       setError(errorMessages[result.error] || result.error);
@@ -82,10 +84,8 @@ function UserCard({ user, onSelect, onRefresh, t }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDelete = () => {
-    import('../users').then(({ deleteUser }) => {
-      deleteUser(user.id);
-      onRefresh();
-    });
+    deleteUser(user.id);
+    onRefresh();
   };
 
   const fsrsCards = user.fsrsCards || {};
