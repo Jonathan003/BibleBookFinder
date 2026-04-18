@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getUsers, createUser, getUser, updateUser } from '../users';
+import { getUsers, createUser, getUser } from '../users';
 import { useAppConfig } from '../App';
 import { isMastered } from '../fsrs';
 import { InitialAvatar } from './Icons';
