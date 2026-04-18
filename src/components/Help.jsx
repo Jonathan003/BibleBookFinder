@@ -81,7 +81,7 @@ const helpContent = {
       },
       {
         q: 'Kan ik een quiz pauzeren?',
-        a: 'Ja. Tik op "← Terug" om je sessie-samenvatting te zien, en dan op "Doorgaan" om verder te gaan. Je score en streak blijven bewaard.',
+        a: 'Ja. Tik op "← Terug" om je sessie-samenvatting te zien. Van daaruit kun je doorgaan, instellingen wijzigen, of de sessie beëindigen. Je score en streak blijven bewaard.',
       },
       {
         q: 'Wat als ik de app lang niet gebruik?',
@@ -183,7 +183,7 @@ const helpContent = {
       },
       {
         q: 'Can I pause a quiz session?',
-        a: 'Yes. Tap "← Back" to see your session summary, then tap "Keep going" to resume. Your score and streak are preserved.',
+        a: 'Yes. Tap "← Back" to see your session summary. From there you can resume, change settings, or end the session. Your score and streak are preserved.',
       },
       {
         q: "What happens if I don't use the app for a while?",
