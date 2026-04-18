@@ -337,7 +337,11 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     if (showCorrect && feedback === 'correct') bgColor = '#3b82f6';
     else if (showCorrect && feedback === 'slow') bgColor = '#f59e0b';
     else if (isCorrectReveal) bgColor = '#3b82f6';
-    else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
+    // Target book on a wrong click: use blue (same as isCorrectReveal) rather
+    // than red. Red/orange side-by-side is hard to distinguish for deutan
+    // colorblindness; blue is unambiguously the app's 'this is the answer'
+    // color in every other context.
+    else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
     else if (showWrong) bgColor = '#f97316';
 
     const showMasteryLine = config.display.highlightFound && bookIsMastered;

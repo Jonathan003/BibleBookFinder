@@ -52,6 +52,7 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
+  const [confirmReset, setConfirmReset] = useState(false);
   // Quiz phase: null = no active quiz, 'playing' = answering questions,
   // 'paused' = summary/pause screen shown. When non-null, QuizGrid is
   // kept mounted even across Settings/Help detours so its session state
@@ -120,6 +121,7 @@ function App() {
     setView('menu');
     setPreviousView(null);
     setQuizPhase(null);
+    setConfirmReset(false);
 
     // Fresh user with no settings yet: inherit whatever lang was active
     // on the UserSelect screen (the module-scope `detectedLang` would
@@ -197,11 +199,17 @@ function App() {
   const fsrsCards = currentUser?.fsrsCards || {};
   const stats = getBookStats(fsrsCards, bibleBooks);
 
+  // Open the inline confirm panel instead of the default browser dialog.
+  // The panel appears below the menu buttons and matches the style used
+  // for user deletion confirmation in UserSelect.
   const resetProgress = () => {
     if (!currentUser) return;
-    if (!window.confirm(lang === 'nl'
-      ? 'Weet je zeker dat je je voortgang wilt wissen?'
-      : 'Are you sure you want to reset your progress?')) return;
+    setConfirmReset(true);
+  };
+
+  const doResetProgress = () => {
+    setConfirmReset(false);
+    if (!currentUser) return;
     updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {}, masteryMsAtStart: config.quiz.masteryMs });
   };
 
@@ -384,6 +392,15 @@ function App() {
                   <span className="btn-icon">🗑️</span>
                   <span>{t.resetProgress}</span>
                 </button>
+                {confirmReset && (
+                  <div className="reset-confirm-panel">
+                    <span className="reset-confirm-msg">{t.confirmResetMsg}</span>
+                    <div className="reset-confirm-buttons">
+                      <button className="btn-confirm-reset" onClick={doResetProgress}>{t.confirmReset}</button>
+                      <button className="btn-cancel-reset" onClick={() => setConfirmReset(false)}>{t.cancelReset}</button>
+                    </div>
+                  </div>
+                )}
                 {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
               </div>
             </div>

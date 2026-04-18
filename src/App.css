@@ -297,6 +297,52 @@
   background: rgba(249, 115, 22, 0.18);
 }
 
+.reset-confirm-panel {
+  grid-column: 1 / -1; /* span both columns of the menu-buttons grid */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  animation: fadeIn 0.15s;
+}
+
+.reset-confirm-msg {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.reset-confirm-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-confirm-reset {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--wrong);
+  color: white;
+  min-height: 44px;
+}
+
+.btn-cancel-reset {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  min-height: 44px;
+}
+
 .share-feedback {
   text-align: center;
   padding: 0.4rem 1rem;

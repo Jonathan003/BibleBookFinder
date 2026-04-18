@@ -363,7 +363,8 @@
 .book-cell:hover:not(:disabled) { filter: brightness(0.85); }
 .book-cell:disabled { cursor: default; }
 .book-cell.correct { animation: flashCorrect 0.5s ease-in-out; }
-.book-cell.wrong, .book-cell.slow { animation: flashWrong 0.4s; }
+.book-cell.wrong { animation: shakeWrong 0.5s ease-in-out; }
+.book-cell.slow { animation: flashWrong 0.4s; }
 
 .book-cell.mastered::after {
   content: '';
@@ -384,6 +385,15 @@
 @keyframes flashWrong {
   0%, 25%, 50%, 75%, 100% { transform: translateX(0); }
   12.5%, 37.5%, 62.5%, 87.5% { transform: translateX(-4px); }
+}
+
+/* Stronger bidirectional shake for wrong-click feedback. Acts as a non-hue
+   signal so deutan/protan users don't have to rely on the orange color alone
+   to distinguish a wrong click from a slow-but-correct one. */
+@keyframes shakeWrong {
+  0%, 100% { transform: translateX(0); }
+  15%, 45%, 75%  { transform: translateX(-6px); }
+  30%, 60%, 90%  { transform: translateX(6px); }
 }
 
 .book-name {
