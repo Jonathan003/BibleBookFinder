@@ -281,8 +281,15 @@ function App() {
                 </div>
               </div>
 
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${(stats.mastered / 66) * 100}%` }} />
+              <div className="progress-section">
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${(stats.mastered / 66) * 100}%` }}>
+                    {stats.mastered > 0 && (
+                      <span className="progress-text">{Math.round((stats.mastered / 66) * 100)}%</span>
+                    )}
+                  </div>
+                </div>
+                <span className="progress-label">{stats.mastered}/66 {t.mastered?.toLowerCase()}</span>
               </div>
 
               <div className="menu-buttons">
