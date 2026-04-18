@@ -582,6 +582,13 @@
   border-color: transparent;
 }
 
+.summary-buttons .settings-summary-btn {
+  background: var(--bg-primary, #f5f5f5);
+  color: var(--text-secondary, #666);
+  border-color: var(--border, #ddd);
+  font-size: 0.9rem;
+}
+
 /* Landscape: hint fits on 2 lines */
 @media (orientation: landscape) {
   .hint-overlay {

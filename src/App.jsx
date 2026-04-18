@@ -48,6 +48,7 @@ export function useAppConfig() {
 function App() {
   const [currentUser, setCurrentUserState] = useState(null);
   const [view, setView] = useState('menu');
+  const [previousView, setPreviousView] = useState(null);
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
@@ -336,6 +337,7 @@ function App() {
               setBestStreak={updateBestStreak}
               addQuizSession={addQuizSession}
               onBack={() => setView('menu')}
+              onSettings={() => { setPreviousView('quiz'); setView('settings'); }}
             />
           )}
 
@@ -343,7 +345,11 @@ function App() {
             <Settings
               config={{ grid: config.grid, quiz: config.quiz, display: config.display, study: config.study, t }}
               onSave={saveConfig}
-              onBack={() => setView('menu')}
+              onBack={() => {
+                const back = previousView || 'menu';
+                setPreviousView(null);
+                setView(back);
+              }}
               currentUser={currentUser}
               onRestore={handleRestore}
             />

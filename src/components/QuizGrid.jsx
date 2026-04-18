@@ -9,7 +9,7 @@ import {
 } from '../fsrs';
 import './QuizGrid.css';
 
-export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack }) {
+export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onSettings }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -329,9 +329,14 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           )}
         </div>
         <div className="summary-buttons">
-          <button className="btn" onClick={() => setShowSummary(false)}>
+          <button className="btn" onClick={() => { setShowSummary(false); setStartTime(Date.now()); }}>
             {t.keepGoing}
           </button>
+          {onSettings && (
+            <button className="btn settings-summary-btn" onClick={onSettings}>
+              ⚙️ {t.settingsTitle || 'Settings'}
+            </button>
+          )}
           <button className="btn quiz-btn" onClick={finishSession}>
             {t.done}
           </button>

@@ -207,7 +207,7 @@
   min-width: 0;
 }
 
-.progress-text {
+.progress-section .progress-text {
   font-size: 0.65rem;
   font-weight: 700;
   color: white;
