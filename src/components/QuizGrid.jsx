@@ -256,13 +256,17 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
           const allNTMastered = ntBookIds.every(id => isMastered(updatedFsrsCards[id]));
           const all66Mastered = newCount === 66;
 
-          // Priority: 66 > OT/NT scripture milestones > count milestones
+          // Priority: 66 > OT/NT scripture milestones > count milestones.
+          // OT/NT milestones only trigger when the just-mastered book is of
+          // that testament AND was the last one needed — otherwise mastering
+          // any OT book after NT was complete would fire the NT milestone
+          // again every time (and vice versa).
           let msg = null;
           if (all66Mastered) {
             msg = t.milestone66;
-          } else if (allOTMastered) {
+          } else if (targetBook.testament === 'OT' && allOTMastered) {
             msg = t.milestone39;
-          } else if (allNTMastered) {
+          } else if (targetBook.testament === 'NT' && allNTMastered) {
             msg = t.milestoneNT;
           } else {
             const countMilestones = { 10: t.milestone10, 20: t.milestone20, 33: t.milestone33, 50: t.milestone50 };
