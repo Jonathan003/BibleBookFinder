@@ -46,14 +46,21 @@ export function useGridLayout(extraDeps = []) {
       const maxChars = Math.floor((cellWidth - 16) / 6);
       setAutoAbbr(longestNameLength > maxChars);
     };
-    // Measure once synchronously on mount — the grid already has its
-    // final size by the time this effect runs, so no timing guess needed.
-    // ResizeObserver then handles every subsequent size change (rotation,
-    // column count change, parent layout shift) in one mechanism.
-    checkFit();
+    // Initial measurement: wait one frame so layout has fully settled.
+    // useEffect runs after React commit but before the browser's first
+    // paint — on mount that's sometimes too early for offsetWidth to
+    // reflect the final laid-out size. rAF is the browser's explicit
+    // "before next paint" hook; by then layout is stable.
+    const rafId = requestAnimationFrame(checkFit);
+    // Subsequent changes (rotation, column change, parent resize) are
+    // handled by ResizeObserver — fires exactly when the element's
+    // dimensions actually change.
     const ro = new ResizeObserver(checkFit);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
   }, [abbrMode, activeColumns, longestNameLength, ...extraDeps]);
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
