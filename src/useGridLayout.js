@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { bibleBooks } from './data';
 import { useAppConfig } from './App';
 
@@ -26,7 +26,16 @@ export function useGridLayout(extraDeps = []) {
   const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
 
   // Smart abbreviation detection
-  const gridRef = useRef(null);
+  //
+  // We use a callback ref (not useRef) so the measurement effect re-runs
+  // when the grid element is actually attached. Consumers like QuizGrid
+  // conditionally return null before the first book is picked, so the
+  // grid doesn't exist at initial mount — a useRef would be null on the
+  // first useEffect run and never trigger a re-run when the element
+  // later appears. Callback refs fire exactly when React attaches or
+  // detaches the DOM node.
+  const [gridEl, setGridEl] = useState(null);
+  const gridRef = useCallback((node) => setGridEl(node), []);
   const [autoAbbr, setAutoAbbr] = useState(false);
   const abbrMode = config.display.abbreviations || 'auto';
 
@@ -38,30 +47,21 @@ export function useGridLayout(extraDeps = []) {
   }, [lang]);
 
   useEffect(() => {
-    if (abbrMode !== 'auto') return;
-    const el = gridRef.current;
-    if (!el) return;
+    if (abbrMode !== 'auto' || !gridEl) return;
     const checkFit = () => {
-      const cellWidth = el.offsetWidth / activeColumns;
+      const cellWidth = gridEl.offsetWidth / activeColumns;
       const maxChars = Math.floor((cellWidth - 16) / 6);
       setAutoAbbr(longestNameLength > maxChars);
     };
-    // Initial measurement: wait one frame so layout has fully settled.
-    // useEffect runs after React commit but before the browser's first
-    // paint — on mount that's sometimes too early for offsetWidth to
-    // reflect the final laid-out size. rAF is the browser's explicit
-    // "before next paint" hook; by then layout is stable.
-    const rafId = requestAnimationFrame(checkFit);
-    // Subsequent changes (rotation, column change, parent resize) are
-    // handled by ResizeObserver — fires exactly when the element's
-    // dimensions actually change.
+    // Measure once now — gridEl is guaranteed to be an attached DOM node
+    // because the callback ref only fires after React has committed it.
+    // ResizeObserver handles subsequent size changes (rotation, column
+    // count change, parent resize) in a single mechanism.
+    checkFit();
     const ro = new ResizeObserver(checkFit);
-    ro.observe(el);
-    return () => {
-      cancelAnimationFrame(rafId);
-      ro.disconnect();
-    };
-  }, [abbrMode, activeColumns, longestNameLength, ...extraDeps]);
+    ro.observe(gridEl);
+    return () => ro.disconnect();
+  }, [gridEl, abbrMode, activeColumns, longestNameLength, ...extraDeps]);
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
 
