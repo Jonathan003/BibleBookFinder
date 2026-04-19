@@ -39,16 +39,20 @@ export function useGridLayout(extraDeps = []) {
 
   useEffect(() => {
     if (abbrMode !== 'auto') return;
+    const el = gridRef.current;
+    if (!el) return;
     const checkFit = () => {
-      const el = gridRef.current;
-      if (!el) return;
       const cellWidth = el.offsetWidth / activeColumns;
       const maxChars = Math.floor((cellWidth - 16) / 6);
       setAutoAbbr(longestNameLength > maxChars);
     };
-    const timer = setTimeout(checkFit, 50);
-    window.addEventListener('resize', checkFit);
-    return () => { clearTimeout(timer); window.removeEventListener('resize', checkFit); };
+    // ResizeObserver fires precisely when the grid's size settles —
+    // no arbitrary setTimeout guessing needed. It also handles window
+    // resize, orientation change, and any parent layout shifts in one
+    // mechanism. Modern browsers (iOS Safari 13.1+) all support it.
+    const ro = new ResizeObserver(checkFit);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [abbrMode, activeColumns, longestNameLength, ...extraDeps]);
 
   const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;

@@ -238,7 +238,9 @@ function App() {
     );
     const fullText = text + ' ' + window.location.href;
 
-    // Native share on mobile only (desktop share dialogs are clunky)
+    // Native share on mobile only (desktop share dialogs are clunky).
+    // On success the OS share UI gives its own confirmation; no in-app
+    // feedback needed.
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile && navigator.share) {
       try {
@@ -250,21 +252,31 @@ function App() {
       }
     }
 
-    // Clipboard fallback
+    // Clipboard fallback. Track whether it actually worked so we can
+    // show honest feedback instead of always claiming success.
+    let copied = false;
     try {
       await navigator.clipboard.writeText(fullText);
+      copied = true;
     } catch {
-      // Clipboard API blocked — legacy fallback
+      // Clipboard API blocked — legacy execCommand path
       const ta = document.createElement('textarea');
       ta.value = fullText;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      document.execCommand('copy');
+      try {
+        copied = document.execCommand('copy');
+      } catch {
+        copied = false;
+      }
       document.body.removeChild(ta);
     }
-    setShareFeedback(lang === 'nl' ? 'Gekopieerd!' : 'Copied!');
+
+    setShareFeedback(copied
+      ? (lang === 'nl' ? 'Gekopieerd!' : 'Copied!')
+      : (lang === 'nl' ? 'Kopiëren mislukt' : 'Copy failed'));
     setTimeout(() => setShareFeedback(''), 2500);
   };
 

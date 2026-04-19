@@ -300,9 +300,16 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
-    schedule(() => {
-      document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
+    // Scroll to the correct book after React commits the state change.
+    // Double rAF: first frame runs after commit, second frame runs after
+    // the browser has laid out the new DOM — so the target cell is
+    // guaranteed to be present and positioned. Replaces a 50ms timer
+    // that was a timing guess in disguise.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
     setSessionWrongBooks(prev => new Set(prev).add(targetBook.id));
     setScore(prev => ({ ...prev, total: prev.total + 1 }));
     setStreak(0);

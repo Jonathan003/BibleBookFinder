@@ -149,9 +149,13 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
-    schedule(() => {
-      document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
+    // Double rAF: wait for React to commit, then for browser to paint.
+    // Replaces the 50ms timing guess.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-book-id="${targetBook.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
   };
 
   const handleHint = () => {
