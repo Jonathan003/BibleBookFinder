@@ -144,8 +144,8 @@
 .delete-btn svg { width: 18px; height: 18px; }
 
 .delete-btn:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--wrong);
+  background: rgba(249, 115, 22, 0.12);
 }
 
 .delete-confirm-panel {
@@ -169,22 +169,24 @@
 }
 
 .btn-confirm-delete {
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1.25rem;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  background: #ef4444;
+  background: var(--wrong);
   color: white;
+  min-height: 44px;
 }
 
 .btn-cancel-delete {
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1.25rem;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
+  min-height: 44px;
 }
 
 .add-user-btn {

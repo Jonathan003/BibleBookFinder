@@ -69,8 +69,8 @@
 }
 
 .wrong-overlay {
-  background: #fee2e2;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: #ffedd5;
+  border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
 .overlay-text {
@@ -89,7 +89,7 @@
 .hint-overlay .overlay-text  { color: #92400e; }
 .correct-overlay .overlay-text { color: #1d4ed8; }
 .slow-overlay .overlay-text  { color: #92400e; }
-.wrong-overlay .overlay-text { color: #b91c1c; }
+.wrong-overlay .overlay-text { color: #c2410c; }
 
 .overlay-hint-btn {
   flex-shrink: 0;
@@ -145,13 +145,13 @@
 }
 
 .quiz-prompt.prompt-wrong {
-  background: #fee2e2;
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.2);
+  background: #ffedd5;
+  box-shadow: 0 1px 4px rgba(249, 115, 22, 0.2);
 }
 
 .prompt-correct .prompt-book { color: #1d4ed8; }
 .prompt-slow .prompt-book    { color: #92400e; }
-.prompt-wrong .prompt-book   { color: #b91c1c; }
+.prompt-wrong .prompt-book   { color: #c2410c; }
 
 .prompt-book {
   font-size: 1.15rem;
