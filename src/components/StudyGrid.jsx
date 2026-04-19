@@ -254,7 +254,10 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
 
     if (showCorrect) bgColor = '#3b82f6';
     else if (isCorrectReveal) bgColor = '#3b82f6';
-    else if (feedback === 'wrong' && isTarget) bgColor = '#ef4444';
+    // Target book on a wrong click: use blue (same as isCorrectReveal) rather
+    // than red.  Consistent with the fix applied in QuizGrid.jsx for deutan
+    // colorblind users.
+    else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
     else if (showWrong) bgColor = '#f97316';
 
     return (
