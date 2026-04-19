@@ -46,10 +46,11 @@ export function useGridLayout(extraDeps = []) {
       const maxChars = Math.floor((cellWidth - 16) / 6);
       setAutoAbbr(longestNameLength > maxChars);
     };
-    // ResizeObserver fires precisely when the grid's size settles —
-    // no arbitrary setTimeout guessing needed. It also handles window
-    // resize, orientation change, and any parent layout shifts in one
-    // mechanism. Modern browsers (iOS Safari 13.1+) all support it.
+    // Measure once synchronously on mount — the grid already has its
+    // final size by the time this effect runs, so no timing guess needed.
+    // ResizeObserver then handles every subsequent size change (rotation,
+    // column count change, parent layout shift) in one mechanism.
+    checkFit();
     const ro = new ResizeObserver(checkFit);
     ro.observe(el);
     return () => ro.disconnect();
