@@ -8,6 +8,11 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   const [study, setStudy] = useState(config.study || {});
   const [activeTab, setActiveTab] = useState('grid');
   const [feedback, setFeedback] = useState('');
+  // Backup import confirmation.  Instead of a browser window.confirm, we
+  // stash the parsed backup data here and render an in-app panel that
+  // matches the Reset Progress dialog styling.  Cross-user imports get
+  // an extra warning line.
+  const [pendingImport, setPendingImport] = useState(null);
 
   const t = config.t;
 
@@ -82,24 +87,17 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       try {
         const data = JSON.parse(ev.target.result);
         if (!data.user || data.app !== 'BibleBookFinder') throw new Error('Invalid');
-        
-        const confirmImport = window.confirm(
-          (config.display?.lang || 'nl') === 'nl' 
-            ? 'Dit overschrijft jouw huidige voortgang en instellingen. Doorgaan?' 
-            : 'This will overwrite your current progress and settings. Continue?'
-        );
-        if (confirmImport) {
-          onRestore(data.user);
-          // Update local state to reflect restored settings
-          if (data.user.settings) {
-            if (data.user.settings.grid) setGrid(data.user.settings.grid);
-            if (data.user.settings.quiz) setQuiz(data.user.settings.quiz);
-            if (data.user.settings.display) setDisplay(data.user.settings.display);
-            if (data.user.settings.study) setStudy(data.user.settings.study);
-          }
-          setFeedback(t.importSuccess || 'Restored!');
-          setTimeout(() => { setFeedback(''); onBack(); }, 1500);
-        }
+
+        // Stash the parsed backup and let the inline confirm panel take over.
+        // Cross-user flag drives the extra warning line in the panel.
+        const backupName  = data.user.name || '?';
+        const currentName = currentUser?.name || '?';
+        setPendingImport({
+          userData:   data.user,
+          backupName,
+          currentName,
+          crossUser:  backupName !== currentName,
+        });
       } catch {
         setFeedback(t.importError || 'Invalid file');
         setTimeout(() => setFeedback(''), 3000);
@@ -107,6 +105,21 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const doImport = () => {
+    if (!pendingImport) return;
+    const { userData } = pendingImport;
+    setPendingImport(null);
+    onRestore(userData);
+    if (userData.settings) {
+      if (userData.settings.grid)    setGrid(userData.settings.grid);
+      if (userData.settings.quiz)    setQuiz(userData.settings.quiz);
+      if (userData.settings.display) setDisplay(userData.settings.display);
+      if (userData.settings.study)   setStudy(userData.settings.study);
+    }
+    setFeedback(t.importSuccess || 'Restored!');
+    setTimeout(() => { setFeedback(''); onBack(); }, 1500);
   };
 
   const renderTabContent = () => {
@@ -231,7 +244,24 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
           </label>
           {feedback && <p className="data-feedback">{feedback}</p>}
-          <p className="data-warning">{t.importWarning || '⚠️ Importeren overschrijft jouw huidige voortgang en instellingen.'}</p>
+          {!pendingImport && (
+            <p className="data-warning">{t.importWarning || '⚠️ Importeren overschrijft jouw huidige voortgang en instellingen.'}</p>
+          )}
+          {pendingImport && (
+            <div className="reset-confirm-panel">
+              <span className="reset-confirm-msg">
+                {pendingImport.crossUser
+                  ? (t.confirmImportCrossMsg || '⚠️ Deze back-up is van "{backup}", je bent ingelogd als "{current}". Dit overschrijft {current}\'s voortgang en instellingen met die van {backup}.')
+                      .replaceAll('{backup}',  pendingImport.backupName)
+                      .replaceAll('{current}', pendingImport.currentName)
+                  : (t.confirmImportMsg || 'Dit overschrijft jouw huidige voortgang en instellingen.')}
+              </span>
+              <div className="reset-confirm-buttons">
+                <button className="btn-confirm-reset" onClick={doImport}>{t.confirmImport || 'Herstel'}</button>
+                <button className="btn-cancel-reset" onClick={() => setPendingImport(null)}>{t.cancelImport || 'Annuleer'}</button>
+              </div>
+            </div>
+          )}
         </div>
       </>
     );

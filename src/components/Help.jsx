@@ -53,7 +53,7 @@ const helpContent = {
       },
       {
         q: 'Wat gebeurt er als ik op het verkeerde boek tik?',
-        a: 'De app scrollt automatisch naar het juiste boek dat blauw oplicht. Alle andere boeken worden oranje. Je moet op het blauwe boek tikken om verder te gaan — dit versterkt het leren.',
+        a: 'De app scrollt automatisch naar het juiste boek dat blauw oplicht. Het boek dat je verkeerd aantikte wordt oranje en schudt even. Je moet op het blauwe boek tikken om verder te gaan — dit versterkt het leren.',
       },
       {
         q: 'Wat gebeurt er als ik een hint gebruik?',
@@ -159,7 +159,7 @@ const helpContent = {
       },
       {
         q: 'What happens when I tap the wrong book?',
-        a: 'The app scrolls to the correct book which lights up blue. All other books turn orange. You must tap the blue book to continue — this reinforces learning.',
+        a: 'The app scrolls to the correct book which lights up blue. The book you tapped wrongly turns orange and briefly shakes. You must tap the blue book to continue — this reinforces learning.',
       },
       {
         q: 'What happens if I use a hint?',
