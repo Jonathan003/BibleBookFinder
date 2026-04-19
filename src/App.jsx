@@ -183,11 +183,24 @@ function App() {
     });
   }, [updateUserData]);
 
-  const addQuizSession = useCallback((session) => {
-    updateUserData(prev => ({
-      quizHistory: [...(prev.quizHistory || []), { ...session, date: Date.now() }]
-    }));
-  }, [updateUserData]);
+  // Add a quiz session to a specific user's history. Accepts an explicit
+  // userId rather than relying on `currentUser` at call time, so that a
+  // session saved during QuizGrid unmount is attributed to the user who
+  // actually played it — not whoever is active after a mid-session switch.
+  // Reads the target user fresh from localStorage to avoid racing with
+  // any concurrent React state updates.
+  const addQuizSession = useCallback((userId, session) => {
+    if (!userId) return;
+    const user = getUser(userId);
+    if (!user) return;
+    const newHistory = [...(user.quizHistory || []), { ...session, date: Date.now() }];
+    updateUser(userId, { quizHistory: newHistory });
+    // Mirror into local state only if the session owner is still active.
+    setCurrentUserState(prev => {
+      if (!prev || prev.id !== userId) return prev;
+      return { ...prev, quizHistory: newHistory };
+    });
+  }, []);
 
   const updateBestTime = useCallback((bookId, ms) => {
     updateUserData(prev => ({
@@ -421,6 +434,7 @@ function App() {
           {quizPhase !== null && (
             <div style={{ display: view === 'quiz' ? 'contents' : 'none' }}>
               <QuizGrid
+                ownerUserId={currentUser.id}
                 fsrsCards={fsrsCards}
                 updateFsrsCard={updateFsrsCard}
                 bestTimes={currentUser.bestTimes || {}}

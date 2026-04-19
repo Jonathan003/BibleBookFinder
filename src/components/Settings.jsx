@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Settings.css';
 
 export default function Settings({ config, onSave, onBack, currentUser, onRestore }) {
-  const [grid, setGrid] = useState(config.grid);
-  const [quiz, setQuiz] = useState(config.quiz);
-  const [display, setDisplay] = useState(config.display);
-  const [study, setStudy] = useState(config.study || {});
+  // All settings held in a single atomic object. A functional updater on
+  // one state makes field changes race-free by construction: React's
+  // reducer semantics guarantee each update sees the result of the
+  // previous one, so no "closure-stale" rebuild is possible.
+  const [settings, setSettings] = useState({
+    grid: config.grid,
+    quiz: config.quiz,
+    display: config.display,
+    study: config.study || {},
+  });
+  const { grid, quiz, display, study } = settings;
+
   const [activeTab, setActiveTab] = useState('grid');
   const [feedback, setFeedback] = useState('');
   // Backup import confirmation.  Instead of a browser window.confirm, we
@@ -13,6 +21,20 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   // matches the Reset Progress dialog styling.  Cross-user imports get
   // an extra warning line.
   const [pendingImport, setPendingImport] = useState(null);
+
+  // Persist on settings change, without coupling state updates to side
+  // effects (which would double-fire under strict mode). `shouldSaveRef`
+  // marks updates that came from user interaction; mount and import-
+  // driven updates leave it false so we don't re-persist data that the
+  // parent already persisted.
+  const shouldSaveRef = useRef(false);
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  useEffect(() => {
+    if (!shouldSaveRef.current) return;
+    shouldSaveRef.current = false;
+    onSaveRef.current(settings);
+  }, [settings]);
 
   const t = config.t;
 
@@ -22,8 +44,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     { id: 'data', icon: '👤', label: t.dataTab || 'Data' },
   ];
 
-  const handleSave = (newConfig) => {
-    onSave(newConfig);
+  // Atomic field update. Pure functional update — no side effects here.
+  // The persistence effect above picks up the change via `settings` dep.
+  const updateField = (section, field, value) => {
+    shouldSaveRef.current = true;
+    setSettings(prev => ({
+      ...prev,
+      [section]: { ...prev[section], [field]: value },
+    }));
   };
 
   const handleExport = async () => {
@@ -113,10 +141,15 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     setPendingImport(null);
     onRestore(userData);
     if (userData.settings) {
-      if (userData.settings.grid)    setGrid(userData.settings.grid);
-      if (userData.settings.quiz)    setQuiz(userData.settings.quiz);
-      if (userData.settings.display) setDisplay(userData.settings.display);
-      if (userData.settings.study)   setStudy(userData.settings.study);
+      // onRestore already persisted everything; we just need to sync our
+      // local UI state. Leave shouldSaveRef false so the persistence
+      // effect doesn't write the same data back again.
+      setSettings(prev => ({
+        grid:    userData.settings.grid    || prev.grid,
+        quiz:    userData.settings.quiz    || prev.quiz,
+        display: userData.settings.display || prev.display,
+        study:   userData.settings.study   || prev.study,
+      }));
     }
     setFeedback(t.importSuccess || 'Restored!');
     setTimeout(() => { setFeedback(''); onBack(); }, 1500);
@@ -129,32 +162,20 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <h3>{t.gridTitle || 'Raster'}</h3>
           <p className="settings-desc">{t.gridDesc || 'Kolommen en schermstand.'}</p>
           <SettingRow label={t.portrait || 'Portret'} desc={t.portraitDesc || '(rechtop)'}>
-            <NumberInput value={grid.portrait} min={3} max={11} onChange={v => {
-              setGrid(g => ({ ...g, portrait: v }));
-              handleSave({ grid: { ...grid, portrait: v }, quiz, display, study });
-            }} />
+            <NumberInput value={grid.portrait} min={3} max={11} onChange={v => updateField('grid', 'portrait', v)} />
           </SettingRow>
           <SettingRow label={t.landscape || 'Liggend'} desc={t.landscapeDesc || '(gedraaid)'}>
-            <NumberInput value={grid.landscape} min={3} max={11} onChange={v => {
-              setGrid(g => ({ ...g, landscape: v }));
-              handleSave({ grid: { ...grid, landscape: v }, quiz, display, study });
-            }} />
+            <NumberInput value={grid.landscape} min={3} max={11} onChange={v => updateField('grid', 'landscape', v)} />
           </SettingRow>
           <SettingRow label={t.orientation || 'Schermstand'} desc={t.orientationDesc || '(forceer of auto)'}>
-            <select value={grid.orientation} onChange={e => {
-              setGrid(g => ({ ...g, orientation: e.target.value }));
-              handleSave({ grid: { ...grid, orientation: e.target.value }, quiz, display, study });
-            }} className="setting-select">
+            <select value={grid.orientation} onChange={e => updateField('grid', 'orientation', e.target.value)} className="setting-select">
               <option value="auto">{t.auto || 'Automatisch'}</option>
               <option value="portrait">{t.portraitMode || 'Portret'}</option>
               <option value="landscape">{t.landscapeMode || 'Liggend'}</option>
             </select>
           </SettingRow>
           <SettingRow label={t.abbreviations || 'Afkortingen'} desc={t.abbreviationsDesc || '(portretmodus)'}>
-            <select value={display.abbreviations || 'auto'} onChange={e => {
-              setDisplay(d => ({ ...d, abbreviations: e.target.value }));
-              handleSave({ grid, quiz, display: { ...display, abbreviations: e.target.value }, study });
-            }} className="setting-select">
+            <select value={display.abbreviations || 'auto'} onChange={e => updateField('display', 'abbreviations', e.target.value)} className="setting-select">
               <option value="auto">{t.abbrAuto || 'Auto'}</option>
               <option value="always">{t.abbrAlways || 'Altijd'}</option>
               <option value="never">{t.abbrNever || 'Nooit'}</option>
@@ -178,11 +199,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
                 max={10000}
                 step={250}
                 value={quiz.masteryMs}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  setQuiz(q => ({ ...q, masteryMs: val }));
-                  handleSave({ grid, quiz: { ...quiz, masteryMs: val }, display, study });
-                }}
+                onChange={e => updateField('quiz', 'masteryMs', Number(e.target.value))}
                 style={{ width: '100%', accentColor: 'var(--accent)' }}
               />
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
@@ -191,10 +208,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             </div>
           </SettingRow>
           <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
-            <select value={quiz.learningPace || 'balanced'} onChange={e => {
-              setQuiz(q => ({ ...q, learningPace: e.target.value }));
-              handleSave({ grid, quiz: { ...quiz, learningPace: e.target.value }, display, study });
-            }} className="setting-select">
+            <select value={quiz.learningPace || 'balanced'} onChange={e => updateField('quiz', 'learningPace', e.target.value)} className="setting-select">
               <option value="relaxed">{t.paceRelaxed || 'Relaxed'}</option>
               <option value="balanced">{t.paceBalanced || 'Balanced'}</option>
               <option value="intensive">{t.paceIntensive || 'Intensive'}</option>
@@ -208,23 +222,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             </div>
           )}
           <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
-            <Toggle value={display.highlightFound} onChange={v => {
-              setDisplay(d => ({ ...d, highlightFound: v }));
-              handleSave({ grid, quiz, display: { ...display, highlightFound: v }, study });
-            }} />
+            <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
           </SettingRow>
           <SettingRow label={t.autoScroll || 'Auto-scroll (Quiz & Study)'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
-            <Toggle value={quiz.autoScroll !== false} onChange={v => {
-              setQuiz(q => ({ ...q, autoScroll: v }));
-              handleSave({ grid, quiz: { ...quiz, autoScroll: v }, display, study });
-            }} />
+            <Toggle value={quiz.autoScroll !== false} onChange={v => updateField('quiz', 'autoScroll', v)} />
           </SettingRow>
           <SettingRow label={t.bookSelection || 'Book selection'} desc={t.bookSelectionDesc || '(in Study Mode)'}>
-            <select value={study.bookSelection || 'focused'} onChange={e => {
-              const val = e.target.value;
-              setStudy(s => ({ ...s, bookSelection: val }));
-              handleSave({ grid, quiz, display, study: { ...study, bookSelection: val } });
-            }} className="setting-select">
+            <select value={study.bookSelection || 'focused'} onChange={e => updateField('study', 'bookSelection', e.target.value)} className="setting-select">
               <option value="random">{t.bookSelectionRandom || 'Random'}</option>
               <option value="focused">{t.bookSelectionFocused || 'Focused'}</option>
             </select>

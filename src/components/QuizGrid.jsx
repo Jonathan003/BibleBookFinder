@@ -9,7 +9,7 @@ import {
 } from '../fsrs';
 import './QuizGrid.css';
 
-export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onPhaseChange }) {
+export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onPhaseChange }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -63,7 +63,14 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
   // is updated on every render so the unmount cleanup reads current
   // values (effect deps are stable, so the cleanup closure alone
   // would capture stale initial-render values).
+  //
+  // `ownerUserIdRef` locks the user who started the session at first
+  // render. That way if the user taps their avatar and switches to
+  // another user mid-session, the session is still saved to the
+  // original player — not silently attributed to whoever is active
+  // when React finally runs this component's unmount cleanup.
   const sessionDataRef = useRef({ saved: false, snapshot: null });
+  const ownerUserIdRef = useRef(ownerUserId);
   sessionDataRef.current.snapshot = {
     correct: score.correct,
     total: score.total,
@@ -78,7 +85,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
     const avgTime = snapshot.responseTimes.length > 0
       ? Math.round(snapshot.responseTimes.reduce((a, b) => a + b, 0) / snapshot.responseTimes.length)
       : 0;
-    addQuizSession({
+    addQuizSession(ownerUserIdRef.current, {
       correct: snapshot.correct,
       total: snapshot.total,
       avgTime,
@@ -172,7 +179,7 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
       const avgTime = responseTimes.length > 0
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
         : 0;
-      addQuizSession({
+      addQuizSession(ownerUserIdRef.current, {
         correct: score.correct,
         total: score.total,
         avgTime,
@@ -233,7 +240,6 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
         const newStreak = streak + 1;
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
-        setSessionMasteredBooks(prev => new Set(prev).add(book.id));
 
         // Personal best check
         const prevBest = bestTimes[targetBook.id];
@@ -248,6 +254,10 @@ export default function QuizGrid({ fsrsCards, updateFsrsCard, bestTimes, updateB
         const wasAlreadyMastered = isMastered(fsrsCards[targetBook.id]);
         const isNowMastered = isMastered(serializeCard(result.card));
         if (!wasAlreadyMastered && isNowMastered) {
+          // Only record as a session-mastered book when it actually crossed
+          // the mastery threshold this turn — not on every correct answer.
+          // This keeps quizHistory.masteredBookIds honest.
+          setSessionMasteredBooks(prev => new Set(prev).add(book.id));
           const newCount = stats.mastered + 1;
           const updatedFsrsCards = { ...fsrsCards, [targetBook.id]: serializeCard(result.card) };
           const otBookIds = bibleBooks.filter(b => b.testament === 'OT').map(b => b.id);
