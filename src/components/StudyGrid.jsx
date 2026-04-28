@@ -63,7 +63,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     return () => window.removeEventListener('resize', measure);
   }, [targetBook]);
 
-  const { orientation, activeColumns, useAbbreviations, gridRef } = useGridLayout([started]);
+  const { orientation, activeColumns, useAbbreviations, useAbbreviationsLong, gridRef } = useGridLayout([started]);
 
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
@@ -250,7 +250,9 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     const showCorrect = feedback === 'correct' && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
     const displayName = useAbbreviations
-      ? (lang === 'nl' ? book.nlAbbr : book.enAbbr)
+      ? useAbbreviationsLong
+        ? (lang === 'nl' ? book.nlAbbrLong : book.enAbbrLong)
+        : (lang === 'nl' ? book.nlAbbr     : book.enAbbr)
       : (lang === 'nl' ? book.nl : book.en);
 
     const colors = groupColors[book.group] || groupColors.law;
@@ -324,14 +326,14 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
       <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className="book-grid" ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${useAbbreviations ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section">
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className="book-grid" style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${useAbbreviations ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

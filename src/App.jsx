@@ -16,7 +16,12 @@ const detectedLang = typeof navigator !== 'undefined' && navigator.language?.sta
 export const defaultConfig = {
   grid: { portrait: 6, landscape: 5, orientation: 'auto' },
   quiz: { masteryMs: 10000, learningPace: 'intensive', autoScroll: true },
-  display: { lang: detectedLang, highlightFound: true, abbreviations: 'auto' },
+  display: {
+    lang: detectedLang,
+    highlightFound: true,
+    abbreviationsPortrait: 'always',
+    abbreviationsLandscape: 'always',
+  },
   study: { selectedGroups: [], bookSelection: 'focused' },
 };
 
@@ -30,10 +35,23 @@ export function mergeConfig(saved) {
       display: { ...defaultConfig.display, lang: saved.lang },
     };
   }
+  // Migrate: old single `abbreviations` field → two orientation-specific
+  // fields. If user had the old field set, apply it to both new fields
+  // so their preference carries over without surprise.
+  const display = { ...defaultConfig.display, ...(saved.display || {}) };
+  if (saved.display && typeof saved.display.abbreviations === 'string') {
+    if (saved.display.abbreviationsPortrait === undefined) {
+      display.abbreviationsPortrait = saved.display.abbreviations;
+    }
+    if (saved.display.abbreviationsLandscape === undefined) {
+      display.abbreviationsLandscape = saved.display.abbreviations;
+    }
+    delete display.abbreviations;
+  }
   return {
     grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
     quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
-    display: { ...defaultConfig.display, ...(saved.display || {}) },
+    display,
     study: { ...defaultConfig.study, ...(saved.study || {}) },
   };
 }

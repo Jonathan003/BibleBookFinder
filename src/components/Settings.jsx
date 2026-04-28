@@ -174,8 +174,15 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               <option value="landscape">{t.landscapeMode || 'Liggend'}</option>
             </select>
           </SettingRow>
-          <SettingRow label={t.abbreviations || 'Afkortingen'} desc={t.abbreviationsDesc || '(portretmodus)'}>
-            <select value={display.abbreviations || 'auto'} onChange={e => updateField('display', 'abbreviations', e.target.value)} className="setting-select">
+          <SettingRow label={t.abbreviationsPortrait || 'Afkortingen (portret)'} desc={t.abbreviationsPortraitDesc || '(rechtop)'}>
+            <select value={display.abbreviationsPortrait || 'always'} onChange={e => updateField('display', 'abbreviationsPortrait', e.target.value)} className="setting-select">
+              <option value="auto">{t.abbrAuto || 'Auto'}</option>
+              <option value="always">{t.abbrAlways || 'Altijd'}</option>
+              <option value="never">{t.abbrNever || 'Nooit'}</option>
+            </select>
+          </SettingRow>
+          <SettingRow label={t.abbreviationsLandscape || 'Afkortingen (liggend)'} desc={t.abbreviationsLandscapeDesc || '(gedraaid)'}>
+            <select value={display.abbreviationsLandscape || 'always'} onChange={e => updateField('display', 'abbreviationsLandscape', e.target.value)} className="setting-select">
               <option value="auto">{t.abbrAuto || 'Auto'}</option>
               <option value="always">{t.abbrAlways || 'Altijd'}</option>
               <option value="never">{t.abbrNever || 'Nooit'}</option>

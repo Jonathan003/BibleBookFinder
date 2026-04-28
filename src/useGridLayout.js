@@ -37,7 +37,11 @@ export function useGridLayout(extraDeps = []) {
   const [gridEl, setGridEl] = useState(null);
   const gridRef = useCallback((node) => setGridEl(node), []);
   const [autoAbbr, setAutoAbbr] = useState(false);
-  const abbrMode = config.display.abbreviations || 'auto';
+  // Independent settings per orientation. Falls back to 'auto' if either
+  // is missing (e.g. very old user data that somehow skipped migration).
+  const abbrMode = orientation === 'landscape'
+    ? (config.display.abbreviationsLandscape || 'auto')
+    : (config.display.abbreviationsPortrait  || 'auto');
 
   const longestNameLength = useMemo(() => {
     return bibleBooks.reduce((max, book) => {
@@ -63,7 +67,20 @@ export function useGridLayout(extraDeps = []) {
     return () => ro.disconnect();
   }, [gridEl, abbrMode, activeColumns, longestNameLength, ...extraDeps]);
 
-  const useAbbreviations = orientation === 'landscape' ? false : abbrMode === 'always' ? true : abbrMode === 'never' ? false : autoAbbr;
+  // Decide whether to show abbreviations:
+  //   - 'always' → yes
+  //   - 'never'  → no
+  //   - 'auto'   → yes if names don't actually fit in the cells
+  let useAbbreviations;
+  if (abbrMode === 'always') useAbbreviations = true;
+  else if (abbrMode === 'never') useAbbreviations = false;
+  else useAbbreviations = autoAbbr;
 
-  return { orientation, activeColumns, useAbbreviations, gridRef };
+  // When abbreviations are shown, pick the variant that matches the
+  // orientation — short ("Ge", "1Sa") in portrait like JW Library
+  // Study Bible portrait; long ("Gen.", "1 Sam.") in landscape like
+  // JW Library Study Bible landscape.
+  const useAbbreviationsLong = useAbbreviations && orientation === 'landscape';
+
+  return { orientation, activeColumns, useAbbreviations, useAbbreviationsLong, gridRef };
 }

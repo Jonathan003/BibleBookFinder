@@ -8,12 +8,23 @@
   overflow-x: hidden;
 }
 
-@media (min-width: 768px) {
-  .quiz-grid { max-width: 720px; }
-}
+/* On larger screens, drop the small-screen max-width and use the
+   viewport width — matching the JW Library Study Bible look where
+   cells fill the screen. Side padding scales with viewport so cells
+   get breathing room from the edges.
 
-@media (min-width: 1024px) {
-  .quiz-grid { max-width: 960px; }
+   Cap at 1280px on very wide screens (4K monitors, large desktops):
+   beyond this width cells get too large and the grid feels sparse.
+   1280px matches industry standard (Tailwind max-w-7xl) and works
+   well for 5-8 column grids on typical Windows laptops, MacBooks,
+   and desktop monitors. Below 1280px viewport (most laptops, all
+   tablets, all phones) the cap has no effect — full width is used. */
+@media (min-width: 768px) {
+  .quiz-grid {
+    max-width: 1280px;
+    padding-left: clamp(1rem, 2vw, 2rem);
+    padding-right: clamp(1rem, 2vw, 2rem);
+  }
 }
 
 /* ---- TOP BAR ---- */
@@ -358,6 +369,27 @@
   min-height: clamp(44px, 7vw, 56px);
   border: none;
   cursor: pointer;
+}
+
+/* Square cells in portrait — but ONLY when abbreviations are shown.
+   Matches the JW Library Study Bible look. With full names, square
+   cells would force ugly multi-line stacking ("Deuter / onomy"), so
+   we keep rectangular cells whenever names need horizontal space.
+   The .using-abbreviations class is added by Quiz/StudyGrid when
+   useGridLayout decides abbreviations should be shown.
+   Text alignment is inherited from the base .book-cell rule:
+   horizontal start (left), vertical center — exactly matching JW
+   Library. Horizontal padding scales with viewport so small phones
+   don't waste space on padding, while bigger screens get JW
+   Library's roomier left margin. Floor 10px keeps text from
+   touching the edge; ceiling 16px prevents desktop cells looking
+   over-padded. */
+@media (orientation: portrait) {
+  .book-grid.using-abbreviations .book-cell {
+    aspect-ratio: 1 / 1;
+    padding-left: clamp(10px, 3vw, 16px);
+    padding-right: clamp(10px, 3vw, 16px);
+  }
 }
 
 .book-cell:hover:not(:disabled) { filter: brightness(0.85); }
