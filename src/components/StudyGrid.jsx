@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
+import { useTimeoutManager } from '../useTimeoutManager';
 import './QuizGrid.css';
 
 const GROUPS = [
@@ -37,20 +38,8 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
 
-  // Track every setTimeout so they can be cancelled on unmount.
-  const timeoutsRef = useRef(new Set());
-  useEffect(() => () => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current.clear();
-  }, []);
-  const schedule = (fn, ms) => {
-    const id = setTimeout(() => {
-      timeoutsRef.current.delete(id);
-      fn();
-    }, ms);
-    timeoutsRef.current.add(id);
-    return id;
-  };
+  // Schedule timeouts that auto-clear on unmount.
+  const schedule = useTimeoutManager();
 
   useEffect(() => {
     const measure = () => {

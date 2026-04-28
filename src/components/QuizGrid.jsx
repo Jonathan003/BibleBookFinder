@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
+import { useTimeoutManager } from '../useTimeoutManager';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
@@ -38,22 +39,10 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
 
-  // Track every setTimeout so they can be cancelled on unmount. Without
-  // this, tapping Back mid-session triggers a pending pickNextBook() or
+  // Schedule timeouts that auto-clear on unmount. Without this,
+  // tapping Back mid-session triggers a pending pickNextBook() or
   // milestone timeout that fires on an unmounted component.
-  const timeoutsRef = useRef(new Set());
-  useEffect(() => () => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current.clear();
-  }, []);
-  const schedule = (fn, ms) => {
-    const id = setTimeout(() => {
-      timeoutsRef.current.delete(id);
-      fn();
-    }, ms);
-    timeoutsRef.current.add(id);
-    return id;
-  };
+  const schedule = useTimeoutManager();
 
   // Autosave on unmount: when the user navigates away (avatar tap,
   // Settings, switching user, closing the quiz without tapping Done)
