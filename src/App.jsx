@@ -8,7 +8,6 @@ import StudyGrid from './components/StudyGrid';
 import QuizGrid from './components/QuizGrid';
 import Settings from './components/Settings';
 import Help from './components/Help';
-import DebugOverlay from './components/DebugOverlay';
 import './App.css';
 
 // Auto-detect language: Dutch for nl-speaking browsers, English for everyone else
@@ -344,7 +343,6 @@ function App() {
   return (
     <ConfigContext.Provider value={{ config, lang, t }}>
       <div className="app">
-        <DebugOverlay />
         <header className="app-header">
           <div className="header-left">
             <button className="user-btn" onClick={() => setCurrentUserState(null)}>
