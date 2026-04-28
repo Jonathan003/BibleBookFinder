@@ -230,7 +230,7 @@
 
 .hint-btn.active {
   background: rgba(251, 191, 36, 0.45);
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--mastery);
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
 }
 
@@ -238,7 +238,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #f59e0b;
+  background: var(--mastery);
   color: #1a1a2e;
   font-size: 0.6rem;
   font-weight: 700;
@@ -262,7 +262,7 @@
 }
 
 .feedback.hint strong {
-  color: #f59e0b;
+  color: var(--mastery);
   font-weight: 700;
 }
 
@@ -296,7 +296,7 @@
   right: 4px;
   width: 6px;
   height: 6px;
-  background: #f59e0b;
+  background: var(--mastery);
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -405,7 +405,7 @@
   left: 0;
   right: 0;
   height: 0.3rem;
-  background: #f59e0b;
+  background: var(--mastery);
 }
 
 @keyframes flashCorrect {
@@ -530,12 +530,12 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: #1e1b2e;
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--mastery);
   border-radius: 14px;
   padding: 18px 28px;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #f59e0b;
+  color: var(--mastery);
   text-align: center;
   z-index: 200;
   pointer-events: none;
@@ -588,7 +588,7 @@
 .summary-number {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #3b82f6;
+  color: var(--correct);
 }
 
 .summary-label {
@@ -599,7 +599,7 @@
 }
 
 .summary-best .summary-number {
-  color: #f59e0b;
+  color: var(--mastery);
 }
 
 .summary-buttons {
