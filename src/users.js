@@ -2,8 +2,22 @@ const USERS_KEY = 'biblefinder_users';
 const CURRENT_USER_KEY = 'biblefinder_current_user';
 
 export function getUsers() {
-  const data = localStorage.getItem(USERS_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(USERS_KEY);
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) {
+      console.error('Users data is not an array, resetting');
+      return [];
+    }
+    return parsed;
+  } catch (e) {
+    // localStorage corrupt or JSON parse failed. Return empty array
+    // so the app keeps working; user can restore from backup if they
+    // had one. Better than crashing the whole app.
+    console.error('Failed to read users from localStorage:', e);
+    return [];
+  }
 }
 
 function saveUsers(users) {
@@ -90,9 +104,21 @@ export function deleteUser(id) {
 }
 
 export function getCurrentUser() {
-  return localStorage.getItem(CURRENT_USER_KEY);
+  try {
+    return localStorage.getItem(CURRENT_USER_KEY);
+  } catch (e) {
+    console.error('Failed to read current user:', e);
+    return null;
+  }
 }
 
 export function setCurrentUser(id) {
-  localStorage.setItem(CURRENT_USER_KEY, id);
+  try {
+    localStorage.setItem(CURRENT_USER_KEY, id);
+  } catch (e) {
+    // Quota exceeded or storage disabled. Non-fatal — user state
+    // just won't persist across reloads. The main saveUsers call
+    // already shows a quota warning, so we stay silent here.
+    console.error('Failed to persist current user:', e);
+  }
 }
