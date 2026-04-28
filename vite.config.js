@@ -15,6 +15,7 @@ export default defineConfig({
         theme_color: '#7C3AED',
         background_color: '#f5f5f5',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone'],
         orientation: 'any',
         icons: [
           {
