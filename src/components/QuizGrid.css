@@ -392,14 +392,7 @@
   }
 }
 
-/* Hover effect alleen op apparaten met echte hover (muis).
-   Op touch devices blijft :hover plakken na een tap totdat
-   de gebruiker ergens anders tikt — dat zorgt dat cellen
-   visueel "vast blijven zitten" in een andere kleur na
-   correct/wrong feedback. Standaard pattern voor touch UX. */
-@media (hover: hover) {
-  .book-cell:hover:not(:disabled) { filter: brightness(0.85); }
-}
+.book-cell:hover:not(:disabled) { filter: brightness(0.85); }
 .book-cell:disabled { cursor: default; }
 .book-cell.correct { animation: flashCorrect 0.5s ease-in-out; }
 .book-cell.wrong { animation: shakeWrong 0.5s ease-in-out; }
