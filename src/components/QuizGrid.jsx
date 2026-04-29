@@ -3,6 +3,7 @@ import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
 import { useTimeoutManager } from '../useTimeoutManager';
+import DebugOverlay from './DebugOverlay';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
@@ -482,6 +483,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
           </div>
         </div>
       </div>
+      <DebugOverlay feedback={feedback} correctBookId={correctBookId} />
     </div>
   );
 }
