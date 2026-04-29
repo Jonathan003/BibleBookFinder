@@ -400,19 +400,6 @@
 @media (hover: hover) {
   .book-cell:hover:not(:disabled) { filter: brightness(0.85); }
 }
-/* Browser-default :active/:focus styling sticks to the last-tapped
-   button on Android Chrome until another button is tapped. That's
-   what causes cells to keep a slightly different look after a
-   correct/wrong animation ends — it's not our React state, it's
-   the browser's button styling. We drive feedback via the
-   .correct/.wrong/.slow classes and inline backgroundColor; any
-   browser-default :active/:focus visuals are redundant. */
-.book-cell:active,
-.book-cell:focus {
-  filter: none;
-  outline: none;
-  color: inherit;
-}
 .book-cell:disabled { cursor: default; }
 .book-cell.correct { animation: flashCorrect 0.5s ease-in-out; }
 .book-cell.wrong { animation: shakeWrong 0.5s ease-in-out; }
