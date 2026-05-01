@@ -137,16 +137,29 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     }
 
     // Tier 2: Web Share API with files
-    const file = new File([json], filename, { type: 'application/json' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file] });
-        setFeedback(t.exportSuccess || 'Exported!');
-        setTimeout(() => setFeedback(''), 2500);
-        return;
-      } catch (err) {
-        if (err.name === 'AbortError') return; // user cancelled
-        // Other errors fall through to the universal fallback.
+    //
+    // Some Android Chrome builds (notably on older/budget Samsung tablets
+    // like the Tab A8) reject `application/json` in canShare's allowlist
+    // even though the same browser version on a flagship phone accepts it.
+    // The Chromium whitelist of shareable MIME types varies by build and
+    // OS-level share-target registration. As a fallback we retry with
+    // `text/plain`, which is universally accepted across all Chromium
+    // builds. The file contents are identical (still valid JSON); only
+    // the MIME label differs. Import validates on extension + parsed
+    // content, not on MIME, so this is fully transparent to restore.
+    for (const mime of ['application/json', 'text/plain']) {
+      const file = new File([json], filename, { type: mime });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          setFeedback(t.exportSuccess || 'Exported!');
+          setTimeout(() => setFeedback(''), 2500);
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // user cancelled
+          // Other errors fall through to the universal fallback.
+          break; // don't retry with text/plain after a real share failure
+        }
       }
     }
 
