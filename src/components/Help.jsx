@@ -109,7 +109,7 @@ const helpContent = {
       },
       {
         q: 'Wat doet de Delen-knop?',
-        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app. Als je je snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset), toont het bericht ook je snelheid — bijv. "33 van 66 (10s)". Als je de snelheid tussentijds hebt aangepast, wordt de snelheid weggelaten omdat het resultaat dan een mix is van verschillende snelheden.',
+        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik heb 33 van 66 bijbelboeken beheerst (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere snelheid, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je beheerste boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je voortgang resetten via "🗑️ Voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige snelheid, dus alles wat je daarna beheerst telt voor die snelheid.',
       },
     ],
   },
@@ -219,7 +219,7 @@ const helpContent = {
       },
       {
         q: 'What does the Share button do?',
-        a: 'The Share button shares your progress as text with a link to the app. If you haven\'t changed your mastery speed since you started (or since your last reset), the message also shows your speed — e.g. "33 of 66 (10s)". If you changed the speed in between, it is left out because the result is a mix of different speeds.',
+        a: 'The Share button shares your progress as text with a link to the app — for example "I mastered 33 out of 66 Bible books (10s) in the Bible Book Finder quiz!". On phone or tablet it opens your system share sheet so you can send to WhatsApp, email, etc.; on desktop it copies the message to your clipboard so you can paste it yourself. The speed in parentheses (e.g. "(10s)") is only included if you haven\'t changed your mastery speed since you started (or since your last reset). If you switched to a different speed partway through, the speed is left out — otherwise it would be misleading, because your mastered books are then a mix of different speeds. Want the speed back in your share message? Then reset your progress via "🗑️ Reset Progress". The reset re-couples your progress to your current speed, so everything you master afterwards counts for that speed.',
       },
     ],
   },
