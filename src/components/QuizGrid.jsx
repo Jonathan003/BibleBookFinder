@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { bibleBooks, groupColors, groupNames } from '../data';
+import { bibleBooks, groupColors, groupNames, getBookDisplayName } from '../data';
 import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
 import { useTimeoutManager } from '../useTimeoutManager';
@@ -107,7 +107,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     return createScheduler(config.quiz.learningPace || 'balanced');
   }, [config.quiz.learningPace]);
 
-  const { orientation, activeColumns, useAbbreviations, useAbbreviationsLong, gridRef } = useGridLayout();
+  const { orientation, activeColumns, displayMode, gridRef } = useGridLayout();
 
   // FSRS-driven book selection
   const pickNextBook = useCallback(() => {
@@ -338,11 +338,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     const showCorrect = (feedback === 'correct' || feedback === 'slow') && isTarget;
     const isCorrectReveal = book.id === correctBookId;
     const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
-    const displayName = useAbbreviations
-      ? useAbbreviationsLong
-        ? (lang === 'nl' ? book.nlAbbrLong : book.enAbbrLong)
-        : (lang === 'nl' ? book.nlAbbr     : book.enAbbr)
-      : (lang === 'nl' ? book.nl : book.en);
+    const displayName = getBookDisplayName(book, displayMode, lang);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
@@ -470,14 +466,14 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className={`book-grid${useAbbreviations ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode !== 'full' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section">
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className={`book-grid${useAbbreviations ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode !== 'full' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

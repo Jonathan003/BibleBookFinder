@@ -2,10 +2,23 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { bibleBooks } from './data';
 import { useAppConfig } from './App';
 
-// Shared hook for orientation detection, column count, and smart abbreviations
-// extraDeps: optional array of dependencies to trigger abbreviation recheck (e.g. [started])
+// Shared hook for orientation detection, column count, and abbreviation level.
+//
+// Returns `displayMode`: one of 'full' | 'long' | 'short'.
+//   'full'  → full localized names ('Genesis', 'Numeri')
+//   'long'  → long abbreviations   ('Gen.', '1 Sam.')
+//   'short' → short abbreviations  ('Ge', '1Sa')
+//
+// The setting per orientation is one of: 'auto' | 'full' | 'long' | 'short'.
+// When set to 'auto', the cascade picks the highest level that fits in the
+// rendered cell width — measured against BOTH languages (NL and EN), so the
+// same level is chosen regardless of which language is currently active.
+// This prevents the layout from flipping between abbreviation levels when
+// the user toggles NL ↔ EN.
+//
+// extraDeps: optional dependencies to force a re-measure (e.g. [started]).
 export function useGridLayout(extraDeps = []) {
-  const { config, lang } = useAppConfig();
+  const { config } = useAppConfig();
 
   // Reactive orientation
   const [isLandscape, setIsLandscape] = useState(
@@ -25,62 +38,62 @@ export function useGridLayout(extraDeps = []) {
   }
   const activeColumns = orientation === 'landscape' ? config.grid.landscape : config.grid.portrait;
 
-  // Smart abbreviation detection
-  //
-  // We use a callback ref (not useRef) so the measurement effect re-runs
-  // when the grid element is actually attached. Consumers like QuizGrid
-  // conditionally return null before the first book is picked, so the
-  // grid doesn't exist at initial mount — a useRef would be null on the
-  // first useEffect run and never trigger a re-run when the element
-  // later appears. Callback refs fire exactly when React attaches or
-  // detaches the DOM node.
+  // Callback ref so the measurement effect re-runs when the grid element
+  // is actually attached. Consumers like QuizGrid render null before the
+  // first book is picked, so the grid element doesn't exist on initial
+  // mount — a useRef would be null on the first useEffect run and would
+  // never re-trigger when the element later appears. Callback refs fire
+  // exactly when React attaches or detaches the DOM node.
   const [gridEl, setGridEl] = useState(null);
   const gridRef = useCallback((node) => setGridEl(node), []);
-  const [autoAbbr, setAutoAbbr] = useState(false);
-  // Independent settings per orientation. Falls back to 'auto' if either
-  // is missing (e.g. very old user data that somehow skipped migration).
-  const abbrMode = orientation === 'landscape'
+
+  const setting = orientation === 'landscape'
     ? (config.display.abbreviationsLandscape || 'auto')
     : (config.display.abbreviationsPortrait  || 'auto');
 
-  const longestNameLength = useMemo(() => {
-    return bibleBooks.reduce((max, book) => {
-      const name = lang === 'nl' ? book.nl : book.en;
-      return Math.max(max, name.length);
-    }, 0);
-  }, [lang]);
+  // Longest length per level, computed across BOTH languages so the auto
+  // cascade is language-independent. If long names fit in NL but not in EN,
+  // we drop to long abbreviations everywhere — the layout never flips on
+  // language toggle.
+  const longestLengths = useMemo(() => {
+    let full = 0, long = 0, short = 0;
+    for (const book of bibleBooks) {
+      full  = Math.max(full,  book.nl.length,         book.en.length);
+      long  = Math.max(long,  book.nlAbbrLong.length, book.enAbbrLong.length);
+      short = Math.max(short, book.nlAbbr.length,     book.enAbbr.length);
+    }
+    return { full, long, short };
+  }, []);
+
+  // Auto-cascade result. Only computed/used when setting === 'auto'.
+  // Default 'short' is the safe initial value: if measurement hasn't run yet,
+  // showing short abbreviations is guaranteed to fit. Once the ResizeObserver
+  // fires (synchronously on first observe), this gets upgraded if possible.
+  const [autoMode, setAutoMode] = useState('short');
 
   useEffect(() => {
-    if (abbrMode !== 'auto' || !gridEl) return;
-    const checkFit = () => {
+    if (setting !== 'auto' || !gridEl) return;
+    const recompute = () => {
       const cellWidth = gridEl.offsetWidth / activeColumns;
+      // ~6px per character, ~16px horizontal padding. Same heuristic the
+      // previous two-level auto used; conservative on the safe side
+      // (under-estimates fit slightly, so we abbreviate a hair earlier
+      // than strictly necessary rather than overflowing).
       const maxChars = Math.floor((cellWidth - 16) / 6);
-      setAutoAbbr(longestNameLength > maxChars);
+      let next;
+      if (longestLengths.full  <= maxChars) next = 'full';
+      else if (longestLengths.long <= maxChars) next = 'long';
+      else next = 'short';
+      setAutoMode(prev => prev === next ? prev : next);
     };
-    // Measure once now — gridEl is guaranteed to be an attached DOM node
-    // because the callback ref only fires after React has committed it.
-    // ResizeObserver handles subsequent size changes (rotation, column
-    // count change, parent resize) in a single mechanism.
-    checkFit();
-    const ro = new ResizeObserver(checkFit);
+    recompute();
+    const ro = new ResizeObserver(recompute);
     ro.observe(gridEl);
     return () => ro.disconnect();
-  }, [gridEl, abbrMode, activeColumns, longestNameLength, ...extraDeps]);
+  }, [gridEl, setting, activeColumns, longestLengths, ...extraDeps]);
 
-  // Decide whether to show abbreviations:
-  //   - 'always' → yes
-  //   - 'never'  → no
-  //   - 'auto'   → yes if names don't actually fit in the cells
-  let useAbbreviations;
-  if (abbrMode === 'always') useAbbreviations = true;
-  else if (abbrMode === 'never') useAbbreviations = false;
-  else useAbbreviations = autoAbbr;
+  // Resolve final displayMode. Explicit settings bypass the cascade.
+  const displayMode = setting === 'auto' ? autoMode : setting;
 
-  // When abbreviations are shown, pick the variant that matches the
-  // orientation — short ("Ge", "1Sa") in portrait like JW Library
-  // Study Bible portrait; long ("Gen.", "1 Sam.") in landscape like
-  // JW Library Study Bible landscape.
-  const useAbbreviationsLong = useAbbreviations && orientation === 'landscape';
-
-  return { orientation, activeColumns, useAbbreviations, useAbbreviationsLong, gridRef };
+  return { orientation, activeColumns, displayMode, gridRef };
 }

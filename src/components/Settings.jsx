@@ -175,17 +175,19 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             </select>
           </SettingRow>
           <SettingRow label={t.abbreviationsPortrait || 'Afkortingen (portret)'} desc={t.abbreviationsPortraitDesc || '(rechtop)'}>
-            <select value={display.abbreviationsPortrait || 'always'} onChange={e => updateField('display', 'abbreviationsPortrait', e.target.value)} className="setting-select">
-              <option value="auto">{t.abbrAuto || 'Auto'}</option>
-              <option value="always">{t.abbrAlways || 'Altijd'}</option>
-              <option value="never">{t.abbrNever || 'Nooit'}</option>
+            <select value={display.abbreviationsPortrait || 'auto'} onChange={e => updateField('display', 'abbreviationsPortrait', e.target.value)} className="setting-select">
+              <option value="auto">{t.abbrAuto || 'Automatisch'}</option>
+              <option value="full">{t.abbrFull || 'Volle namen'}</option>
+              <option value="long">{t.abbrLong || 'Lange afkortingen'}</option>
+              <option value="short">{t.abbrShort || 'Korte afkortingen'}</option>
             </select>
           </SettingRow>
           <SettingRow label={t.abbreviationsLandscape || 'Afkortingen (liggend)'} desc={t.abbreviationsLandscapeDesc || '(gedraaid)'}>
-            <select value={display.abbreviationsLandscape || 'always'} onChange={e => updateField('display', 'abbreviationsLandscape', e.target.value)} className="setting-select">
-              <option value="auto">{t.abbrAuto || 'Auto'}</option>
-              <option value="always">{t.abbrAlways || 'Altijd'}</option>
-              <option value="never">{t.abbrNever || 'Nooit'}</option>
+            <select value={display.abbreviationsLandscape || 'auto'} onChange={e => updateField('display', 'abbreviationsLandscape', e.target.value)} className="setting-select">
+              <option value="auto">{t.abbrAuto || 'Automatisch'}</option>
+              <option value="full">{t.abbrFull || 'Volle namen'}</option>
+              <option value="long">{t.abbrLong || 'Lange afkortingen'}</option>
+              <option value="short">{t.abbrShort || 'Korte afkortingen'}</option>
             </select>
           </SettingRow>
         </>

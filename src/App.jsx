@@ -19,8 +19,8 @@ export const defaultConfig = {
   display: {
     lang: detectedLang,
     highlightFound: true,
-    abbreviationsPortrait: 'always',
-    abbreviationsLandscape: 'always',
+    abbreviationsPortrait: 'auto',
+    abbreviationsLandscape: 'auto',
   },
   study: { selectedGroups: [], bookSelection: 'focused' },
 };
@@ -48,6 +48,20 @@ export function mergeConfig(saved) {
     }
     delete display.abbreviations;
   }
+  // Migrate: old 2-state values (auto/always/never) → new 4-state values
+  // (auto/full/long/short). 'always' kept its visual meaning per orientation
+  // (short in portrait, long in landscape), so we preserve that exact look:
+  //   portrait  'always' → 'short'
+  //   landscape 'always' → 'long'
+  //   any       'never'  → 'full'   (force full names — same as before)
+  // Already-new values pass through unchanged.
+  const migrateAbbr = (value, orientation) => {
+    if (value === 'always') return orientation === 'landscape' ? 'long' : 'short';
+    if (value === 'never')  return 'full';
+    return value;
+  };
+  display.abbreviationsPortrait  = migrateAbbr(display.abbreviationsPortrait,  'portrait');
+  display.abbreviationsLandscape = migrateAbbr(display.abbreviationsLandscape, 'landscape');
   return {
     grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
     quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },

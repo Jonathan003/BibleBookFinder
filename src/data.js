@@ -120,6 +120,18 @@ export const groupNames = {
   }
 };
 
+// Pick the right book name string for a given displayMode + language.
+// Modes:
+//   'full'  → full localized name (e.g. 'Genesis', 'Numeri')
+//   'long'  → long abbreviation  (e.g. 'Gen.', '1 Sam.')
+//   'short' → short abbreviation (e.g. 'Ge', '1Sa')
+// Falls back to full name if displayMode is unknown.
+export function getBookDisplayName(book, displayMode, lang) {
+  if (displayMode === 'short') return lang === 'nl' ? book.nlAbbr     : book.enAbbr;
+  if (displayMode === 'long')  return lang === 'nl' ? book.nlAbbrLong : book.enAbbrLong;
+  return lang === 'nl' ? book.nl : book.en;
+}
+
 export const translations = {
   nl: {
     title: 'Bijbelboek Zoeker',
@@ -197,8 +209,9 @@ export const translations = {
     abbreviationsLandscape: 'Afkortingen (liggend)',
     abbreviationsLandscapeDesc: '(gedraaid)',
     abbrAuto: 'Automatisch',
-    abbrAlways: 'Altijd',
-    abbrNever: 'Nooit',
+    abbrFull: 'Volle namen',
+    abbrLong: 'Lange afkortingen',
+    abbrShort: 'Korte afkortingen',
     learningPace: 'Leertempo',
     learningPaceDesc: '',
     paceRelaxed: 'Ontspannen',
@@ -312,9 +325,10 @@ export const translations = {
     abbreviationsPortraitDesc: '(upright)',
     abbreviationsLandscape: 'Abbreviations (landscape)',
     abbreviationsLandscapeDesc: '(rotated)',
-    abbrAuto: 'Auto',
-    abbrAlways: 'Always',
-    abbrNever: 'Never',
+    abbrAuto: 'Automatic',
+    abbrFull: 'Full names',
+    abbrLong: 'Long abbreviations',
+    abbrShort: 'Short abbreviations',
     learningPace: 'Learning pace',
     learningPaceDesc: '',
     paceRelaxed: 'Relaxed',
