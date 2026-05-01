@@ -23,6 +23,10 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   // an extra warning line.
   const [pendingImport, setPendingImport] = useState(null);
 
+  // Hidden <input type="file"> ref. Used by the import flow as a fallback
+  // when showOpenFilePicker is unavailable (Safari, Firefox) or fails.
+  const fileInputRef = useRef(null);
+
   // Persist on settings change, without coupling state updates to side
   // effects (which would double-fire under strict mode). `shouldSaveRef`
   // marks updates that came from user interaction; mount and import-
@@ -85,9 +89,55 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     };
     const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;
     const json = JSON.stringify(exportData, null, 2);
-    const file = new File([json], filename, { type: 'application/json' });
+    const blob = new Blob([json], { type: 'application/json' });
 
-    // Mobile: use native share sheet (reliable on iOS Safari / PWA)
+    // Three-tier export, in order of UX quality:
+    //
+    //   1. File System Access API (Chrome/Edge desktop, Chrome Android)
+    //      — best UX: native Save As dialog where the user navigates freely
+    //      to any folder (incl. OneDrive, Google Drive Desktop, Dropbox if
+    //      installed locally). Browser handles overwrite confirmation. No
+    //      "(1)" duplicates.
+    //
+    //   2. Web Share API with files (Safari iOS/iPadOS, Chrome Android as
+    //      alternative path) — opens the system share sheet, where the user
+    //      picks "Save to Files" / "Save to Drive" / "Save to OneDrive" /
+    //      etc. depending on installed apps. Each app handles overwrite.
+    //
+    //   3. Anchor download (Firefox, older browsers, fallback) — file goes
+    //      to the browser's default Downloads folder. Browser may auto-
+    //      append "(1)" on duplicates; not under our control.
+    //
+    // Each tier honours user cancellation (AbortError) without falling
+    // through — falling through would surprise the user with a download
+    // they explicitly cancelled. Only technical failures fall through.
+
+    // Tier 1: File System Access API
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'BibleBookFinder backup',
+            accept: { 'application/json': ['.json'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setFeedback(t.exportSuccess || 'Exported!');
+        setTimeout(() => setFeedback(''), 2500);
+        return;
+      } catch (err) {
+        // User cancelled the Save As dialog — respect that, do nothing.
+        if (err.name === 'AbortError') return;
+        // Other errors (e.g. permission denied, write failure) fall through
+        // to the next tier so the user still gets their backup somehow.
+      }
+    }
+
+    // Tier 2: Web Share API with files
+    const file = new File([json], filename, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
@@ -96,11 +146,11 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         return;
       } catch (err) {
         if (err.name === 'AbortError') return; // user cancelled
+        // Other errors fall through to the universal fallback.
       }
     }
 
-    // Desktop fallback: blob download
-    const blob = new Blob([json], { type: 'application/json' });
+    // Tier 3: Anchor download (universal fallback)
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -113,9 +163,9 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     setTimeout(() => setFeedback(''), 2500);
   };
 
-  const handleImport = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Parse and stage a backup file for import. Used by both the modern
+  // showOpenFilePicker path and the legacy <input type="file"> path.
+  const stagePendingImport = (file) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
@@ -138,6 +188,53 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       }
     };
     reader.readAsText(file);
+  };
+
+  // Two-tier import, mirroring the export's three-tier structure:
+  //
+  //   1. File System Access API (Chrome/Edge desktop, Chrome Android)
+  //      — opens a native Open dialog where the user navigates freely
+  //      to any folder, including cloud-synced ones. Same UX as desktop
+  //      software.
+  //
+  //   2. <input type="file"> (universal fallback) — works in every
+  //      browser including Safari iOS, Firefox, etc. The OS handles
+  //      navigation through its own file picker.
+  //
+  // Note: there is no "Web Share API" tier for import, because Web Share
+  // is one-way (sharing OUT, not reading IN). Mobile users go through
+  // the legacy <input type="file"> path, which on iOS opens the Files
+  // app and on Android opens the storage access framework — both fine.
+  const handleImportClick = async () => {
+    // Tier 1: File System Access API
+    if ('showOpenFilePicker' in window) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{
+            description: 'BibleBookFinder backup',
+            accept: { 'application/json': ['.json'] },
+          }],
+          multiple: false,
+        });
+        const file = await handle.getFile();
+        stagePendingImport(file);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user cancelled
+        // Other errors fall through to the legacy path.
+      }
+    }
+
+    // Tier 2: programmatically click the hidden <input type="file">.
+    fileInputRef.current?.click();
+  };
+
+  // Legacy <input type="file"> change handler — used when the modern
+  // API is unavailable or fails. Reads the chosen file and stages it
+  // for import via the same code path as the modern API.
+  const handleFileInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) stagePendingImport(file);
     e.target.value = '';
   };
 
@@ -277,10 +374,16 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         <p className="settings-desc">{t.dataDesc || 'Exporteer of importeer jouw persoonlijke voortgang en instellingen.'}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <button className="btn-data btn-export" onClick={handleExport}>{t.exportBtn || 'Exporteer voortgang'}</button>
-          <label className="btn-data btn-import">
+          <button className="btn-data btn-import" onClick={handleImportClick}>
             {t.importBtn || 'Importeer voortgang'}
-            <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
-          </label>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+          />
           {feedback && <p className="data-feedback">{feedback}</p>}
           {!pendingImport && (
             <p className="data-warning">{t.importWarning || '⚠️ Importeren overschrijft jouw huidige voortgang en instellingen.'}</p>

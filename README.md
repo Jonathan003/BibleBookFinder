@@ -12,7 +12,7 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 
 **Your data**
 - **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
-- **Backup & restore** — JSON export/import of progress and personal preferences. Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
+- **Backup & restore** — JSON export/import with free choice of save location (any cloud drive or local folder). Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
 - **Bilingual** — Dutch and English, auto-detected from browser language
 
 **Display**
