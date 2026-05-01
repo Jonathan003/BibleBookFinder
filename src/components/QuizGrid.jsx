@@ -3,6 +3,7 @@ import { bibleBooks, groupColors, groupNames } from '../data';
 import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
 import { useTimeoutManager } from '../useTimeoutManager';
+import DebugOverlay from './DebugOverlay';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
@@ -358,18 +359,32 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
 
     const showMasteryLine = config.display.highlightFound && bookIsMastered;
 
+    const isDisabled = feedbackRef.current && book.id !== correctBookId;
     return (
-      <button
+      // EXPERIMENT: Using <div role="button"> instead of <button> to test
+      // if Samsung's One UI 6.1+ system-level "last-tapped button"
+      // highlight is button-element-specific. Per DeepSeek's hypothesis.
+      // Accessibility preserved via tabIndex + role + onKeyDown.
+      <div
         key={book.id}
+        role="button"
+        tabIndex={isDisabled ? -1 : 0}
+        aria-disabled={isDisabled}
         className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
-        style={{ backgroundColor: bgColor }}
+        style={{ backgroundColor: bgColor, ...(isDisabled ? { pointerEvents: 'none' } : {}) }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}
-        onClick={() => handleBookClick(book)}
-        disabled={feedbackRef.current && book.id !== correctBookId}
+        onClick={() => !isDisabled && handleBookClick(book)}
+        onKeyDown={(e) => {
+          if (isDisabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleBookClick(book);
+          }
+        }}
       >
         <span className="book-name">{displayName}</span>
-      </button>
+      </div>
     );
   };
 
@@ -482,6 +497,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
           </div>
         </div>
       </div>
+      <DebugOverlay feedback={feedback} correctBookId={correctBookId} />
     </div>
   );
 }

@@ -369,6 +369,12 @@
   min-height: clamp(44px, 7vw, 56px);
   border: none;
   cursor: pointer;
+  /* Force GPU layer promotion. On Samsung One UI 6.1+, tapped buttons
+     get a system-level visual overlay that persists until another button
+     is tapped. By promoting cells to their own compositor layer, the
+     overlay may not apply (or apply differently). Experimental fix per
+     Qwen's hypothesis. */
+  will-change: transform;
 }
 
 /* Square cells in portrait — but ONLY when abbreviations are shown.
@@ -392,8 +398,9 @@
   }
 }
 
-.book-cell:hover:not(:disabled) { filter: brightness(0.85); }
-.book-cell:disabled { cursor: default; }
+.book-cell:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(0.85); }
+.book-cell:disabled,
+.book-cell[aria-disabled="true"] { cursor: default; }
 .book-cell.correct { animation: flashCorrect 0.5s ease-in-out; }
 .book-cell.wrong { animation: shakeWrong 0.5s ease-in-out; }
 .book-cell.slow { animation: flashWrong 0.4s; }
