@@ -466,14 +466,14 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       <div className="quiz-bottom" ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className={`book-grid${displayMode !== 'full' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section">
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className={`book-grid${displayMode !== 'full' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

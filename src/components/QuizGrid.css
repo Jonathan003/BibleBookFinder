@@ -371,12 +371,13 @@
   cursor: pointer;
 }
 
-/* Square cells in portrait — but ONLY when abbreviations are shown.
-   Matches the JW Library Study Bible look. With full names, square
-   cells would force ugly multi-line stacking ("Deuter / onomy"), so
-   we keep rectangular cells whenever names need horizontal space.
-   The .using-abbreviations class is added by Quiz/StudyGrid when
-   useGridLayout decides abbreviations should be shown.
+/* Square cells in portrait — but ONLY when SHORT abbreviations are shown.
+   Matches the JW Library Study Bible portrait look. With longer text
+   (full names like "Deuteronomium" OR long abbreviations like "Klaagl.")
+   square cells force ugly multi-line stacking where the trailing period
+   ends up alone on a second row. So we keep rectangular cells whenever
+   names need horizontal space. The .using-abbreviations class is added
+   by Quiz/StudyGrid only when displayMode === 'short'.
    Text alignment is inherited from the base .book-cell rule:
    horizontal start (left), vertical center — exactly matching JW
    Library. Horizontal padding scales with viewport so small phones
