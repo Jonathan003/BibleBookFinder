@@ -329,6 +329,18 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const otBooks = bibleBooks.filter(b => b.testament === 'OT');
   const ntBooks = bibleBooks.filter(b => b.testament === 'NT');
 
+  // In side-by-side mode, force both grids to use the SAME number of rows
+  // so cells are the same height across testaments (matches JW Library Study
+  // Bible look, where every cell is the same size regardless of which side
+  // it sits on). The shorter testament — typically NT with 9 rows vs OT's 10
+  // — ends up with empty rows at the bottom, which is the desired behavior.
+  // Without this, `grid-auto-rows: 1fr` makes each grid divide its parent
+  // height by its own row count, so NT cells become taller than OT cells.
+  const otRows = Math.ceil(otBooks.length / otColumns);
+  const ntRows = Math.ceil(ntBooks.length / ntColumns);
+  const maxRows = Math.max(otRows, ntRows);
+  const sideBySideRows = testamentsLayout === 'sideBySide' ? `repeat(${maxRows}, 1fr)` : undefined;
+
   const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
 
   // Stats for display
@@ -467,16 +479,16 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       )}
 
       <div className={`quiz-bottom${testamentsLayout === 'sideBySide' ? ' testaments-side-by-side' : ''}`} ref={scrollRef}>
-        <div className="section">
+        <div className="section" style={testamentsLayout === 'sideBySide' ? { flex: otColumns } : undefined}>
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${otColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${otColumns}, 1fr)`, gridTemplateRows: sideBySideRows }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
-        <div className="section">
+        <div className="section" style={testamentsLayout === 'sideBySide' ? { flex: ntColumns } : undefined}>
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${ntColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${ntColumns}, 1fr)`, gridTemplateRows: sideBySideRows }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

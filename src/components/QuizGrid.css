@@ -341,22 +341,27 @@
 
 /* OT/NT side-by-side layout (JW Library Study Bible landscape style).
    Activated by useGridLayout when display.testamentsLayout === 'sideBySide'
-   AND orientation === 'landscape'. The container becomes a horizontal
-   flex row with each .section taking equal share of the width. We disable
-   vertical scrolling on the container because in this mode both halves
-   should fit on one screen — auto-scroll is also skipped in JS, so there's
-   no need for the overflow-y. min-width: 0 on the children allows them to
-   shrink below their content width, which is required for grid cells to
-   resize down rather than overflow. */
+   AND orientation === 'landscape'. The container becomes a horizontal flex
+   row. Each .section receives an inline `flex: ${columnCount}` from the
+   component, so OT (4 cols) gets 4/7 of the width and NT (3 cols) gets 3/7
+   — making cells the same WIDTH across testaments instead of the same
+   section width (which would make NT cells 4/3× wider than OT cells).
+   The components also pass `grid-template-rows: repeat(maxRows, 1fr)` to
+   both grids so cells are the same HEIGHT too. End result: every cell is
+   the same size on both halves, matching JW Library exactly.
+   We disable vertical scrolling on the container because in this mode both
+   halves fit on one screen — auto-scroll is also skipped in JS. min-width:
+   0 on children allows them to shrink below their content width, which is
+   required for grid cells to resize down rather than overflow. */
 .quiz-bottom.testaments-side-by-side {
   display: flex;
   flex-direction: row;
-  gap: 0.75rem;
+  gap: 1.5rem;
   overflow-y: hidden;
 }
 
 .quiz-bottom.testaments-side-by-side .section {
-  flex: 1;
+  /* flex value comes from inline style: flex: otColumns / ntColumns. */
   min-width: 0;
   margin-bottom: 0;
   display: flex;
