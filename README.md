@@ -10,10 +10,11 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 - **Study Mode** — Group-based practice, no timer, focused or random book selection
 - **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
 - **Bilingual** — Dutch and English, auto-detected from browser language
-- **Backup & restore** — Full JSON export/import of all user data
+- **Backup & restore** — JSON export/import of progress and personal preferences. Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
 - **In-app help** — Getting started guide, recommended approach, and FAQ accordion
 - **PWA** — Installable on Android, iOS, and desktop, works offline
 - **Responsive** — Portrait and landscape with smart abbreviation switching
+- **OT/NT layout** — Landscape mode supports stacked (default) or side-by-side testaments (JW Library Study Bible style), with independent column counts per testament
 - **Colorblind-safe** — Blue (#3B82F6) for correct, orange (#F97316) for wrong
 
 ## Getting started

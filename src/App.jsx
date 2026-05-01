@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, createContext, useContext } from 'rea
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats } from './fsrs';
+import { applyDeviceScoped } from './settingsScope';
 import { InitialAvatar } from './components/Icons';
 import UserSelect from './components/UserSelect';
 import StudyGrid from './components/StudyGrid';
@@ -14,13 +15,26 @@ import './App.css';
 const detectedLang = typeof navigator !== 'undefined' && navigator.language?.startsWith('nl') ? 'nl' : 'en';
 
 export const defaultConfig = {
-  grid: { portrait: 6, landscape: 5, orientation: 'auto' },
+  grid: {
+    portrait: 6,
+    landscape: 5,
+    orientation: 'auto',
+    // Used only when display.testamentsLayout === 'sideBySide' (landscape).
+    // Defaults mirror JW Library Study Bible landscape: 4 OT columns, 3 NT.
+    landscapeSideBySideOT: 4,
+    landscapeSideBySideNT: 3,
+  },
   quiz: { masteryMs: 10000, learningPace: 'intensive', autoScroll: true },
   display: {
     lang: detectedLang,
     highlightFound: true,
     abbreviationsPortrait: 'auto',
     abbreviationsLandscape: 'auto',
+    // 'stacked' (current behavior — OT above NT) or 'sideBySide' (JW Library
+    // landscape look — OT and NT next to each other). Only meaningful in
+    // landscape; portrait is always stacked because there's no horizontal
+    // room for two halves.
+    testamentsLayout: 'stacked',
   },
   study: { selectedGroups: [], bookSelection: 'focused' },
 };
@@ -324,7 +338,15 @@ function App() {
 
   const handleRestore = (userData) => {
     if (!currentUser || !userData) return;
-    const restoredConfig = mergeConfig(userData.settings);
+    // Run incoming settings through mergeConfig so legacy field shapes get
+    // migrated, then overlay device-scoped fields from the CURRENT device.
+    // This is the "Anki-style" split: collection + user prefs come from the
+    // backup; device prefs (column counts, abbreviation modes, OT/NT layout,
+    // autoScroll) stay local. Same logic handles backups from this device,
+    // backups from another device, and cross-user imports — the receiving
+    // device always keeps its own screen-related settings.
+    const incoming = mergeConfig(userData.settings);
+    const restoredConfig = applyDeviceScoped(incoming, config);
     updateUserData({
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],

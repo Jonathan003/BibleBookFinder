@@ -52,7 +52,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     return () => window.removeEventListener('resize', measure);
   }, [targetBook]);
 
-  const { orientation, activeColumns, displayMode, gridRef } = useGridLayout([started]);
+  const { orientation, testamentsLayout, otColumns, ntColumns, displayMode, gridRef } = useGridLayout([started]);
 
   const pickRandomBook = useCallback(() => {
     feedbackRef.current = false;
@@ -85,7 +85,9 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
     setHintVisible(false);
     setFeedback(null);
     setCorrectBookId(null);
-    if (config.quiz.autoScroll !== false) {
+    // In sideBySide both testaments are visible at once — no need (and not
+    // helpful) to scroll between OT-top and NT-bottom.
+    if (config.quiz.autoScroll !== false && testamentsLayout !== 'sideBySide') {
       // OT book: scroll to top, NT book: scroll to bottom
       schedule(() => {
         const el = scrollRef.current;
@@ -100,7 +102,7 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
       scrollRef.current?.scrollTo(0, 0);
       window.scrollTo(0, 0);
     }
-  }, [selectedGroups, config.quiz.autoScroll]);
+  }, [selectedGroups, config.quiz.autoScroll, testamentsLayout]);
 
   // Latest-ref pattern: effects and timeouts always call the current
   // pickRandomBook without needing it as a dependency (avoids stale closures)
@@ -308,17 +310,17 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
         )}
       </div>
 
-      <div className="quiz-bottom" ref={scrollRef}>
+      <div className={`quiz-bottom${testamentsLayout === 'sideBySide' ? ' testaments-side-by-side' : ''}`} ref={scrollRef}>
         <div className="section">
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${otColumns}, 1fr)` }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section">
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${activeColumns}, 1fr)` }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${ntColumns}, 1fr)` }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

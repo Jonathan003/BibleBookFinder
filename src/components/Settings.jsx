@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { stripDeviceScoped } from '../settingsScope';
 import './Settings.css';
 
 export default function Settings({ config, onSave, onBack, currentUser, onRestore }) {
@@ -56,9 +57,19 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
 
   const handleExport = async () => {
     if (!currentUser) return;
+    // Strip device-scoped settings (column counts, abbreviation modes,
+    // OT/NT layout, autoScroll) so the backup is portable across devices.
+    // Each device keeps its own screen-related preferences. See
+    // src/settingsScope.js for the canonical list.
+    const portableSettings = stripDeviceScoped({
+      grid: config.grid,
+      quiz: config.quiz,
+      display: config.display,
+      study: config.study,
+    });
     const exportData = {
       app: 'BibleBookFinder',
-      version: '2.0',
+      version: '3.0',
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -66,12 +77,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         bestStreak: currentUser.bestStreak || 0,
         quizHistory: currentUser.quizHistory || [],
         fsrsCards: currentUser.fsrsCards || {},
-        settings: {
-          grid: config.grid,
-          quiz: config.quiz,
-          display: config.display,
-          study: config.study,
-        },
+        settings: portableSettings,
         bestTimes: currentUser.bestTimes || {},
         lastActive: currentUser.lastActive || 0,
         masteryMsAtStart: currentUser.masteryMsAtStart || null,
@@ -157,6 +163,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
 
   const renderTabContent = () => {
     if (activeTab === 'grid') {
+      const isSideBySide = display.testamentsLayout === 'sideBySide';
       return (
         <>
           <h3>{t.gridTitle || 'Raster'}</h3>
@@ -164,9 +171,27 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.portrait || 'Portret'} desc={t.portraitDesc || '(rechtop)'}>
             <NumberInput value={grid.portrait} min={3} max={11} onChange={v => updateField('grid', 'portrait', v)} />
           </SettingRow>
-          <SettingRow label={t.landscape || 'Liggend'} desc={t.landscapeDesc || '(gedraaid)'}>
-            <NumberInput value={grid.landscape} min={3} max={11} onChange={v => updateField('grid', 'landscape', v)} />
+          <SettingRow label={t.testamentsLayout || 'OT/NT layout (liggend)'} desc={t.testamentsLayoutDesc || '(naast of onder elkaar)'}>
+            <select value={display.testamentsLayout || 'stacked'} onChange={e => updateField('display', 'testamentsLayout', e.target.value)} className="setting-select">
+              <option value="stacked">{t.layoutStacked || 'Onder elkaar'}</option>
+              <option value="sideBySide">{t.layoutSideBySide || 'Naast elkaar'}</option>
+            </select>
           </SettingRow>
+          {!isSideBySide && (
+            <SettingRow label={t.landscape || 'Liggend'} desc={t.landscapeDesc || '(gedraaid)'}>
+              <NumberInput value={grid.landscape} min={3} max={11} onChange={v => updateField('grid', 'landscape', v)} />
+            </SettingRow>
+          )}
+          {isSideBySide && (
+            <>
+              <SettingRow label={t.landscapeOT || 'Liggend OT'} desc={t.landscapeOTDesc || '(kolommen voor Hebreeuws-Aramees)'}>
+                <NumberInput value={grid.landscapeSideBySideOT ?? 4} min={2} max={8} onChange={v => updateField('grid', 'landscapeSideBySideOT', v)} />
+              </SettingRow>
+              <SettingRow label={t.landscapeNT || 'Liggend NT'} desc={t.landscapeNTDesc || '(kolommen voor Christelijk Grieks)'}>
+                <NumberInput value={grid.landscapeSideBySideNT ?? 3} min={2} max={8} onChange={v => updateField('grid', 'landscapeSideBySideNT', v)} />
+              </SettingRow>
+            </>
+          )}
           <SettingRow label={t.orientation || 'Schermstand'} desc={t.orientationDesc || '(forceer of auto)'}>
             <select value={grid.orientation} onChange={e => updateField('grid', 'orientation', e.target.value)} className="setting-select">
               <option value="auto">{t.auto || 'Automatisch'}</option>
