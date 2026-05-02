@@ -401,7 +401,15 @@
   transition: background-color 0.15s;
   position: relative;
   overflow: hidden;
-  padding: clamp(6px, 1.5vw, 12px) clamp(8px, 1.5vw, 14px);
+  /* Horizontal padding is intentionally tight so full names fit on
+     small/medium screens. At 800px viewport (e.g. tablet portrait):
+     0.8vw = 6.4px per side → 120px available in a 133px cell, enough
+     for "1 Thessalonicenzen" (~117px in font). At 1280px+: caps at 12px
+     per side, plenty of breathing room on big screens. The .using-
+     abbreviations override below restores roomier padding for the
+     square-cells-with-short-abbreviations portrait look (JW Library
+     Study Bible style). */
+  padding: clamp(6px, 1.5vw, 12px) clamp(4px, 0.8vw, 12px);
   min-height: clamp(44px, 7vw, 56px);
   border: none;
   cursor: pointer;

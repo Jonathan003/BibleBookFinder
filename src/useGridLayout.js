@@ -161,7 +161,19 @@ export function useGridLayout(extraDeps = []) {
     const ro = new ResizeObserver(recompute);
     ro.observe(gridEl);
     return () => ro.disconnect();
-  }, [gridEl, setting, measuredColumns, longestStrings, ...extraDeps]);
+    // autoMode is in deps so the effect re-runs after each cascade decision.
+    // This handles a subtle padding-mismatch bug in portrait: when autoMode
+    // is 'short', the .using-abbreviations CSS rule kicks in (only in
+    // portrait) and applies bigger padding to cells. We measure with that
+    // bigger padding and decide e.g. 'long'. After re-render, the class is
+    // gone, padding shrinks, MORE room is available for text — but
+    // ResizeObserver does NOT fire because gridEl's own size didn't change
+    // (only cell-internal padding did). Without re-measuring, we'd be stuck
+    // on 'long' even though 'full' would now fit. The setAutoMode bail-out
+    // (`prev === next ? prev : next`) prevents infinite loops: once the
+    // cascade reaches a stable level, the same `next` is re-derived and no
+    // state update fires. Convergence happens in at most 2-3 iterations.
+  }, [gridEl, setting, measuredColumns, longestStrings, autoMode, ...extraDeps]);
 
   // Resolve final displayMode. Explicit settings bypass the cascade.
   const displayMode = setting === 'auto' ? autoMode : setting;
