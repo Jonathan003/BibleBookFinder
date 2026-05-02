@@ -160,41 +160,47 @@ export function useGridLayout(extraDeps = []) {
           widestSegment(book.nlAbbr),     widestSegment(book.enAbbr));
       }
 
-      // 2-line threshold. CSS allows up to 2 lines per cell
+      // 2-line threshold for landscape. CSS allows up to 2 lines per cell
       // (-webkit-line-clamp: 2), so a segment fits as long as its width
       // ≤ 2 × available. Browser wraps at spaces preferentially via
       // overflow-wrap; the few segments wider than `available` itself
-      // get broken mid-word as a fallback. This is much more permissive
-      // than the previous strict-single-line check, which forced
-      // landscape S22+ down to 'long' just because "Thessalonicenzen"
-      // was 1-2px over the single-line budget.
+      // get broken mid-word as a fallback. Used in landscape to permit
+      // 'full' mode even when one or two outliers ("Thessalonicenzen")
+      // need to wrap.
       const fits = (segPx) => segPx <= 2 * available;
 
-      // Cascade order depends on orientation:
+      // Cascade per orientation:
       //
-      // PORTRAIT — full → short, skipping 'long' on purpose.
-      //   In portrait, 'short' mode triggers .using-abbreviations CSS,
-      //   which makes cells square (aspect-ratio: 1/1) — the JW Library
-      //   Study Bible look the user wants on phones. 'long' mode in
-      //   portrait gives rectangular cells with text like "Klaagl." or
-      //   "1 Chron." — neither the clean square look NOR the full names.
-      //   Skipping 'long' means: if 'full' fits (tablet portrait), use it;
-      //   otherwise fall back to 'short' (phone portrait → square cells).
+      // PORTRAIT — width-based heuristic, NOT canvas measurement.
+      //   Phones (< 600 CSS px) get 'short' for the JW Library
+      //   square-cell aesthetic; tablets and larger get 'full'.
+      //   We can't reliably measure-cascade in portrait because the
+      //   .using-abbreviations CSS rule applies bigger padding when
+      //   'short' is selected, which makes 'full' appear unfittable
+      //   even on tablets where it would fit perfectly with the
+      //   smaller padding 'full' itself uses. The viewport width
+      //   isn't subject to that feedback loop, so a hard threshold
+      //   gives stable, predictable results across rotations.
       //
-      //   This also fixes the rotation hysteresis bug: previously, after
-      //   landscape→portrait, 'long' would persist because the smaller
-      //   non-using-abbreviations padding made 'long' fit comfortably.
-      //   With 'long' skipped in portrait, cascade settles correctly.
+      //   Why 600px? Below that, cells in 6-col stacked layout are
+      //   too narrow (≤ ~95 px content) for the longest names like
+      //   "Thessalonicenzen"; above that, they comfortably fit.
+      //   It also matches the typical phone/tablet split: phones
+      //   max out around 430px portrait, smallest tablets start at
+      //   ~600 (e.g. 7" tablets), most at 768+.
       //
-      // LANDSCAPE — full → long → short.
+      // LANDSCAPE — measurement-based cascade with 2-line allowance.
       //   No .using-abbreviations engagement (the CSS is portrait-only),
-      //   cells are rectangular regardless of mode. All three levels
-      //   look fine; pick the most informative one that fits.
+      //   so padding stays consistent and measurement is reliable.
+      //   Pick the most informative level whose widest segment fits
+      //   in 2 lines.
       let next;
       if (orientation === 'portrait') {
-        next = fits(fullMax) ? 'full' : 'short';
+        next = window.innerWidth < 600 ? 'short' : 'full';
       } else {
-        next = fits(fullMax) ? 'full' : fits(longMax) ? 'long' : 'short';
+        next = fits(fullMax) ? 'full'
+             : fits(longMax) ? 'long'
+             : 'short';
       }
 
       setAutoMode(prev => prev === next ? prev : next);

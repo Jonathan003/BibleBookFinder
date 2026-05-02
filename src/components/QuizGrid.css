@@ -388,14 +388,26 @@
      rows) become taller than OT cells (10 rows) since same H ÷ different
      N = unequal sizes. */
 
-  /* Fixed row height. clamp(60px, 6vw, 72px) covers:
-       - min 60px: enough for 2-line wrap (32px text @ 0.85rem×1.2 line-height
-         + 24px max padding = 56px content; 4px buffer for descenders)
-       - 6vw: scales with viewport so big screens get slightly larger cells
-       - max 72px: prevents cells from looking stretched on desktop/4K
-     This OVERRIDES the global `.book-grid { grid-auto-rows: 1fr }` (used
-     by stacked layouts where 1fr is correct since there's only one grid). */
-  grid-auto-rows: clamp(60px, 6vw, 72px);
+  /* Match cell height to STACKED layout's cell height. Stacked cells are
+     sized by .book-cell's min-height: clamp(44px, 7vw, 56px), so reusing
+     the same formula here gives identical row heights on the same
+     viewport. The previous clamp(48, 5vw, 56) gave 48px cells at 915
+     viewport while stacked gave 56px → visual mismatch when toggling
+     layouts. This OVERRIDES the global `.book-grid { grid-auto-rows: 1fr }`
+     (which would size each row by content, giving different heights for
+     1-line vs 2-line cells, breaking OT/NT uniformity). */
+  grid-auto-rows: clamp(44px, 7vw, 56px);
+}
+
+/* Tighten vertical padding inside side-by-side cells so 2-line content
+   ("1 Thessalonians" → "1" / "Thessalonians") fits comfortably in the
+   shrunk row height above. Horizontal padding is inherited from the
+   base .book-cell rule, so canvas-cascade text-width measurements stay
+   accurate. Without this override, base padding (up to 12px each side)
+   would push 2-line content over the 48px floor. */
+.quiz-bottom.testaments-side-by-side .book-cell {
+  padding-top:    clamp(4px, 0.7vw, 6px);
+  padding-bottom: clamp(4px, 0.7vw, 6px);
 }
 
 .section {
@@ -413,6 +425,9 @@
 
 .book-grid {
   display: grid;
+  /* Original tight gap — restored after experiment with 0.3rem made
+     portrait cells feel too separated. Landscape side-by-side adds an
+     explicit row-gap override below for distinct rows there only. */
   gap: 0.15rem;
   grid-auto-rows: 1fr;
 }
