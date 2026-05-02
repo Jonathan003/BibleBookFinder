@@ -157,13 +157,9 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
   const otBooks = bibleBooks.filter(b => b.testament === 'OT');
   const ntBooks = bibleBooks.filter(b => b.testament === 'NT');
 
-  // In side-by-side mode, force both grids to use the SAME number of rows so
-  // cells are the same height across testaments — see QuizGrid.jsx for details.
-  const otRows = Math.ceil(otBooks.length / otColumns);
-  const ntRows = Math.ceil(ntBooks.length / ntColumns);
-  const maxRows = Math.max(otRows, ntRows);
-  const sideBySideRows = testamentsLayout === 'sideBySide' ? `repeat(${maxRows}, 1fr)` : undefined;
-
+  // No forced row sizing in side-by-side; cells use natural height — see
+  // QuizGrid.jsx for the full reasoning. Rows containing wrap-prone names
+  // grow; everything else stays at min-height clamp.
   const hintGroup = groupNames[lang]?.[targetBook?.group] || '';
 
   const toggleGroup = (groupId) => {
@@ -320,14 +316,14 @@ export default function StudyGrid({ savedGroups, onSaveGroups, onBack, fsrsCards
       <div className={`quiz-bottom${testamentsLayout === 'sideBySide' ? ' testaments-side-by-side' : ''}`} ref={scrollRef}>
         <div className="section" style={testamentsLayout === 'sideBySide' ? { flex: otColumns } : undefined}>
           <h3 className="section-title">{t.hebrewSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${otColumns}, 1fr)`, gridTemplateRows: sideBySideRows }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} ref={gridRef} style={{ gridTemplateColumns: `repeat(${otColumns}, 1fr)` }}>
             {otBooks.map(renderBookCell)}
           </div>
         </div>
 
         <div className="section" style={testamentsLayout === 'sideBySide' ? { flex: ntColumns } : undefined}>
           <h3 className="section-title">{t.greekSection}</h3>
-          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${ntColumns}, 1fr)`, gridTemplateRows: sideBySideRows }}>
+          <div className={`book-grid${displayMode === 'short' ? ' using-abbreviations' : ''}`} style={{ gridTemplateColumns: `repeat(${ntColumns}, 1fr)` }}>
             {ntBooks.map(renderBookCell)}
           </div>
         </div>

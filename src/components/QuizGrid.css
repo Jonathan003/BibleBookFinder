@@ -361,6 +361,14 @@
   flex-direction: row;
   gap: 1.5rem;
   overflow-y: auto;
+  /* Sections take their natural height — don't stretch to match the
+     tallest sibling. Without this, NT-section (9 rows of content) gets
+     stretched to OT-section's height (10 rows), creating empty space
+     below NT or distributing it among NT cells (depending on align-content).
+     With flex-start, OT-section is naturally taller than NT-section by
+     exactly 1 row-height. NT ends above OT vertically — exactly what
+     JW Library Study Bible does. */
+  align-items: flex-start;
 }
 
 .quiz-bottom.testaments-side-by-side .section {
@@ -372,7 +380,22 @@
 }
 
 .quiz-bottom.testaments-side-by-side .section .book-grid {
-  flex: 1;
+  /* No flex: 1 — let the grid take its natural height (sum of fixed-height
+     rows). Combined with align-items: flex-start above, this ensures both
+     grids have cells of IDENTICAL height regardless of their row counts.
+     With flex:1, the grid would stretch to section height, and grid-auto-
+     rows: 1fr would then divide that height by row count → NT cells (9
+     rows) become taller than OT cells (10 rows) since same H ÷ different
+     N = unequal sizes. */
+
+  /* Fixed row height. clamp(60px, 6vw, 72px) covers:
+       - min 60px: enough for 2-line wrap (32px text @ 0.85rem×1.2 line-height
+         + 24px max padding = 56px content; 4px buffer for descenders)
+       - 6vw: scales with viewport so big screens get slightly larger cells
+       - max 72px: prevents cells from looking stretched on desktop/4K
+     This OVERRIDES the global `.book-grid { grid-auto-rows: 1fr }` (used
+     by stacked layouts where 1fr is correct since there's only one grid). */
+  grid-auto-rows: clamp(60px, 6vw, 72px);
 }
 
 .section {
@@ -478,7 +501,11 @@
   font-weight: 500;
   text-align: left;
   line-height: 1.2;
-  word-break: break-word;
+  /* overflow-wrap (not word-break) so multi-word names wrap at spaces by
+     preference: "1 Thessalonicenzen" → "1" / "Thessalonicenzen". The
+     widest-segment cascade in useGridLayout ensures no single word is wider
+     than the cell, so mid-word breaking never has to trigger. */
+  overflow-wrap: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
