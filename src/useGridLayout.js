@@ -113,31 +113,40 @@ export function useGridLayout(extraDeps = []) {
       const sampleCell = gridEl.querySelector('.book-cell');
       if (!sampleCell) return;
 
-      const cellStyle  = getComputedStyle(sampleCell);
-      const cellWidth  = sampleCell.offsetWidth;
-      const padLeft    = parseFloat(cellStyle.paddingLeft)  || 0;
-      const padRight   = parseFloat(cellStyle.paddingRight) || 0;
-      const available  = cellWidth - padLeft - padRight;
+      // Padding is measured from the CELL (the cell controls horizontal
+      // padding), but font is measured from the rendered TEXT element.
+      // .book-name overrides .book-cell with font-size 0.85rem and
+      // font-weight 500. Measuring against the cell's default 16px/400
+      // font would overestimate text width by ~17% on Roboto/Inter and
+      // reject layouts that actually fit comfortably — which is exactly
+      // why S22+ landscape was previously stuck on 'long' even though
+      // 'full' has plenty of room.
+      const cellStyle = getComputedStyle(sampleCell);
+      const textEl    = sampleCell.querySelector('.book-name') || sampleCell;
+      const textStyle = getComputedStyle(textEl);
 
-      // Match canvas font to cell font for accurate measurement.
-      ctx.font = cellStyle.font ||
-        `${cellStyle.fontWeight} ${cellStyle.fontSize} ${cellStyle.fontFamily}`;
+      const cellWidth = sampleCell.offsetWidth;
+      const padLeft   = parseFloat(cellStyle.paddingLeft)  || 0;
+      const padRight  = parseFloat(cellStyle.paddingRight) || 0;
+      const available = cellWidth - padLeft - padRight;
+
+      ctx.font = textStyle.font ||
+        `${textStyle.fontWeight} ${textStyle.fontSize} ${textStyle.fontFamily}`;
 
       // Find the widest single SEGMENT (substring between spaces) at each
       // level, across both languages. Multi-word names like "1 Thessalonicenzen"
       // wrap naturally at spaces; what matters is that the widest indivisible
-      // word fits on a single line. CSS handles the wrap into 2 lines for the
-      // few outliers that need it. The user-visible result matches what manual
-      // 'full' mode produces (verified against user screenshot).
+      // word fits in available × N_lines pixels. CSS handles the actual wrap
+      // (overflow-wrap: break-word + -webkit-line-clamp: 2).
       //
-      // Examples (in jw-library-style font ~13px):
-      //   "Thessalonicenzen" → ~104px (widest segment in NL full)
-      //   "Deuteronomium"    → ~85px
-      //   "Solomon"          → ~45px
+      // Examples (in 0.85rem/500-weight font ~13.6px):
+      //   "Thessalonicenzen" → ~96px (widest segment in NL full)
+      //   "Thessalonians"    → ~84px (widest segment in EN full)
+      //   "Deuteronomium"    → ~78px
+      //   "Genesis"          → ~52px
       //   "1"                → ~7px
       //
       // Single-word names ARE their own segment (e.g. "Klaagliederen").
-      // No-spaces means no wrap is possible, so they must fit on one line.
       const widestSegment = (text) =>
         Math.max(...text.split(' ').map(s => ctx.measureText(s).width));
 
@@ -151,15 +160,42 @@ export function useGridLayout(extraDeps = []) {
           widestSegment(book.nlAbbr),     widestSegment(book.enAbbr));
       }
 
-      // 1px slack to absorb sub-pixel rounding between canvas measurement
-      // and DOM layout — without it a segment measured at exactly `available`
-      // sometimes overflows by half a pixel and triggers wrap-mid-word.
-      const fits = (segPx) => segPx + 1 <= available;
+      // 2-line threshold. CSS allows up to 2 lines per cell
+      // (-webkit-line-clamp: 2), so a segment fits as long as its width
+      // ≤ 2 × available. Browser wraps at spaces preferentially via
+      // overflow-wrap; the few segments wider than `available` itself
+      // get broken mid-word as a fallback. This is much more permissive
+      // than the previous strict-single-line check, which forced
+      // landscape S22+ down to 'long' just because "Thessalonicenzen"
+      // was 1-2px over the single-line budget.
+      const fits = (segPx) => segPx <= 2 * available;
 
+      // Cascade order depends on orientation:
+      //
+      // PORTRAIT — full → short, skipping 'long' on purpose.
+      //   In portrait, 'short' mode triggers .using-abbreviations CSS,
+      //   which makes cells square (aspect-ratio: 1/1) — the JW Library
+      //   Study Bible look the user wants on phones. 'long' mode in
+      //   portrait gives rectangular cells with text like "Klaagl." or
+      //   "1 Chron." — neither the clean square look NOR the full names.
+      //   Skipping 'long' means: if 'full' fits (tablet portrait), use it;
+      //   otherwise fall back to 'short' (phone portrait → square cells).
+      //
+      //   This also fixes the rotation hysteresis bug: previously, after
+      //   landscape→portrait, 'long' would persist because the smaller
+      //   non-using-abbreviations padding made 'long' fit comfortably.
+      //   With 'long' skipped in portrait, cascade settles correctly.
+      //
+      // LANDSCAPE — full → long → short.
+      //   No .using-abbreviations engagement (the CSS is portrait-only),
+      //   cells are rectangular regardless of mode. All three levels
+      //   look fine; pick the most informative one that fits.
       let next;
-      if (fits(fullMax))      next = 'full';
-      else if (fits(longMax)) next = 'long';
-      else                    next = 'short';
+      if (orientation === 'portrait') {
+        next = fits(fullMax) ? 'full' : 'short';
+      } else {
+        next = fits(fullMax) ? 'full' : fits(longMax) ? 'long' : 'short';
+      }
 
       setAutoMode(prev => prev === next ? prev : next);
     };
@@ -167,15 +203,18 @@ export function useGridLayout(extraDeps = []) {
     const ro = new ResizeObserver(recompute);
     ro.observe(gridEl);
     return () => ro.disconnect();
-    // autoMode is in deps so the effect re-runs after each cascade decision.
-    // Handles the portrait padding mismatch: in 'short' mode the
-    // .using-abbreviations CSS rule applies bigger padding (only in portrait).
-    // After re-render with a higher mode, padding shrinks, more room is
-    // available — but ResizeObserver does NOT fire (gridEl's own size hasn't
-    // changed, only cell-internal padding). Re-running the effect catches
-    // this. The setAutoMode bail-out (prev === next ? prev : next) guarantees
-    // convergence in 2-3 iterations.
-  }, [gridEl, setting, measuredColumns, autoMode, ...extraDeps]);
+    // Deps:
+    // - orientation: rotation may not change column counts (e.g. portrait
+    //   6 cols ↔ landscape stacked 6 cols), so we need it explicitly to
+    //   trigger a re-cascade with the new orientation-aware order.
+    // - autoMode: in 'short' mode the .using-abbreviations CSS rule
+    //   applies bigger padding (portrait only). After re-render with a
+    //   different mode, padding shrinks, more room is available — but
+    //   ResizeObserver does NOT fire (gridEl's own size hasn't changed,
+    //   only cell-internal padding). Re-running the effect catches this.
+    //   The setAutoMode bail-out (prev === next ? prev : next) guarantees
+    //   convergence in 1-2 iterations.
+  }, [gridEl, setting, orientation, measuredColumns, autoMode, ...extraDeps]);
 
   // Resolve final displayMode. Explicit settings bypass the cascade.
   const displayMode = setting === 'auto' ? autoMode : setting;
