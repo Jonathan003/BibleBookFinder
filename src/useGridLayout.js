@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { bibleBooks } from './data';
 import { useAppConfig } from './App';
 
@@ -83,25 +83,6 @@ export function useGridLayout(extraDeps = []) {
     ? (config.display.abbreviationsLandscape || 'auto')
     : (config.display.abbreviationsPortrait  || 'auto');
 
-  // Longest TEXT per level, computed across BOTH languages so the auto
-  // cascade is language-independent. If long names fit in NL but not in EN,
-  // we drop to long abbreviations everywhere — the layout never flips on
-  // language toggle. We need the actual STRINGS (not lengths) here because
-  // the cascade measures their pixel width via canvas; "1 Thessalonicenzen"
-  // and "1 Corinthians" are both 14+ chars but render very differently.
-  const longestStrings = useMemo(() => {
-    let full = '', long = '', short = '';
-    for (const book of bibleBooks) {
-      if (book.nl.length         > full.length)  full  = book.nl;
-      if (book.en.length         > full.length)  full  = book.en;
-      if (book.nlAbbrLong.length > long.length)  long  = book.nlAbbrLong;
-      if (book.enAbbrLong.length > long.length)  long  = book.enAbbrLong;
-      if (book.nlAbbr.length     > short.length) short = book.nlAbbr;
-      if (book.enAbbr.length     > short.length) short = book.enAbbr;
-    }
-    return { full, long, short };
-  }, []);
-
   // Auto-cascade result. Only computed/used when setting === 'auto'.
   // Default 'short' is the safe initial value: if measurement hasn't run yet,
   // showing short abbreviations is guaranteed to fit. Once the ResizeObserver
@@ -139,21 +120,46 @@ export function useGridLayout(extraDeps = []) {
       const available  = cellWidth - padLeft - padRight;
 
       // Match canvas font to cell font for accurate measurement.
-      // The font shorthand combines weight, size, family — exactly what
-      // measureText needs to produce pixel-accurate widths.
-      ctx.font = cellStyle.font || `${cellStyle.fontWeight} ${cellStyle.fontSize} ${cellStyle.fontFamily}`;
+      ctx.font = cellStyle.font ||
+        `${cellStyle.fontWeight} ${cellStyle.fontSize} ${cellStyle.fontFamily}`;
 
-      // Each level's longest string measured in real pixels in the real
-      // font. Tiny safety margin (1px) to absorb sub-pixel rounding from
-      // canvas vs DOM layout — without it, a string measured at exactly
-      // `available` px sometimes overflows by half a pixel and triggers
-      // an ellipsis or wrap.
-      const fits = (text) => ctx.measureText(text).width + 1 <= available;
+      // Find the widest single SEGMENT (substring between spaces) at each
+      // level, across both languages. Multi-word names like "1 Thessalonicenzen"
+      // wrap naturally at spaces; what matters is that the widest indivisible
+      // word fits on a single line. CSS handles the wrap into 2 lines for the
+      // few outliers that need it. The user-visible result matches what manual
+      // 'full' mode produces (verified against user screenshot).
+      //
+      // Examples (in jw-library-style font ~13px):
+      //   "Thessalonicenzen" → ~104px (widest segment in NL full)
+      //   "Deuteronomium"    → ~85px
+      //   "Solomon"          → ~45px
+      //   "1"                → ~7px
+      //
+      // Single-word names ARE their own segment (e.g. "Klaagliederen").
+      // No-spaces means no wrap is possible, so they must fit on one line.
+      const widestSegment = (text) =>
+        Math.max(...text.split(' ').map(s => ctx.measureText(s).width));
+
+      let fullMax = 0, longMax = 0, shortMax = 0;
+      for (const book of bibleBooks) {
+        fullMax  = Math.max(fullMax,
+          widestSegment(book.nl),         widestSegment(book.en));
+        longMax  = Math.max(longMax,
+          widestSegment(book.nlAbbrLong), widestSegment(book.enAbbrLong));
+        shortMax = Math.max(shortMax,
+          widestSegment(book.nlAbbr),     widestSegment(book.enAbbr));
+      }
+
+      // 1px slack to absorb sub-pixel rounding between canvas measurement
+      // and DOM layout — without it a segment measured at exactly `available`
+      // sometimes overflows by half a pixel and triggers wrap-mid-word.
+      const fits = (segPx) => segPx + 1 <= available;
 
       let next;
-      if (fits(longestStrings.full))      next = 'full';
-      else if (fits(longestStrings.long)) next = 'long';
-      else                                next = 'short';
+      if (fits(fullMax))      next = 'full';
+      else if (fits(longMax)) next = 'long';
+      else                    next = 'short';
 
       setAutoMode(prev => prev === next ? prev : next);
     };
@@ -162,18 +168,14 @@ export function useGridLayout(extraDeps = []) {
     ro.observe(gridEl);
     return () => ro.disconnect();
     // autoMode is in deps so the effect re-runs after each cascade decision.
-    // This handles a subtle padding-mismatch bug in portrait: when autoMode
-    // is 'short', the .using-abbreviations CSS rule kicks in (only in
-    // portrait) and applies bigger padding to cells. We measure with that
-    // bigger padding and decide e.g. 'long'. After re-render, the class is
-    // gone, padding shrinks, MORE room is available for text — but
-    // ResizeObserver does NOT fire because gridEl's own size didn't change
-    // (only cell-internal padding did). Without re-measuring, we'd be stuck
-    // on 'long' even though 'full' would now fit. The setAutoMode bail-out
-    // (`prev === next ? prev : next`) prevents infinite loops: once the
-    // cascade reaches a stable level, the same `next` is re-derived and no
-    // state update fires. Convergence happens in at most 2-3 iterations.
-  }, [gridEl, setting, measuredColumns, longestStrings, autoMode, ...extraDeps]);
+    // Handles the portrait padding mismatch: in 'short' mode the
+    // .using-abbreviations CSS rule applies bigger padding (only in portrait).
+    // After re-render with a higher mode, padding shrinks, more room is
+    // available — but ResizeObserver does NOT fire (gridEl's own size hasn't
+    // changed, only cell-internal padding). Re-running the effect catches
+    // this. The setAutoMode bail-out (prev === next ? prev : next) guarantees
+    // convergence in 2-3 iterations.
+  }, [gridEl, setting, measuredColumns, autoMode, ...extraDeps]);
 
   // Resolve final displayMode. Explicit settings bypass the cascade.
   const displayMode = setting === 'auto' ? autoMode : setting;
