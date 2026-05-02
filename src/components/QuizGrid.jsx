@@ -137,9 +137,11 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     setResponseTime(null);
     setFeedback(null);
     setHintVisible(false);
-    // In sideBySide layout both testaments are visible at once, so the
-    // OT-top / NT-bottom auto-scroll is meaningless and would just cause
-    // a confusing jump. Skip it.
+    // In sideBySide layout both testaments are visible at once on tablets
+    // and desktop landscape, so OT-top / NT-bottom auto-scroll would cause
+    // a confusing jump with no benefit. Skip it. (On phones in landscape
+    // some rows may need manual scrolling, but auto-scroll-to-top-or-bottom
+    // there is still wrong since both halves are partially visible.)
     if (config.quiz.autoScroll !== false && testamentsLayout !== 'sideBySide') {
       // Scroll after DOM updates and new book name is visible
       // OT book: scroll to top, NT book: scroll to bottom

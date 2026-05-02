@@ -349,15 +349,18 @@
    The components also pass `grid-template-rows: repeat(maxRows, 1fr)` to
    both grids so cells are the same HEIGHT too. End result: every cell is
    the same size on both halves, matching JW Library exactly.
-   We disable vertical scrolling on the container because in this mode both
-   halves fit on one screen — auto-scroll is also skipped in JS. min-width:
-   0 on children allows them to shrink below their content width, which is
-   required for grid cells to resize down rather than overflow. */
+   Scrolling: on tablets/desktop landscape both halves comfortably fit on
+   screen, but on phones in landscape (e.g. 412px tall) the rows shrink so
+   far that bottom rows are clipped. We use overflow-y: auto so a scrollbar
+   appears only when content overflows — invisible on tablets, accessible
+   on phones. min-width: 0 on children allows them to shrink below their
+   content width, which is required for grid cells to resize down rather
+   than overflow horizontally. */
 .quiz-bottom.testaments-side-by-side {
   display: flex;
   flex-direction: row;
   gap: 1.5rem;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 .quiz-bottom.testaments-side-by-side .section {

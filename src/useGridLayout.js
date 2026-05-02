@@ -83,16 +83,21 @@ export function useGridLayout(extraDeps = []) {
     ? (config.display.abbreviationsLandscape || 'auto')
     : (config.display.abbreviationsPortrait  || 'auto');
 
-  // Longest length per level, computed across BOTH languages so the auto
+  // Longest TEXT per level, computed across BOTH languages so the auto
   // cascade is language-independent. If long names fit in NL but not in EN,
   // we drop to long abbreviations everywhere — the layout never flips on
-  // language toggle.
-  const longestLengths = useMemo(() => {
-    let full = 0, long = 0, short = 0;
+  // language toggle. We need the actual STRINGS (not lengths) here because
+  // the cascade measures their pixel width via canvas; "1 Thessalonicenzen"
+  // and "1 Corinthians" are both 14+ chars but render very differently.
+  const longestStrings = useMemo(() => {
+    let full = '', long = '', short = '';
     for (const book of bibleBooks) {
-      full  = Math.max(full,  book.nl.length,         book.en.length);
-      long  = Math.max(long,  book.nlAbbrLong.length, book.enAbbrLong.length);
-      short = Math.max(short, book.nlAbbr.length,     book.enAbbr.length);
+      if (book.nl.length         > full.length)  full  = book.nl;
+      if (book.en.length         > full.length)  full  = book.en;
+      if (book.nlAbbrLong.length > long.length)  long  = book.nlAbbrLong;
+      if (book.enAbbrLong.length > long.length)  long  = book.enAbbrLong;
+      if (book.nlAbbr.length     > short.length) short = book.nlAbbr;
+      if (book.enAbbr.length     > short.length) short = book.enAbbr;
     }
     return { full, long, short };
   }, []);
@@ -110,23 +115,53 @@ export function useGridLayout(extraDeps = []) {
 
   useEffect(() => {
     if (setting !== 'auto' || !gridEl) return;
+
+    // Lazy canvas context — one per hook instance, reused across recomputes.
+    // Canvas is never inserted into the DOM, just used as a measurement
+    // engine. measureText() is fast (microseconds) and doesn't trigger
+    // layout, so calling it on every resize is fine.
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
     const recompute = () => {
-      const cellWidth = gridEl.offsetWidth / measuredColumns;
-      // ~6px per character, ~16px horizontal padding. Conservative on the
-      // safe side (under-estimates fit slightly, so we abbreviate a hair
-      // earlier than strictly necessary rather than overflowing).
-      const maxChars = Math.floor((cellWidth - 16) / 6);
+      // Measure the actual rendered cell — its font and padding determine
+      // how much room text really has. We grab the first .book-cell as
+      // representative; all cells in the grid share styling. If for some
+      // reason there are no cells yet (initial mount race), bail and let
+      // ResizeObserver retry once they appear.
+      const sampleCell = gridEl.querySelector('.book-cell');
+      if (!sampleCell) return;
+
+      const cellStyle  = getComputedStyle(sampleCell);
+      const cellWidth  = sampleCell.offsetWidth;
+      const padLeft    = parseFloat(cellStyle.paddingLeft)  || 0;
+      const padRight   = parseFloat(cellStyle.paddingRight) || 0;
+      const available  = cellWidth - padLeft - padRight;
+
+      // Match canvas font to cell font for accurate measurement.
+      // The font shorthand combines weight, size, family — exactly what
+      // measureText needs to produce pixel-accurate widths.
+      ctx.font = cellStyle.font || `${cellStyle.fontWeight} ${cellStyle.fontSize} ${cellStyle.fontFamily}`;
+
+      // Each level's longest string measured in real pixels in the real
+      // font. Tiny safety margin (1px) to absorb sub-pixel rounding from
+      // canvas vs DOM layout — without it, a string measured at exactly
+      // `available` px sometimes overflows by half a pixel and triggers
+      // an ellipsis or wrap.
+      const fits = (text) => ctx.measureText(text).width + 1 <= available;
+
       let next;
-      if (longestLengths.full  <= maxChars) next = 'full';
-      else if (longestLengths.long <= maxChars) next = 'long';
-      else next = 'short';
+      if (fits(longestStrings.full))      next = 'full';
+      else if (fits(longestStrings.long)) next = 'long';
+      else                                next = 'short';
+
       setAutoMode(prev => prev === next ? prev : next);
     };
     recompute();
     const ro = new ResizeObserver(recompute);
     ro.observe(gridEl);
     return () => ro.disconnect();
-  }, [gridEl, setting, measuredColumns, longestLengths, ...extraDeps]);
+  }, [gridEl, setting, measuredColumns, longestStrings, ...extraDeps]);
 
   // Resolve final displayMode. Explicit settings bypass the cascade.
   const displayMode = setting === 'auto' ? autoMode : setting;
