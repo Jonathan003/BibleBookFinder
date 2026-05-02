@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { stripDeviceScoped } from '../settingsScope';
+import { formatDuration } from '../timeFormat';
+import { getBookStats } from '../fsrs';
+import { bibleBooks } from '../data';
 import './Settings.css';
 
 export default function Settings({ config, onSave, onBack, currentUser, onRestore }) {
@@ -74,6 +77,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     const exportData = {
       app: 'BibleBookFinder',
       version: '3.0',
+      // Internal schema version for the user-data shape inside `user`.
+      // Bump this when adding/removing tracked fields. Restore code uses
+      // `?? defaultValue` for graceful handling of older backups, so a
+      // missing field never crashes — but explicit versioning lets us
+      // add real migrations later if a field's shape ever changes.
+      // v2 added: totalQuizMs (cumulative active-quiz time, in ms).
+      _schemaVersion: 2,
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -85,6 +95,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         bestTimes: currentUser.bestTimes || {},
         lastActive: currentUser.lastActive || 0,
         masteryMsAtStart: currentUser.masteryMsAtStart || null,
+        totalQuizMs: currentUser.totalQuizMs || 0,
       }
     };
     const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;
@@ -385,6 +396,10 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       <>
         <h3>{t.dataTitle || 'Voortgang beheren'}</h3>
         <p className="settings-desc">{t.dataDesc || 'Exporteer of importeer jouw persoonlijke voortgang en instellingen.'}</p>
+        <div className="data-stat-row">
+          <span className="data-stat-label">{t.totalTrainingTime}</span>
+          <span className="data-stat-value">{formatDuration(currentUser?.totalQuizMs || 0)}</span>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <button className="btn-data btn-export" onClick={handleExport}>{t.exportBtn || 'Exporteer voortgang'}</button>
           <button className="btn-data btn-import" onClick={handleImportClick}>
@@ -410,6 +425,28 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
                       .replaceAll('{current}', pendingImport.currentName)
                   : (t.confirmImportMsg || 'Dit overschrijft jouw huidige voortgang en instellingen.')}
               </span>
+              {/* Diff display: shows current vs incoming state side-by-side
+                  so the user can spot accidentally importing an OLDER backup
+                  over freshly-earned progress (the most common dataloss
+                  footgun for backup/restore systems). Mastered/66 + total
+                  training time are the two metrics that capture meaningful
+                  progress at a glance. */}
+              <div className="restore-diff">
+                <div className="restore-diff-row">
+                  <span className="restore-diff-label">{t.restoreCurrent}</span>
+                  <span className="restore-diff-value">
+                    {getBookStats(currentUser?.fsrsCards || {}, bibleBooks).mastered}/66 {t.restoreMastered}
+                    {(currentUser?.totalQuizMs || 0) > 0 && ` · ${formatDuration(currentUser?.totalQuizMs || 0)}`}
+                  </span>
+                </div>
+                <div className="restore-diff-row">
+                  <span className="restore-diff-label">{t.restoreIncoming}</span>
+                  <span className="restore-diff-value">
+                    {getBookStats(pendingImport.userData?.fsrsCards || {}, bibleBooks).mastered}/66 {t.restoreMastered}
+                    {(pendingImport.userData?.totalQuizMs || 0) > 0 && ` · ${formatDuration(pendingImport.userData?.totalQuizMs || 0)}`}
+                  </span>
+                </div>
+              </div>
               <div className="reset-confirm-buttons">
                 <button className="btn-confirm-reset" onClick={doImport}>{t.confirmImport || 'Herstel'}</button>
                 <button className="btn-cancel-reset" onClick={() => setPendingImport(null)}>{t.cancelImport || 'Annuleer'}</button>

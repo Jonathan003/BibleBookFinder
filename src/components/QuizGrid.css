@@ -689,6 +689,28 @@
   color: var(--mastery);
 }
 
+/* Total training time spans the full row below the per-session stats.
+   Visually distinct (slightly muted, full-width) because it's a cumulative
+   counter, not a session-specific number. */
+.summary-total-time {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border, #ddd);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0.85;
+}
+
+/* Pause hint clarifies that "Stats so far" is interim, not an end-state.
+   Subtle so it doesn't compete with the numbers above. */
+.summary-pause-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  text-align: center;
+  margin: 0 0 1rem;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
 .summary-buttons {
   display: flex;
   flex-direction: column;

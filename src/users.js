@@ -65,6 +65,10 @@ export function createUser(name, initialSettings) {
     quizHistory: [],
     fsrsCards: {},
     bestTimes: {},
+    // Cumulative active-quiz time in ms. Grows with each answered question
+    // (capped at 30s per question, Anki-style). Reset by Reset Progress.
+    // Restored from backup, falling back to 0 for legacy backups.
+    totalQuizMs: 0,
     // Persist the lang (and any other setting) the user had active on the
     // UserSelect screen so it isn't snapped back to the browser default
     // on first login.
@@ -89,6 +93,25 @@ export function updateUser(id, updates) {
   users[index] = { ...users[index], ...updates };
   saveUsers(users);
   return true;
+}
+
+// Atomically add to a user's totalQuizMs counter. Reads the latest stored
+// value and increments — avoids the closure-over-stale-state problem you'd
+// get from `updateUser(id, { totalQuizMs: currentUser.totalQuizMs + ms })`
+// where `currentUser` might be a snapshot from before a previous update.
+//
+// addMs is the delta to add. Negative is silently treated as 0 (clamps).
+// Returns the new total, or null if the user doesn't exist.
+export function addToTotalQuizMs(id, addMs) {
+  if (!Number.isFinite(addMs) || addMs <= 0) return null;
+  const users = getUsers();
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return null;
+  const current = users[index].totalQuizMs || 0;
+  const next = current + addMs;
+  users[index] = { ...users[index], totalQuizMs: next };
+  saveUsers(users);
+  return next;
 }
 
 export function deleteUser(id) {

@@ -236,14 +236,29 @@ export const translations = {
     studyChooseGroup: 'Kies groepen om te oefenen',
     startStudy: 'Start',
     wrongShowCorrect: 'Fout — kijk naar het blauwe vakje!',
-    // Session summary
-    sessionSummaryTitle: 'Sessie afgerond',
+    // Session summary (renamed from "Sessie afgerond" → "Tussenstand"
+    // because the screen isn't truly an end-state: Keep going lets you
+    // continue. "Tussenstand" reads as "interim score / progress so far",
+    // which is what the screen actually shows.)
+    sessionSummaryTitle: 'Tussenstand',
     sessionReviewed: 'boeken gereviewd',
     sessionMinutes: 'minuten',
     sessionCorrect: 'correct binnen de tijd',
     sessionNewBests: 'nieuw persoonlijk record',
+    sessionTotal: 'Totale trainingstijd',
+    sessionPauseHint: 'Trainingstijd pauzeert wanneer je weggaat. Kom gerust later terug.',
     keepGoing: 'Verder oefenen',
     done: 'Klaar',
+    // Total training time label (shared across Settings, Stats screen, share)
+    totalTrainingTime: 'Totale trainingstijd',
+    // Restore confirmation dialog
+    restoreTitle: 'Back-up herstellen',
+    restoreWarning: 'Dit vervangt je huidige voortgang. Deze actie kan niet ongedaan gemaakt worden.',
+    restoreCurrent: 'Huidig',
+    restoreIncoming: 'Back-up',
+    restoreMastered: 'beheerst',
+    restoreContinue: 'Doorgaan',
+    restoreCancel: 'Annuleren',
     // Personal best
     newBest: 'Nieuw record!',
     // Milestones
@@ -361,14 +376,29 @@ export const translations = {
     studyChooseGroup: 'Choose groups to study',
     startStudy: 'Start',
     wrongShowCorrect: 'Wrong — look for the blue cell!',
-    // Session summary
-    sessionSummaryTitle: 'Session complete',
+    // Session summary (renamed from "Session complete" → "Stats so far"
+    // because the screen isn't truly an end-state: Keep going lets you
+    // continue. "Stats so far" reads as a progress check, which is what
+    // the screen actually shows.)
+    sessionSummaryTitle: 'Stats so far',
     sessionReviewed: 'books reviewed',
     sessionMinutes: 'minutes',
     sessionCorrect: 'correct within time',
     sessionNewBests: 'new personal record',
+    sessionTotal: 'Total training time',
+    sessionPauseHint: 'Training time pauses when you leave. Come back anytime.',
     keepGoing: 'Keep going',
     done: 'Done',
+    // Total training time label (shared across Settings, Stats screen, share)
+    totalTrainingTime: 'Total training time',
+    // Restore confirmation dialog
+    restoreTitle: 'Restore backup',
+    restoreWarning: 'This will replace your current progress. This action cannot be undone.',
+    restoreCurrent: 'Current',
+    restoreIncoming: 'Backup',
+    restoreMastered: 'mastered',
+    restoreContinue: 'Continue',
+    restoreCancel: 'Cancel',
     // Personal best
     newBest: 'New record!',
     // Milestones

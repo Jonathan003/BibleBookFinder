@@ -74,6 +74,10 @@ const helpContent = {
         q: 'Kan ik een quiz pauzeren?',
         a: 'Ja. Tik op "← Terug" om je sessie-samenvatting te zien. Van daaruit kun je doorgaan, instellingen wijzigen, of de sessie beëindigen. Je score en streak blijven bewaard.',
       },
+      {
+        q: 'Hoe wordt mijn trainingstijd bijgehouden?',
+        a: 'Per beantwoorde vraag tellen we hoe lang je erover deed, met een maximum van 30 seconden per vraag. Als je weggaat of in slaap valt, telt enkel die 30 seconden mee — zo wordt je totaal niet kunstmatig opgeblazen. Je totale trainingstijd zie je op het Tussenstand-scherm en in Instellingen → Data. "Voortgang resetten" zet ook de trainingstijd terug op nul.',
+      },
 
       // ─── Voortgang begrijpen ────────────────────────────────────────
       {
@@ -196,6 +200,10 @@ const helpContent = {
       {
         q: 'Can I pause a quiz session?',
         a: 'Yes. Tap "← Back" to see your session summary. From there you can resume, change settings, or end the session. Your score and streak are preserved.',
+      },
+      {
+        q: 'How is my training time tracked?',
+        a: 'For each answered question we count how long you took, capped at 30 seconds per question. If you walk away or fall asleep, only 30 seconds count for that question — so your total isn\'t artificially inflated. Your total training time appears on the Stats so far screen and in Settings → Data. "Reset progress" also wipes the training-time counter.',
       },
 
       // ─── Understanding progress ─────────────────────────────────────

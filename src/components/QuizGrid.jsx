@@ -8,9 +8,27 @@ import {
   reviewBook, getDueBooks, serializeCard, deserializeCard,
   Rating, getBookStats, isMastered
 } from '../fsrs';
+import { formatDuration } from '../timeFormat';
 import './QuizGrid.css';
 
-export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, onBack, onPhaseChange }) {
+// Per-question cap for the cumulative training-time counter. If the user
+// takes longer than this on a single question (typically because they
+// walked away, locked their phone, or got distracted by a notification),
+// only this many milliseconds count toward totalQuizMs for that question.
+//
+// Why 30s? The default masteryMs is 10s, so 30s = 3× mastery. Genuine
+// hard-thinking on a difficult book rarely exceeds this; longer is almost
+// always idle time. This is the same idea as Anki's "Maximum answer
+// seconds" setting (default 60s in Anki). We use 30s because mastery in
+// this app is faster — book identification is simpler than recalling a
+// flashcard answer.
+//
+// The cap protects the share-message claim ("X books mastered in Y time")
+// from being inflated by AFK moments. Without it, a single sleeping-with-
+// the-app-open incident could add hours of fake training time.
+const MAX_ANSWER_MS = 30000;
+
+export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, addTrainingTime, totalQuizMs = 0, onBack, onPhaseChange }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -121,9 +139,33 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       if (unseenBooks.length > 0 && Math.random() < 0.2) {
         selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
       } else {
-        // Pick from top 5 most overdue to add some variety
-        const pool = dueBooks.slice(0, Math.min(5, dueBooks.length));
-        selected = pool[Math.floor(Math.random() * pool.length)];
+        // Pool top-8 most-overdue books for variety, then weight non-mastered
+        // books 3× heavier than mastered ones. Rationale:
+        //
+        // FSRS schedules each book independently based on its own stability.
+        // Once you have many mastered books, they all come due regularly for
+        // maintenance reviews. A user trying to master their LAST few non-
+        // mastered books would find them buried by all the mastered-due ones
+        // — even when their non-mastered book IS due, it's outranked by 5+
+        // more-overdue mastered books in the top-5 pool.
+        //
+        // The 3× weight nudges selection toward non-mastered due books
+        // WITHOUT breaking FSRS spacing: only books whose due-date already
+        // arrived are eligible. So a non-mastered book never gets MORE
+        // reviews than FSRS scheduled — it just gets PICKED sooner from
+        // the pool when both options exist.
+        //
+        // Mastery itself remains earned: the same 3-rep / stability>7
+        // requirements apply. The boost only changes ordering, not the
+        // criteria. This keeps the share message ("X mastered in Y time")
+        // a legitimate achievement.
+        const pool = dueBooks.slice(0, Math.min(8, dueBooks.length));
+        const weighted = [];
+        for (const book of pool) {
+          const weight = isMastered(cards[book.id]) ? 1 : 3;
+          for (let i = 0; i < weight; i++) weighted.push(book);
+        }
+        selected = weighted[Math.floor(Math.random() * weighted.length)];
       }
     } else if (unseenBooks.length > 0) {
       selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
@@ -213,6 +255,13 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
 
+      // Cumulative training time: cap per-question at MAX_ANSWER_MS so
+      // AFK moments don't inflate the share-message claim. See constant
+      // definition for rationale.
+      if (addTrainingTime) {
+        addTrainingTime(Math.min(timeTaken, MAX_ANSWER_MS));
+      }
+
       const isWithinTime = timeTaken <= config.quiz.masteryMs;
       const rating = ratingFromSpeed(timeTaken, config.quiz.masteryMs);
       setFeedback(isWithinTime ? 'correct' : 'slow');
@@ -294,6 +343,15 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
+
+    // Track time spent on this question for the cumulative training
+    // counter. Wrong answers get the same per-question cap as correct
+    // ones — what matters for "time spent training" is engagement, not
+    // outcome. See MAX_ANSWER_MS for rationale.
+    const timeTaken = Date.now() - startTime;
+    if (addTrainingTime) {
+      addTrainingTime(Math.min(timeTaken, MAX_ANSWER_MS));
+    }
     // Scroll to the correct book after React commits the state change.
     // Double rAF: first frame runs after commit, second frame runs after
     // the browser has laid out the new DOM — so the target cell is
@@ -412,7 +470,12 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
               <span className="summary-label">{t.sessionNewBests}</span>
             </div>
           )}
+          <div className="summary-stat summary-total-time">
+            <span className="summary-number">{formatDuration(totalQuizMs)}</span>
+            <span className="summary-label">{t.sessionTotal}</span>
+          </div>
         </div>
+        <p className="summary-pause-hint">{t.sessionPauseHint}</p>
         <div className="summary-buttons">
           <button className="btn" onClick={() => { setShowSummary(false); setStartTime(Date.now()); }}>
             {t.keepGoing}

@@ -342,3 +342,62 @@
 .setting-control-full {
   width: 100%;
 }
+
+/* Total training time row in Data section. Tabular numerals so the
+   value column aligns visually if more rows are added later. */
+.data-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg, #f8f8f8);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.data-stat-label {
+  color: var(--text-secondary, #666);
+}
+
+.data-stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* Diff display inside the restore confirmation panel. Shows current vs
+   incoming state so users can spot importing an older backup over
+   freshly-earned progress before they confirm. Sits between the warning
+   message and the action buttons. */
+.restore-diff {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.6rem 0;
+  background: var(--bg, #fff);
+}
+
+.restore-diff-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.restore-diff-row:not(:last-child) {
+  border-bottom: 1px solid var(--border, #eee);
+}
+
+.restore-diff-label {
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+}
+
+.restore-diff-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-primary, #1a1a2e);
+}

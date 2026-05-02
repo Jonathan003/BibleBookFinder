@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { bibleBooks, translations } from './data';
-import { getCurrentUser, getUser, updateUser, setCurrentUser as persistCurrentUser } from './users';
+import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats } from './fsrs';
 import { applyDeviceScoped } from './settingsScope';
+import { formatDuration } from './timeFormat';
 import { InitialAvatar } from './components/Icons';
 import UserSelect from './components/UserSelect';
 import StudyGrid from './components/StudyGrid';
@@ -189,6 +190,15 @@ function App() {
       user.masteryMsAtStart = userConfig.quiz.masteryMs;
     }
 
+    // Legacy migration: users created before the totalQuizMs field
+    // existed have no counter. Initialize to 0 once on load — they'll
+    // start accumulating training time from this point forward without
+    // any retroactive estimate (which would be a guess regardless).
+    if (user.totalQuizMs == null) {
+      updateUser(user.id, { totalQuizMs: 0 });
+      user.totalQuizMs = 0;
+    }
+
     // Welcome back detection
     const now = Date.now();
     const lastActive = user.lastActive || 0;
@@ -269,8 +279,26 @@ function App() {
   const doResetProgress = () => {
     setConfirmReset(false);
     if (!currentUser) return;
-    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {}, masteryMsAtStart: config.quiz.masteryMs });
+    // Reset wipes everything earned by quiz activity, including the
+    // cumulative training-time counter. After reset, the next share
+    // message reflects only post-reset training time.
+    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {}, masteryMsAtStart: config.quiz.masteryMs, totalQuizMs: 0 });
   };
+
+  // Add to the user's cumulative training-time counter. Called per
+  // answered question by QuizGrid with a pre-capped delta. Uses an atomic
+  // add (read-modify-write inside users.js) rather than a closure-based
+  // `currentUser.totalQuizMs + ms` to avoid race conditions when
+  // multiple answers arrive in quick succession.
+  const addTrainingTime = useCallback((deltaMs) => {
+    if (!currentUser) return;
+    const next = addToTotalQuizMs(currentUser.id, deltaMs);
+    if (next != null) {
+      // Mirror to React state so the Stats screen shows up-to-date
+      // values without forcing a re-fetch from localStorage.
+      setCurrentUserState(prev => prev ? { ...prev, totalQuizMs: next } : prev);
+    }
+  }, [currentUser]);
 
   const share = async () => {
     if (!currentUser) return;
@@ -278,9 +306,23 @@ function App() {
     const speedUnchanged = currentUser.masteryMsAtStart != null && currentUser.masteryMsAtStart === speedMs;
     const speedStr = speedUnchanged ? ` (${(speedMs / 1000).toFixed(speedMs % 1000 ? 1 : 0)}s)` : '';
 
+    // Include training time in the share when there's any to show.
+    // Earlier design gated this behind `mastered >= 1`, but in practice
+    // that just hid the counter inexplicably for users with real time
+    // invested but no mastery yet. Two simpler rules instead:
+    //   - If totalMs is 0 (legacy account or just-imported backup with
+    //     no time tracked), the suffix is omitted — nothing to show.
+    //   - Otherwise show it. The `(10s)` speed suffix already serves
+    //     as the "this was earned legitimately" signal; an extra gate
+    //     here is redundant.
+    // The format string is the same in both NL and EN messages because
+    // "8h 32m" reads naturally to a Dutch audience too.
+    const totalMs = currentUser.totalQuizMs || 0;
+    const timeStr = totalMs > 0 ? ` in ${formatDuration(totalMs)}` : '';
+
     const text = (lang === 'nl'
-      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${speedStr} in de Bijbelboek Zoeker quiz!`
-      : `I mastered ${stats.mastered} out of 66 Bible books${speedStr} in the Bible Book Finder quiz!`
+      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
+      : `I mastered ${stats.mastered} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`
     );
     const fullText = text + ' ' + window.location.href;
 
@@ -345,6 +387,9 @@ function App() {
     // autoScroll) stay local. Same logic handles backups from this device,
     // backups from another device, and cross-user imports — the receiving
     // device always keeps its own screen-related settings.
+    //
+    // Confirmation happens in Settings.jsx (inline panel with diff display)
+    // before this is called — no second modal here.
     const incoming = mergeConfig(userData.settings);
     const restoredConfig = applyDeviceScoped(incoming, config);
     updateUserData({
@@ -358,6 +403,11 @@ function App() {
       // current masteryMs so a restored user immediately behaves like a
       // freshly-reset user.
       masteryMsAtStart: userData.masteryMsAtStart ?? config.quiz.masteryMs,
+      // Legacy (pre-_schemaVersion 2) backups have no totalQuizMs field.
+      // `?? 0` means: if the field exists in backup, use it; otherwise
+      // start at zero rather than carrying over the current device's
+      // counter (which would be misleading).
+      totalQuizMs: userData.totalQuizMs ?? 0,
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
@@ -508,6 +558,8 @@ function App() {
                 bestStreak={currentUser.bestStreak || 0}
                 setBestStreak={updateBestStreak}
                 addQuizSession={addQuizSession}
+                addTrainingTime={addTrainingTime}
+                totalQuizMs={currentUser.totalQuizMs || 0}
                 onBack={() => {
                   setQuizPhase(null);
                   setView('menu');

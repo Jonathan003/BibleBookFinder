@@ -53,3 +53,7 @@ Hosted on **GitHub Pages** (primary) with auto-deploy via GitHub Actions on ever
 - Book abbreviations and color groups: JW Library Study Bible
 - Group names and descriptions: NWT "The 66 Books of the Bible — What Is Contained in Them?" (jw.org)
 - Spaced repetition: FSRS algorithm (open-spaced-repetition project)
+
+## Training-time tracking
+
+Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("X books mastered in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Progress wipes the counter; backups carry it across devices via `_schemaVersion: 2`.
