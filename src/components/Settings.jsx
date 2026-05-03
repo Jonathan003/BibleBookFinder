@@ -3,6 +3,7 @@ import { stripDeviceScoped } from '../settingsScope';
 import { formatDuration } from '../timeFormat';
 import { getBookStats } from '../fsrs';
 import { bibleBooks } from '../data';
+import { APP_COMMIT, APP_BUILD_DATE } from '../version';
 import './Settings.css';
 
 export default function Settings({ config, onSave, onBack, currentUser, onRestore }) {
@@ -483,7 +484,15 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         {renderTabContent()}
       </div>
 
-      <p className="version-info">Bible Book Finder v2.0</p>
+      <p className="version-info">
+        Bible Book Finder v2.0
+        {APP_COMMIT !== 'unknown' && (
+          <>
+            <br />
+            <span className="version-build">{APP_BUILD_DATE} ({APP_COMMIT})</span>
+          </>
+        )}
+      </p>
     </div>
   );
 }

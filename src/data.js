@@ -259,6 +259,10 @@ export const translations = {
     restoreMastered: 'beheerst',
     restoreContinue: 'Doorgaan',
     restoreCancel: 'Annuleren',
+    // Update banner
+    updateAvailable: 'Nieuwe versie beschikbaar',
+    updateNow: 'Nu vernieuwen',
+    updateDismiss: 'Later',
     // Personal best
     newBest: 'Nieuw record!',
     // Milestones
@@ -399,6 +403,10 @@ export const translations = {
     restoreMastered: 'mastered',
     restoreContinue: 'Continue',
     restoreCancel: 'Cancel',
+    // Update banner
+    updateAvailable: 'New version available',
+    updateNow: 'Update now',
+    updateDismiss: 'Later',
     // Personal best
     newBest: 'New record!',
     // Milestones

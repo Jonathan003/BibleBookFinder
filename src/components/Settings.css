@@ -401,3 +401,12 @@
   text-align: right;
   color: var(--text-primary, #1a1a2e);
 }
+
+/* Build info under version label — date + short commit hash, dimmer
+   than the main version line so it doesn't fight for attention but
+   readable when the user looks for it. */
+.version-build {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #999);
+  font-variant-numeric: tabular-nums;
+}

@@ -61,3 +61,7 @@ Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, cap
 ## Endgame book selection
 
 When 10 or fewer books remain non-mastered, the picker switches into a finish-line mode: 80% of the time it serves a non-mastered book (force-served even when not strictly due, since FSRS doesn't punish early reviews much), and 20% of the time a due mastered book for maintenance and variety. This prevents the few remaining non-mastered books from being buried beneath the dozens of already-mastered books queueing for maintenance reviews. This is the same pattern Anki users replicate manually with Custom Study filtered decks.
+
+## Update notifications
+
+The app uses vite-plugin-pwa's `prompt` strategy with `useRegisterSW`. The service worker checks for updates every 30 minutes while the app is open; when a new version is detected, a banner on the home screen offers a one-tap reload via `updateServiceWorker(true)`. Settings → Data shows the currently-running build (commit hash and date), injected at build time from `git rev-parse` so it accurately reflects the deployed code on each device. This avoids the common PWA pitfall where users unknowingly run cached old versions across multiple devices.

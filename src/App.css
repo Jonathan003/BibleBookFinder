@@ -382,3 +382,60 @@
 .welcome-back-banner:hover {
   opacity: 0.7;
 }
+
+/* Update banner — appears on menu when vite-plugin-pwa's needRefresh
+   becomes true (a new service worker is waiting to activate). Subtle
+   blue accent (matches "correct" color) to read as positive, not
+   warning. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--bg-secondary, #fff);
+  border: 2px solid var(--correct, #3B82F6);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  flex-wrap: wrap;
+}
+
+.update-banner-text {
+  font-weight: 600;
+  color: var(--correct, #3B82F6);
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+.update-banner-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.update-banner-btn-primary {
+  background: var(--correct, #3B82F6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.update-banner-btn-primary:active {
+  opacity: 0.8;
+}
+
+.update-banner-btn-secondary {
+  background: transparent;
+  color: var(--text-secondary, #666);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}

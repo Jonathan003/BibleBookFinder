@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats } from './fsrs';
@@ -100,6 +101,34 @@ function App() {
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
   const [confirmReset, setConfirmReset] = useState(false);
+
+  // PWA update detection via vite-plugin-pwa.
+  //
+  // useRegisterSW returns a `needRefresh` state that becomes true when
+  // a new service worker has been downloaded and is waiting to activate.
+  // The user clicks "Update now" → updateServiceWorker(true) tells the
+  // waiting SW to skipWaiting() and reloads the page.
+  //
+  // The setInterval in onRegisteredSW polls the server for SW updates
+  // every 30 minutes (no full reload, just a quiet check). This is the
+  // pattern recommended by vite-plugin-pwa docs ("Periodic Service
+  // Worker Updates"). 30 minutes is a balance between freshness and
+  // unnecessary network requests on always-open tabs.
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegisteredSW(swUrl, registration) {
+      if (registration) {
+        setInterval(() => {
+          // Don't update if we're offline — fetch will fail anyway and
+          // log a misleading error.
+          if (!navigator.onLine) return;
+          registration.update();
+        }, 30 * 60 * 1000); // 30 minutes
+      }
+    },
+  });
   // Quiz phase: null = no active quiz, 'playing' = answering questions,
   // 'paused' = summary/pause screen shown. When non-null, QuizGrid is
   // kept mounted even across Settings/Help detours so its session state
@@ -472,6 +501,29 @@ function App() {
         </header>
 
         <main className="app-main">
+          {/* PWA update banner — appears on the menu when a new service
+              worker has been downloaded and is waiting to activate.
+              "Later" dismisses for this session; full reload triggers the
+              service worker swap via updateServiceWorker(true). */}
+          {view === 'menu' && needRefresh && (
+            <div className="update-banner">
+              <span className="update-banner-text">⬆️ {t.updateAvailable}</span>
+              <div className="update-banner-buttons">
+                <button
+                  className="update-banner-btn-primary"
+                  onClick={() => updateServiceWorker(true)}
+                >
+                  {t.updateNow}
+                </button>
+                <button
+                  className="update-banner-btn-secondary"
+                  onClick={() => setNeedRefresh(false)}
+                >
+                  {t.updateDismiss}
+                </button>
+              </div>
+            </div>
+          )}
           {view === 'menu' && (
             <div className="menu">
               {welcomeMessage && (

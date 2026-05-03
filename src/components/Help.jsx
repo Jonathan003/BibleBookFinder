@@ -82,6 +82,10 @@ const helpContent = {
         q: 'Waarom komen mijn laatste paar boeken zo vaak terug?',
         a: 'Wanneer je nog 10 of minder boeken te beheersen hebt, schakelt de quiz over naar een eindfase-modus: 80% van de tijd krijg je een nog niet beheerst boek, 20% van de tijd een beheerst boek (voor onderhoud en variatie). Zo verdringen de tientallen reeds beheerste boeken die voor onderhoud terugkomen je laatste paar boeken niet voortdurend. Dezelfde aanpak gebruiken Anki-gebruikers handmatig met "Custom Study"-decks.',
       },
+      {
+        q: 'Wat betekent het "Nieuwe versie beschikbaar" balkje?',
+        a: 'Wanneer er een nieuwere versie van de app is, verschijnt dit balkje op het startscherm. Tap "Nu vernieuwen" om de nieuwste versie te laden — je voortgang blijft gewoon bewaard. "Later" sluit het balkje voor deze sessie. De app controleert automatisch elk half uur of er een update is. In Instellingen → Data zie je onderaan welke versie en datum je momenteel gebruikt.',
+      },
 
       // ─── Voortgang begrijpen ────────────────────────────────────────
       {
@@ -212,6 +216,10 @@ const helpContent = {
       {
         q: 'Why are my last few books showing up so often?',
         a: 'Once you have 10 or fewer books left to master, the quiz switches into a finish-line mode: 80% of the time you\'ll get a not-yet-mastered book, 20% of the time a mastered book (for maintenance and variety). This keeps the dozens of already-mastered books coming up for maintenance reviews from constantly burying your last few unmastered books. This is the same pattern Anki users apply manually with "Custom Study" filtered decks.',
+      },
+      {
+        q: 'What does the "New version available" banner mean?',
+        a: 'When a newer version of the app is available, this banner appears on the home screen. Tap "Update now" to load the latest version — your progress stays intact. "Later" dismisses the banner for this session. The app automatically checks for updates every half hour. In Settings → Data, the bottom shows which version and date you\'re currently running.',
       },
 
       // ─── Understanding progress ─────────────────────────────────────
