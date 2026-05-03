@@ -16,17 +16,39 @@ import './QuizGrid.css';
 // walked away, locked their phone, or got distracted by a notification),
 // only this many milliseconds count toward totalQuizMs for that question.
 //
-// Why 30s? The default masteryMs is 10s, so 30s = 3× mastery. Genuine
-// hard-thinking on a difficult book rarely exceeds this; longer is almost
-// always idle time. This is the same idea as Anki's "Maximum answer
-// seconds" setting (default 60s in Anki). We use 30s because mastery in
-// this app is faster — book identification is simpler than recalling a
-// flashcard answer.
+// 30s is an absolute "AFK detection" threshold, NOT relative to masteryMs.
+// Genuine hard-thinking on a difficult book rarely exceeds this regardless
+// of the user's mastery setting; longer is almost always idle time. This
+// is the same idea as Anki's "Maximum answer seconds" setting (default
+// 60s in Anki) — we use 30s because book identification is simpler than
+// recalling a flashcard answer.
 //
 // The cap protects the share-message claim ("X books mastered in Y time")
 // from being inflated by AFK moments. Without it, a single sleeping-with-
 // the-app-open incident could add hours of fake training time.
 const MAX_ANSWER_MS = 30000;
+
+// How long to pause between a correct answer and picking the next book.
+// Scales with the user's masteryMs setting because that's their declared
+// expected pace: someone with masteryMs=1000 (1s target) wants a snappy
+// flow, someone with masteryMs=10000 (10s target) is more contemplative
+// and benefits from a longer pause to register the green feedback.
+//
+// Formula: 50% of masteryMs, clamped between 250ms and 800ms.
+//   - 250ms minimum: below this, the green "correct" feedback is barely
+//     perceived (Nielsen Norman Group: ~230ms is human visual perception
+//     threshold). Below this users wouldn't see their own success.
+//   - 800ms maximum: above this, the pause feels like a delay (Material
+//     Design pegs 500ms as the upper bound for "responsive" feedback;
+//     800ms is our pre-existing value, kept as ceiling for compatibility).
+//
+// Examples:
+//   masteryMs=10000 → 800ms (capped — same as before)
+//   masteryMs=1000  → 500ms (responsive but visible)
+//   masteryMs=500   → 250ms (capped — minimum perceptible)
+function autoPickDelayMs(masteryMs) {
+  return Math.min(800, Math.max(250, Math.round(masteryMs * 0.5)));
+}
 
 export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, addTrainingTime, totalQuizMs = 0, onBack, onPhaseChange }) {
   const { config, t, lang } = useAppConfig();
@@ -477,7 +499,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
         setStreak(0);
       }
 
-      schedule(() => pickNextBook(), 800);
+      schedule(() => pickNextBook(), autoPickDelayMs(config.quiz.masteryMs));
       return;
     }
 
