@@ -690,12 +690,14 @@
   color: var(--mastery);
 }
 
-/* Newly mastered this session — uses the mastery (purple) color to signal
-   "this is the headline number from this session". The delta line below
-   the label gives concrete before→after context (e.g. "20 → 23 of 66")
+/* Newly mastered this session — uses the accent color (purple) to match
+   the home screen's "X Mastered of 66" stat, signaling "long-term progress
+   indicator". The amber --mastery variable is reserved for the cell-level
+   golden-line markers; using it here would be inconsistent. The delta line
+   below the label gives concrete before→after context (e.g. "20 → 23 of 66")
    that the standalone stat alone wouldn't convey. */
 .summary-newly-mastered .summary-number {
-  color: var(--mastery);
+  color: var(--accent);
 }
 
 .summary-delta {
