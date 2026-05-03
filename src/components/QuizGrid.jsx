@@ -48,6 +48,13 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const [showSummary, setShowSummary] = useState(false);
   const [milestone, setMilestone] = useState(null); // message string | null
   const [showNewBest, setShowNewBest] = useState(false);
+  // Snapshot of the time that earned the current "new record" badge. Kept
+  // separate from `responseTime` because the badge has its own 1.5s
+  // visibility timer — `responseTime` may be cleared (by picking the next
+  // book) before the badge fades out, which previously caused "nullms" to
+  // briefly render. Reading from this snapshot ensures the badge always
+  // shows the time that actually earned it.
+  const [newBestTime, setNewBestTime] = useState(null);
   
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
@@ -337,6 +344,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
         if (!prevBest || timeTaken < prevBest) {
           updateBestTime(targetBook.id, timeTaken);
           setSessionNewBests(prev => prev + 1);
+          setNewBestTime(timeTaken);
           setShowNewBest(true);
           schedule(() => setShowNewBest(false), 1500);
         }
@@ -432,7 +440,15 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     setHintVisible(prev => !prev);
   };
 
-  const formatTime = (ms) => ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+  // Format a millisecond duration for inline feedback ("2.7s", "850ms").
+  // Defensive null-guard: state can transiently be null between picking the
+  // next book and the feedback element unmounting (showNewBest has a 1.5s
+  // visibility timer that can outlive responseTime). Returning empty string
+  // is preferable to rendering "nullms".
+  const formatTime = (ms) => {
+    if (ms == null || !Number.isFinite(ms)) return '';
+    return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+  };
 
   const otBooks = bibleBooks.filter(b => b.testament === 'OT');
   const ntBooks = bibleBooks.filter(b => b.testament === 'NT');
@@ -550,7 +566,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
             {!hintVisible && feedback === 'correct' && !showNewBest
               ? <span className="prompt-book">✓ {t.correct} {formatTime(responseTime)}</span>
               : !hintVisible && showNewBest
-              ? <span className="prompt-book">⚡ {t.newBest} {formatTime(responseTime)}</span>
+              ? <span className="prompt-book">⚡ {t.newBest} {formatTime(newBestTime)}</span>
               : !hintVisible && feedback === 'slow'
               ? <span className="prompt-book">⏱ {t.tooSlow} — {formatTime(responseTime)}</span>
               : !hintVisible && feedback === 'wrong'
