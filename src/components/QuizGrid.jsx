@@ -69,16 +69,6 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const [sessionStartTime] = useState(() => Date.now());
   const [showSummary, setShowSummary] = useState(false);
   const [milestone, setMilestone] = useState(null); // message string | null
-  // Dynamic placement for the milestone banner. Recomputed whenever the
-  // target book changes — banner stays out of the way of whichever cell
-  // the user needs to click next, not just the cell that triggered the
-  // milestone. Uses Floating UI's flip-then-shift logic distilled:
-  //   1. Try placing above the target (preferred)
-  //   2. If above doesn't fit, flip to below
-  //   3. If below doesn't fit either, fall back to viewport-bottom toast
-  // Stored as { top, left } in viewport coordinates (used with position: fixed).
-  const [milestonePos, setMilestonePos] = useState(null);
-  const milestoneBannerRef = useRef(null);
   const [showNewBest, setShowNewBest] = useState(false);
   // Snapshot of the time that earned the current "new record" badge. Kept
   // separate from `responseTime` because the badge has its own 1.5s
@@ -294,79 +284,6 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     window.scrollTo(0, 0);
   }, [pickNextBook]);
 
-  // Reposition the milestone banner whenever it appears OR when the target
-  // book changes (so a banner showing while we move to the next question
-  // re-anchors away from the new target, not the old one).
-  //
-  // Algorithm — distilled from Floating UI's flip + shift middleware:
-  //   1. PREFERRED: place banner above the target cell (most natural — like
-  //      a tooltip pointing down at "this is the book you want")
-  //   2. FLIP: if banner doesn't fit above (target near top of viewport),
-  //      try below the target
-  //   3. SHIFT: if neither fits (small phone, target spans most of view),
-  //      pin to bottom of viewport — even if it overlaps the target, that's
-  //      better than being clipped offscreen
-  //
-  // Uses position: fixed coordinates so the banner ignores scroll containers
-  // and works regardless of where it sits in the DOM. Re-runs on resize too,
-  // which catches orientation changes on mobile.
-  useEffect(() => {
-    if (!milestone || !targetBook) {
-      setMilestonePos(null);
-      return;
-    }
-    const computePosition = () => {
-      const targetEl = document.querySelector(`[data-book-id="${targetBook.id}"]`);
-      const bannerEl = milestoneBannerRef.current;
-      if (!targetEl || !bannerEl) return;
-
-      const targetRect = targetEl.getBoundingClientRect();
-      const bannerRect = bannerEl.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const GAP = 12; // px between target cell and banner
-      const PADDING = 8; // min gap to viewport edges
-
-      // Horizontal: center on target, but clamp to viewport so the banner
-      // never gets clipped off the left or right edge.
-      const idealLeft = targetRect.left + targetRect.width / 2 - bannerRect.width / 2;
-      const left = Math.max(
-        PADDING,
-        Math.min(idealLeft, vw - bannerRect.width - PADDING)
-      );
-
-      // Vertical: try above first, flip to below, fall back to viewport-bottom.
-      const spaceAbove = targetRect.top - PADDING;
-      const spaceBelow = vh - targetRect.bottom - PADDING;
-      let top;
-      if (spaceAbove >= bannerRect.height + GAP) {
-        // Above fits
-        top = targetRect.top - bannerRect.height - GAP;
-      } else if (spaceBelow >= bannerRect.height + GAP) {
-        // Below fits
-        top = targetRect.bottom + GAP;
-      } else {
-        // Last resort: pin to bottom of viewport
-        top = vh - bannerRect.height - PADDING;
-      }
-
-      setMilestonePos({ top, left });
-    };
-
-    // Run twice: once immediately to take a measurement, then again after
-    // the browser has had a chance to lay out the banner (its initial size
-    // depends on text content). Without the second pass, very long
-    // milestone messages can be measured at width 0 on first paint.
-    computePosition();
-    const raf = requestAnimationFrame(computePosition);
-
-    // Reposition on resize/orientation change
-    window.addEventListener('resize', computePosition);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', computePosition);
-    };
-  }, [milestone, targetBook]);
   const finishSession = useCallback(() => {
     // Mark as saved before triggering onBack so the unmount cleanup
     // doesn't write a duplicate entry to quizHistory.
@@ -488,10 +405,11 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
           }
 
           if (msg) {
+            // Show the milestone banner in the existing topbar overlay
+            // slot (same area where hints appear). Auto-dismisses after
+            // 2.5s — long enough to register emotionally, short enough
+            // that it doesn't block the next prompt.
             setMilestone(msg);
-            // 2.5s is short enough that the toast is gone before most users
-            // would naturally need to refer to the grid for their next answer,
-            // but long enough for the milestone to register emotionally.
             schedule(() => setMilestone(null), 2500);
           }
         }
@@ -708,17 +626,16 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
             <span className="overlay-text">{t.hintReveal} <strong>{hintGroup}</strong></span>
           </div>
         )}
-      </div>
 
-      {milestone && (
-        <div
-          ref={milestoneBannerRef}
-          className="milestone-banner"
-          style={milestonePos ? { top: milestonePos.top, left: milestonePos.left } : undefined}
-        >
-          {milestone}
-        </div>
-      )}
+        {/* Milestone overlay — same slot as hint overlay, only visible
+            when no hint is showing (hints are user-triggered and take
+            precedence; milestones auto-dismiss after 2.5s anyway). */}
+        {overlayTop !== null && milestone && !hintVisible && (
+          <div className="topbar-overlay milestone-overlay" style={{ top: overlayTop }}>
+            <span className="overlay-text">{milestone}</span>
+          </div>
+        )}
+      </div>
 
       <div className={`quiz-bottom${testamentsLayout === 'sideBySide' ? ' testaments-side-by-side' : ''}`} ref={scrollRef}>
         <div className="section" style={testamentsLayout === 'sideBySide' ? { flex: otColumns } : undefined}>
