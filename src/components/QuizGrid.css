@@ -610,29 +610,49 @@
   cursor: default;
 }
 
-/* ── Milestone banner ── */
+/* ── Milestone banner ──
+   Position is computed in JS (see useEffect in QuizGrid.jsx) using the
+   flip-then-shift algorithm from Floating UI. The banner anchors above
+   the current target book cell; if that cell is too close to the top of
+   the viewport, the banner flips below it; as a last resort it pins to
+   the bottom of the viewport. The banner intentionally never covers the
+   target cell unless the screen is too small to avoid it.
+
+   CSS handles styling and the slide-in animation; positioning is purely
+   inline-style from the effect. transform: none overrides the animation's
+   final state so the inline top/left aren't fought by the keyframes.
+
+   pointer-events: none means taps pass through to whatever cell is
+   beneath, ensuring the banner can never block input even momentarily. */
 .milestone-banner {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  /* Initial coordinates before JS measurement — placed off-screen so a
+     flash isn't visible during the first frame. The effect overrides this
+     with a measured position before the next paint. */
+  top: -200px;
+  left: 0;
+  max-width: calc(100vw - 16px);
+  width: max-content;
   background: #1e1b2e;
   border: 2px solid var(--mastery);
-  border-radius: 14px;
-  padding: 18px 28px;
-  font-size: 1.15rem;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--mastery);
   text-align: center;
   z-index: 200;
   pointer-events: none;
   animation: milestoneIn 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @keyframes milestoneIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Session summary screen ── */
