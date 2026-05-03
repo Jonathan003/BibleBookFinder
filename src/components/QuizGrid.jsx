@@ -560,6 +560,20 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
               <span className="summary-label">{t.sessionNewBests}</span>
             </div>
           )}
+          {/* Newly mastered this session — only shown when > 0. A "+0" would
+              feel like punishment for a productive review-only session, and
+              the existing per-session stats already convey activity. The
+              delta (X → Y of 66) gives concrete progress feedback the menu
+              screen's static "X/66 mastered" can't match. */}
+          {sessionMasteredBooks.size > 0 && (
+            <div className="summary-stat summary-newly-mastered">
+              <span className="summary-number">+{sessionMasteredBooks.size}</span>
+              <span className="summary-label">{t.sessionNewlyMastered}</span>
+              <span className="summary-delta">
+                {stats.mastered - sessionMasteredBooks.size} → {stats.mastered} {t.of} 66
+              </span>
+            </div>
+          )}
           <div className="summary-stat summary-total-time">
             <span className="summary-number">{formatDuration(totalQuizMs)}</span>
             <span className="summary-label">{t.sessionTotal}</span>

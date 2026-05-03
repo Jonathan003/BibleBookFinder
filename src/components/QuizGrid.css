@@ -690,6 +690,22 @@
   color: var(--mastery);
 }
 
+/* Newly mastered this session — uses the mastery (purple) color to signal
+   "this is the headline number from this session". The delta line below
+   the label gives concrete before→after context (e.g. "20 → 23 of 66")
+   that the standalone stat alone wouldn't convey. */
+.summary-newly-mastered .summary-number {
+  color: var(--mastery);
+}
+
+.summary-delta {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #888);
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Total training time spans the full row below the per-session stats.
    Visually distinct (slightly muted, full-width) because it's a cumulative
    counter, not a session-specific number. */
