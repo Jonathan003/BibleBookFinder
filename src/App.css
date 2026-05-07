@@ -371,6 +371,19 @@
   color: var(--text-primary);
 }
 
+/* "X books close to Mastered" indicator. Subtle by design — it's
+   secondary information, an explanation of the rep-gate rather than a
+   metric the user is competing against. Sits between the tier legend
+   and the streak/forecast row so it reads as a footnote on the tier
+   visualization, not as its own section. */
+.close-to-mastery {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
 /* ─── Streak + forecast row ──────────────────────────────────────────
    Two compact cards side by side on tablet+, stacked on phone. Both
    are derived state — streak from quizHistory, forecast from FSRS due

@@ -281,6 +281,13 @@ export const translations = {
     tierAnchored: 'Verankerd',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Voortgang per niveau',
+    // "X boeken bijna Beheerst" indicator. Shown only when at least one
+    // book is one rep away from Mastered (state=Review, stability>7,
+    // reps=MASTERY_MIN_REPS-1). Makes the otherwise-invisible rep-gate
+    // transparent so the user knows progress is happening even though
+    // the tier-bar hasn't shifted yet.
+    closeToMasterySingle: '1 boek bijna Beheerst — nog 1 herhaling',
+    closeToMastery: 'boeken bijna Beheerst — elk nog 1 herhaling',
     // Menu — "all caught up" celebration shown when there's nothing
     // due right now. Replaces the Quiz Mode primary button so the
     // user isn't tempted to over-rehearse stable cards (which FSRS
@@ -467,6 +474,9 @@ export const translations = {
     tierAnchored: 'Anchored',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Progress by tier',
+    // See NL section for design rationale.
+    closeToMasterySingle: '1 book close to Mastered — 1 more correct answer',
+    closeToMastery: 'books close to Mastered — 1 more correct answer each',
     // Menu — "all caught up" celebration
     // Three-level celebration — see NL section for design rationale.
     allCaughtUpTitle: '✓ Done for today',

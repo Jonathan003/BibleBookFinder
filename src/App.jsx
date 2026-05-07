@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, createContext, useContext, useMemo } 
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
-import { getBookStats, getTierStats, TIERS } from './fsrs';
+import { getBookStats, getTierStats, countCloseToMastery, TIERS } from './fsrs';
 import { computeForecast, getNextDueTime, formatNextDue, forecastDayLabel, getCelebrationLevel } from './forecast';
 import { computeStreakInfo } from './streak';
+import { useRefreshableMemo } from './useRefreshableMemo';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
 import { InitialAvatar } from './components/Icons';
@@ -152,22 +153,6 @@ function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
-
-  // Periodic re-render of the menu so derived stats stay fresh while
-  // the user lingers without interacting. `stats.dueNow` and `nextDue`
-  // depend on `now`, but React doesn't know to recompute them as time
-  // passes — without this tick, books whose short-term Learning intervals
-  // (~5-15 min) expire don't show up in "Ready to practice" until the
-  // user navigates away and back. The 60 s cadence is more than enough
-  // for those intervals while staying invisible to battery life. Only
-  // ticks while on the menu — Quiz/Study/Settings have their own state
-  // and don't benefit from the wake-up.
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    if (view !== 'menu') return undefined;
-    const id = setInterval(() => forceTick(t => t + 1), 60 * 1000);
-    return () => clearInterval(id);
-  }, [view]);
 
   // Load current user on mount + migrate old global config if present
   useEffect(() => {
@@ -317,19 +302,39 @@ function App() {
   // Memoized because it walks all 66 cards on every recompute and the
   // menu re-renders on every state change (welcome banner dismissal,
   // share feedback, etc.) where the cards themselves haven't changed.
+  // No time dependency — the tier each card is in is a function of its
+  // FSRS state, not the current clock.
   const tierStats = useMemo(() => getTierStats(fsrsCards, bibleBooks), [fsrsCards]);
 
-  // Review forecast for the next 7 days. computeForecast is pure and
-  // cheap (one pass over 66 books × 7 days = 462 ops) but memoizing
-  // saves the same recompute on every menu re-render and gives a
-  // stable array reference for any descendant memoization.
-  const forecast = useMemo(() => computeForecast(fsrsCards, bibleBooks, 7), [fsrsCards]);
+  // Books one rep away from Mastered (see countCloseToMastery in fsrs.js
+  // for the precise condition). Memoized on fsrsCards — no time
+  // dependency: the rep count of a card doesn't drift with the clock.
+  const closeToMasteryCount = useMemo(
+    () => countCloseToMastery(fsrsCards, bibleBooks),
+    [fsrsCards]
+  );
 
-  // Next future due — used for the "all caught up" countdown label.
-  // Recomputed only when fsrsCards changes; the displayed string
-  // (formatNextDue) regenerates on each render to stay fresh as time
-  // passes within a session.
-  const nextDue = useMemo(() => getNextDueTime(fsrsCards, bibleBooks), [fsrsCards]);
+  // Time-dependent derived values. These all call `new Date()` internally
+  // (filtering or bucketing by current time), so a plain useMemo on
+  // [fsrsCards] would go stale: the cached value still reflects whatever
+  // `now` was when first computed. useRefreshableMemo re-evaluates every
+  // 60 s while the menu is visible, keeping the "Next book" countdown
+  // and 7-day forecast bars honest as time passes. Disabled outside the
+  // menu so we don't run timers behind Quiz/Study/Settings (their own
+  // state changes drive the renders they need).
+  const onMenu = view === 'menu';
+  const forecast = useRefreshableMemo(
+    () => computeForecast(fsrsCards, bibleBooks, 7),
+    [fsrsCards],
+    60 * 1000,
+    onMenu
+  );
+  const nextDue = useRefreshableMemo(
+    () => getNextDueTime(fsrsCards, bibleBooks),
+    [fsrsCards],
+    60 * 1000,
+    onMenu
+  );
 
   // Streak from quizHistory — purely derived, no separate state.
   const streakInfo = useMemo(
@@ -652,6 +657,18 @@ function App() {
                     </span>
                   ))}
                 </div>
+                {/* "X books close to Mastered" — surfaces the otherwise-
+                    invisible MASTERY_MIN_REPS=3 rep gate. A book at 2/3
+                    reps is visually still in Familiar tier but a single
+                    correct answer away from promotion; without this
+                    line, that progress is invisible to the user. */}
+                {closeToMasteryCount > 0 && (
+                  <div className="close-to-mastery">
+                    {closeToMasteryCount === 1
+                      ? t.closeToMasterySingle
+                      : `${closeToMasteryCount} ${t.closeToMastery}`}
+                  </div>
+                )}
               </div>
 
               {/* Streak indicator + 7-day forecast. Both are derived from

@@ -154,6 +154,28 @@ export function getTierStats(fsrsCards, allBooks) {
   return { ...counts, total: allBooks.length };
 }
 
+// Count books that are one rep away from being Mastered: state=Review,
+// stability already past the >7d threshold, but reps still below
+// MASTERY_MIN_REPS. These books visually live in the Familiar tier on
+// the home menu, so without an explicit indicator the user has no
+// signal that "1 more correct answer promotes this to Mastered".
+// Surfacing this count answers the otherwise-mysterious question
+// "I've answered this book correctly twice — why am I still on
+// Familiar?" by making the rep-gate transparent.
+export function countCloseToMastery(fsrsCards, allBooks) {
+  let count = 0;
+  allBooks.forEach(book => {
+    const card = fsrsCards[book.id];
+    if (!card) return;
+    if (card.state === State.Review
+        && (card.stability || 0) > 7
+        && (card.reps || 0) === MASTERY_MIN_REPS - 1) {
+      count++;
+    }
+  });
+  return count;
+}
+
 // Get stats summary for display
 export function getBookStats(fsrsCards, allBooks) {
   let mastered = 0;
