@@ -293,7 +293,7 @@ export const translations = {
     allCaughtUpBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
     // 'session-end' — next book due within an hour
     sessionEndTitle: '✓ Sessie klaar',
-    sessionEndBody: 'Je sessie is af. Het volgende boek komt zo terug — neem even pauze.',
+    sessionEndBody: 'Je sessie is af. De volgende boeken komen zo terug — neem even pauze.',
     // 'today' — next book due later today
     doneForTodayTitle: '✓ Klaar voor vandaag',
     doneForTodayBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
@@ -473,7 +473,7 @@ export const translations = {
     allCaughtUpBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
     // 'session-end' — next book due within an hour
     sessionEndTitle: '✓ Session complete',
-    sessionEndBody: 'Your session is done. The next book comes back soon — take a breather.',
+    sessionEndBody: 'Your session is done. The next books come back soon — take a breather.',
     // 'today' — next book due later today
     doneForTodayTitle: '✓ Done for today',
     doneForTodayBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',

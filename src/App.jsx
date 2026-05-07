@@ -153,6 +153,22 @@ function App() {
     }
   }, [lang]);
 
+  // Periodic re-render of the menu so derived stats stay fresh while
+  // the user lingers without interacting. `stats.dueNow` and `nextDue`
+  // depend on `now`, but React doesn't know to recompute them as time
+  // passes — without this tick, books whose short-term Learning intervals
+  // (~5-15 min) expire don't show up in "Ready to practice" until the
+  // user navigates away and back. The 60 s cadence is more than enough
+  // for those intervals while staying invisible to battery life. Only
+  // ticks while on the menu — Quiz/Study/Settings have their own state
+  // and don't benefit from the wake-up.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (view !== 'menu') return undefined;
+    const id = setInterval(() => forceTick(t => t + 1), 60 * 1000);
+    return () => clearInterval(id);
+  }, [view]);
+
   // Load current user on mount + migrate old global config if present
   useEffect(() => {
     const userId = getCurrentUser();
