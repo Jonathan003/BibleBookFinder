@@ -266,6 +266,35 @@ export const translations = {
     updateDismiss: 'Later',
     // Personal best
     newBest: 'Nieuw record!',
+    // Tiers — discrete progression labels derived from FSRS card state
+    // (see src/fsrs.js getTier). Names chosen to read as a natural
+    // ladder for Dutch speakers, with "Beheerst" preserved as the
+    // existing milestone term so old share messages and milestones
+    // continue to make sense.
+    tierUnseen: 'Onbekend',
+    tierLearned: 'Geleerd',
+    tierFamiliar: 'Vertrouwd',
+    tierMastered: 'Beheerst',
+    tierAnchored: 'Verankerd',
+    tierPermanent: 'Permanent',
+    tierLegendTitle: 'Voortgang per niveau',
+    // Menu — "all caught up" celebration shown when there's nothing
+    // due right now. Replaces the Quiz Mode primary button so the
+    // user isn't tempted to over-rehearse stable cards (which FSRS
+    // research shows hurts retention vs. waiting).
+    allCaughtUpTitle: '✓ Klaar voor vandaag',
+    allCaughtUpBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
+    nextBookDue: 'Volgende boek',
+    nothingScheduled: 'Niks ingepland',
+    extraPracticeHint: 'Toch oefenen? Studie Modus telt niet mee voor je schema.',
+    // Forecast (next 7 days)
+    forecastTitle: 'Komende 7 dagen',
+    // Streak — consecutive days with at least one quiz session.
+    // "Streak" is also used for in-quiz consecutive-correct count;
+    // dayStreak / dayStreakSingle distinguish them in display.
+    dayStreak: 'dagen op rij',
+    dayStreakSingle: 'dag',
+    streakBest: 'Beste',
     // Milestones
     milestone10: 'Goed zo! 10 boeken beheerst! 🎉',
     milestone20: 'Geweldig! 20 boeken beheerst! 🎉',
@@ -411,6 +440,24 @@ export const translations = {
     updateDismiss: 'Later',
     // Personal best
     newBest: 'New record!',
+    // Tiers — see Dutch section for rationale
+    tierUnseen: 'Unseen',
+    tierLearned: 'Learning',
+    tierFamiliar: 'Familiar',
+    tierMastered: 'Mastered',
+    tierAnchored: 'Anchored',
+    tierPermanent: 'Permanent',
+    tierLegendTitle: 'Progress by tier',
+    // Menu — "all caught up" celebration
+    allCaughtUpTitle: '✓ Done for today',
+    allCaughtUpBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
+    nextBookDue: 'Next book',
+    nothingScheduled: 'Nothing scheduled',
+    extraPracticeHint: 'Want extra practice? Study Mode does not affect your schedule.',
+    forecastTitle: 'Next 7 days',
+    dayStreak: 'day streak',
+    dayStreakSingle: 'day',
+    streakBest: 'Best',
     // Milestones
     milestone10: 'Nice! 10 books mastered! 🎉',
     milestone20: 'Great! 20 books mastered! 🎉',
