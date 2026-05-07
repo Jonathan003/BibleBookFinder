@@ -375,19 +375,35 @@
    Two compact cards side by side on tablet+, stacked on phone. Both
    are derived state — streak from quizHistory, forecast from FSRS due
    dates — so they're cheap to render and always in sync with the
-   underlying data. */
+   underlying data.
+
+   Layout: flexbox rather than grid because either card may be absent
+   (no streak yet, or no forecast data) and flexbox handles "the
+   remaining card fills the row" naturally. With grid 'auto 1fr', a
+   solo forecast card would render at content width with empty 1fr
+   space beside it. */
 .momentum-section {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
 
 @media (min-width: 520px) {
   .momentum-section {
-    grid-template-columns: auto 1fr;
+    flex-direction: row;
+    align-items: stretch;
   }
+}
+
+.momentum-section .streak-card {
+  flex: 0 0 auto;
+}
+
+.momentum-section .forecast-card {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .streak-card {
