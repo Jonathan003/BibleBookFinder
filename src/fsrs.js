@@ -95,6 +95,65 @@ export function isMastered(cardData) {
     && (cardData.reps || 0) >= MASTERY_MIN_REPS;
 }
 
+// ─── Tier overlay ──────────────────────────────────────────────────────
+// Discrete named tiers derived from FSRS card state, inspired by
+// WaniKani's Apprentice→Guru→Master→Enlightened→Burned ladder. The
+// underlying FSRS scheduler is unchanged — these tiers are a *display*
+// layer that gives the learner a tangible "next step" beyond the binary
+// mastered/not-mastered split. Six tiers were chosen because:
+//   - 'unseen' covers books with no card yet (fresh user / after reset)
+//   - 'learned' is the moment between first answer and Review state
+//     (FSRS's Learning/Relearning) — visible feedback that something
+//     happened without overpromising stability
+//   - 'familiar' = entered Review state but not yet stable (<7d)
+//   - 'mastered' = the existing isMastered() condition; preserves the
+//     gold-line UX and the legacy milestone definitions
+//   - 'anchored' = stability >30d, takes ~1-2 months at default pace
+//   - 'permanent' = stability >180d, takes 4-6+ months — the WaniKani
+//     'Burned' equivalent and a real long-term goal
+//
+// Thresholds were chosen to roughly match natural FSRS progression at
+// request_retention=0.9 (Balanced pace). With Intensive pace (0.95)
+// users move through the tiers slightly slower; with Relaxed (0.85)
+// slightly faster. That's intentional — the pace setting already
+// expresses how much grind the user wants.
+export const TIERS = ['unseen', 'learned', 'familiar', 'mastered', 'anchored', 'permanent'];
+
+// Numeric ordering, useful for "is X higher than Y" comparisons
+export const TIER_ORDER = Object.fromEntries(TIERS.map((t, i) => [t, i]));
+
+export function getTier(cardData) {
+  if (!cardData) return 'unseen';
+  const stability = cardData.stability || 0;
+  const reps = cardData.reps || 0;
+
+  // Defensive: a card with reps=0 shouldn't exist (it would have been
+  // returned from createEmptyCard but never reviewed) — treat as unseen.
+  if (reps === 0) return 'unseen';
+
+  // Still in Learning or Relearning: the user has seen the book but
+  // FSRS hasn't promoted it to Review state yet. Don't claim 'familiar'
+  // — that implies stability the system hasn't confirmed.
+  if (cardData.state !== State.Review) return 'learned';
+
+  // In Review state — promote based on stability
+  if (stability > 180) return 'permanent';
+  if (stability > 30)  return 'anchored';
+  if (stability > 7 && reps >= MASTERY_MIN_REPS) return 'mastered';
+  return 'familiar';
+}
+
+// Counts of books in each tier. Always returns all six keys (with zero
+// counts for empty tiers) so the UI can render a stable layout without
+// null-checks.
+export function getTierStats(fsrsCards, allBooks) {
+  const counts = { unseen: 0, learned: 0, familiar: 0, mastered: 0, anchored: 0, permanent: 0 };
+  allBooks.forEach(book => {
+    counts[getTier(fsrsCards[book.id])]++;
+  });
+  return { ...counts, total: allBooks.length };
+}
+
 // Get stats summary for display
 export function getBookStats(fsrsCards, allBooks) {
   let mastered = 0;
