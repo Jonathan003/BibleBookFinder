@@ -250,6 +250,9 @@ export const translations = {
     sessionPauseHint: 'Trainingstijd pauzeert wanneer je weggaat. Kom gerust later terug.',
     keepGoing: 'Verder oefenen',
     done: 'Klaar',
+    caughtUpTitle: 'Klaar voor nu!',
+    caughtUpBody: 'Alle boeken zijn nu gereviewd. Kom morgen terug voor meer.',
+    practiceAhead: 'Toch vooruit oefenen',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Totale trainingstijd',
     // Restore confirmation dialog
@@ -395,6 +398,9 @@ export const translations = {
     sessionPauseHint: 'Training time pauses when you leave. Come back anytime.',
     keepGoing: 'Keep going',
     done: 'Done',
+    caughtUpTitle: 'All caught up!',
+    caughtUpBody: 'All books are reviewed for now. Come back tomorrow for more.',
+    practiceAhead: 'Practice ahead anyway',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Total training time',
     // Restore confirmation dialog
