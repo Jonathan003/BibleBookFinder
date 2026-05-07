@@ -156,99 +156,30 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
 
   const { orientation, testamentsLayout, otColumns, ntColumns, displayMode, gridRef } = useGridLayout();
 
-  // FSRS-driven book selection
+  // FSRS-driven book selection — pure FSRS, no heuristics.
+  //
+  //   1. Due books exist → 20% unseen for variety, otherwise random from
+  //      top-8 most-overdue. FSRS decides what's due; we just pick.
+  //   2. No due, but unseen exist → pick a random unseen book.
+  //   3. No due, no unseen → random pick from all 66 (free practice).
   const pickNextBook = useCallback(() => {
     feedbackRef.current = false;
     const cards = fsrsCardsRef.current || {};
     const { dueBooks, unseenBooks } = getDueBooks(cards, bibleBooks);
 
-    // Finish-line detection: count how many books still need to be mastered.
-    // "In progress" = has been seen at least once, but mastery criteria not met yet.
-    // Together with unseen books, that's everything still on the path to 66/66.
-    //
-    // The previous implementation only nudged selection toward non-mastered books
-    // that happened to be in the top-8 most-overdue pool. That fails in the
-    // endgame: with ~60 mastered books all queueing for maintenance reviews, the
-    // top-8 fills entirely with mastered books (longer intervals = more total
-    // overdue time at any given moment). The non-mastered books — whose
-    // intervals are short and whose due-windows are narrow — get buried at
-    // position 9, 10, 11+ and are never picked.
-    //
-    // Anki's solution to this exact problem is "Custom Study" / "Filtered Decks":
-    // a temporary mode that prioritizes specific cards (new ones, struggling
-    // ones, tagged ones) outside the normal scheduling. We bake that pattern in
-    // automatically: when ≤10 books remain non-mastered, we enter finish-line
-    // mode and aggressively serve those books — even forcing them ahead of their
-    // FSRS due-date when none happen to be due right now.
-    //
-    // FSRS doesn't punish early reviews much: stability still grows, just
-    // slightly less than a perfectly-timed review would. The trade-off is
-    // worth it — the user gets to feel real progress on their last 6 books
-    // instead of cycling through 60 already-mastered ones for hours.
-    const inProgress = bibleBooks.filter(b => cards[b.id] && !isMastered(cards[b.id]));
-    const remainingCount = inProgress.length + unseenBooks.length;
-    const isFinishLine = remainingCount > 0 && remainingCount <= 10;
-
     let selected;
 
-    if (isFinishLine) {
-      // Pre-compute pools used in either branch
-      const masteredDue = dueBooks.filter(b => isMastered(cards[b.id]));
-      // 20% maintenance pick from due mastered books — keeps mastery healthy and
-      // adds variety so the user isn't drilled on the same 6 books repeatedly.
-      // Skipped if no mastered books are due (early-game when most books are
-      // still unseen).
-      if (masteredDue.length > 0 && Math.random() < 0.2) {
-        const pool = masteredDue.slice(0, Math.min(8, masteredDue.length));
-        selected = pool[Math.floor(Math.random() * pool.length)];
-      } else if (unseenBooks.length > 0 && Math.random() < 0.4) {
-        // 40% of the non-maintenance time, pick an unseen book if any exist.
-        // Unseen books are the most urgent: they've literally never been
-        // attempted. Higher probability than the 20% used in normal mode.
-        selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
-      } else if (inProgress.length > 0) {
-        // Pick from in-progress books, sorted by soonest-due first. This is
-        // the "force-due" cheat: even books FSRS scheduled for tomorrow get
-        // picked today if they're the next-up. We pool the top-3 to add some
-        // randomness — picking strictly the soonest one would mean the SAME
-        // book shows up several times in a row, which feels unnatural.
-        const sorted = [...inProgress].sort((a, b) => {
-          const aDue = new Date(cards[a.id].due).getTime();
-          const bDue = new Date(cards[b.id].due).getTime();
-          return aDue - bDue;
-        });
-        const pool = sorted.slice(0, Math.min(3, sorted.length));
-        selected = pool[Math.floor(Math.random() * pool.length)];
-      } else if (unseenBooks.length > 0) {
-        // Fallback when in-progress is empty but unseen books still exist
-        // (early game with mostly-unseen books that fell into the ≤10 bucket
-        // — unlikely but possible if you've barely started).
-        selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
-      }
-    }
-
-    if (!selected) {
-      // Normal mode (>10 books remaining, or all mastered). Same logic as before
-      // with the 3× weight nudge — useful in the mid-game when non-mastered
-      // books still occasionally make it into the top-8 pool naturally.
-      if (dueBooks.length > 0) {
-        if (unseenBooks.length > 0 && Math.random() < 0.2) {
-          selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
-        } else {
-          const pool = dueBooks.slice(0, Math.min(8, dueBooks.length));
-          const weighted = [];
-          for (const book of pool) {
-            const weight = isMastered(cards[book.id]) ? 1 : 3;
-            for (let i = 0; i < weight; i++) weighted.push(book);
-          }
-          selected = weighted[Math.floor(Math.random() * weighted.length)];
-        }
-      } else if (unseenBooks.length > 0) {
+    if (dueBooks.length > 0) {
+      if (unseenBooks.length > 0 && Math.random() < 0.2) {
         selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
       } else {
-        // All books reviewed and none due — pick random for practice
-        selected = bibleBooks[Math.floor(Math.random() * bibleBooks.length)];
+        const pool = dueBooks.slice(0, Math.min(8, dueBooks.length));
+        selected = pool[Math.floor(Math.random() * pool.length)];
       }
+    } else if (unseenBooks.length > 0) {
+      selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
+    } else {
+      selected = bibleBooks[Math.floor(Math.random() * bibleBooks.length)];
     }
 
     setTargetBook(selected);
