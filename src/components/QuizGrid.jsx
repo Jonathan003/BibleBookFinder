@@ -8,6 +8,7 @@ import {
   reviewBook, getDueBooks, serializeCard, deserializeCard,
   Rating, getBookStats, isMastered
 } from '../fsrs';
+import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd, logBranch4Warning } from '../debug';
 import { formatDuration } from '../timeFormat';
 import './QuizGrid.css';
 
@@ -168,19 +169,28 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     const { dueBooks, unseenBooks } = getDueBooks(cards, bibleBooks);
 
     let selected;
+    let branch;
 
     if (dueBooks.length > 0) {
       if (unseenBooks.length > 0 && Math.random() < 0.2) {
         selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
+        branch = 'unseen-from-due';
       } else {
         const pool = dueBooks.slice(0, Math.min(8, dueBooks.length));
         selected = pool[Math.floor(Math.random() * pool.length)];
+        branch = 'due-pool';
       }
     } else if (unseenBooks.length > 0) {
       selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
+      branch = 'unseen';
     } else {
+      const masteredCount = bibleBooks.filter(b => cards[b.id] && isMastered(cards[b.id])).length;
+      logBranch4Warning(masteredCount, bibleBooks.length);
       selected = bibleBooks[Math.floor(Math.random() * bibleBooks.length)];
+      branch = 'random-from-66';
     }
+
+    logBookPick(selected, cards[selected.id], branch, dueBooks, unseenBooks, bibleBooks, cards);
 
     setTargetBook(selected);
     setStartTime(Date.now());
@@ -211,6 +221,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   }, [config.quiz.autoScroll, testamentsLayout]);
 
   useEffect(() => {
+    logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
     pickNextBook();
     window.scrollTo(0, 0);
   }, [pickNextBook]);
@@ -219,6 +230,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     // Mark as saved before triggering onBack so the unmount cleanup
     // doesn't write a duplicate entry to quizHistory.
     sessionDataRef.current.saved = true;
+    logSessionEnd(fsrsCardsRef.current || {}, bibleBooks);
     if (score.total > 0) {
       const avgTime = responseTimes.length > 0
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
@@ -280,6 +292,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
         : createBookCard();
       const result = reviewBook(scheduler, currentCard, rating);
       updateFsrsCard(targetBook.id, serializeCard(result.card));
+      logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), rating);
 
       // Score only counts if within time limit
       setScore(prev => ({
@@ -385,6 +398,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       : createBookCard();
     const result = reviewBook(scheduler, currentCard, Rating.Again);
     updateFsrsCard(targetBook.id, serializeCard(result.card));
+    logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), Rating.Again);
 
     // Wait for user to click the correct (blue) book to advance
   };
