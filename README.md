@@ -10,15 +10,23 @@ An interactive quiz and study app to help you learn the location of all 66 Bible
 - **Quiz Mode** — FSRS spaced repetition, timed responses, streaks, personal records, milestones, session summaries
 - **Study Mode** — Group-based practice, no timer, focused or random book selection
 
+**Progress tracking**
+- **Six-tier ladder** — Books climb Unseen → Learning → Familiar → Mastered → Anchored → Permanent as the FSRS algorithm builds confidence. Replaces the binary mastered/not-mastered split with a tangible long-term goal (Permanent ≈ 6+ months stability)
+- **7-day forecast** — Bar chart on the home screen showing how many books are due each upcoming day, so you can plan around busy or quiet days
+- **Day streak** — Consecutive-days counter (with grace day for "yesterday" so night owls aren't punished by midnight rollover); your best streak ever is shown alongside
+- **Three-level rest celebration** — When nothing's due now, the message matches reality: "Session complete" if the next book is back within an hour, "Done for today" if later today, "Done — enjoy the rest" if tomorrow or later
+- **Learning pace** — Relaxed (longer intervals, ~5-10 min/day), Balanced, or Intensive (default; ~20-30 min/day, fastest mastery)
+
 **Your data**
 - **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
 - **Backup & restore** — JSON export/import with free choice of save location (any cloud drive or local folder). Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
+- **Reset progress** — Available in Settings → Data alongside backup/restore (moved from the home menu to keep practice actions front-and-center)
 - **Bilingual** — Dutch and English, auto-detected from browser language
 
 **Display**
 - **Responsive** — Portrait and landscape with smart abbreviation switching
 - **OT/NT layout** — Landscape mode supports stacked (default) or side-by-side testaments (JW Library Study Bible style), with independent column counts per testament
-- **Colorblind-safe** — Blue (#3B82F6) for correct, orange (#F97316) for wrong
+- **Colorblind-safe** — Blue (#3B82F6) for correct, orange (#F97316) for wrong (deutan-friendly; no green/red anywhere)
 
 **Platform**
 - **PWA** — Installable on Android, iOS, and desktop, works offline

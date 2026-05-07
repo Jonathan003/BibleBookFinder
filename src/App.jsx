@@ -3,7 +3,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats, getTierStats, TIERS } from './fsrs';
-import { computeForecast, getNextDueTime, formatNextDue, forecastDayLabel } from './forecast';
+import { computeForecast, getNextDueTime, formatNextDue, forecastDayLabel, getCelebrationLevel } from './forecast';
 import { computeStreakInfo } from './streak';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
@@ -102,7 +102,6 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
-  const [confirmReset, setConfirmReset] = useState(false);
 
   // PWA update detection via vite-plugin-pwa.
   //
@@ -199,7 +198,6 @@ function App() {
     setView('menu');
     setPreviousView(null);
     setQuizPhase(null);
-    setConfirmReset(false);
 
     // Fresh user with no settings yet: inherit whatever lang was active
     // on the UserSelect screen (the module-scope `detectedLang` would
@@ -323,16 +321,11 @@ function App() {
     [currentUser?.quizHistory]
   );
 
-  // Open the inline confirm panel instead of the default browser dialog.
-  // The panel appears below the menu buttons and matches the style used
-  // for user deletion confirmation in UserSelect.
-  const resetProgress = () => {
-    if (!currentUser) return;
-    setConfirmReset(true);
-  };
-
+  // Reset all progress for the current user. Confirmation is owned by
+  // Settings.jsx (where the button now lives) — this just performs the
+  // wipe when called. See Settings.jsx Data tab for the inline confirm
+  // panel that matches the import-confirm styling.
   const doResetProgress = () => {
-    setConfirmReset(false);
     if (!currentUser) return;
     // Reset wipes everything earned by quiz activity, including the
     // cumulative training-time counter. After reset, the next share
@@ -579,18 +572,33 @@ function App() {
                     <span className="stat-label">{t.readyToPractice}</span>
                   </div>
                 </div>
-              ) : (
-                <div className="all-caught-up">
-                  <div className="all-caught-up-title">{t.allCaughtUpTitle}</div>
-                  <p className="all-caught-up-body">{t.allCaughtUpBody}</p>
-                  <div className="all-caught-up-next">
-                    <span className="all-caught-up-next-label">{t.nextBookDue}:</span>
-                    <span className="all-caught-up-next-time">
-                      {nextDue ? formatNextDue(nextDue, lang) : t.nothingScheduled}
-                    </span>
+              ) : (() => {
+                // Three-level celebration based on how far away the next
+                // book is. Avoids the misleading "Done for today" message
+                // when in reality the next book is back in 5 minutes
+                // (Learning-tier short intervals).
+                const level = getCelebrationLevel(nextDue);
+                const titleKey =
+                  level === 'session-end' ? 'sessionEndTitle' :
+                  level === 'multi-day'   ? 'doneForDaysTitle' :
+                                            'doneForTodayTitle';
+                const bodyKey =
+                  level === 'session-end' ? 'sessionEndBody' :
+                  level === 'multi-day'   ? 'doneForDaysBody' :
+                                            'doneForTodayBody';
+                return (
+                  <div className={`all-caught-up all-caught-up-${level}`}>
+                    <div className="all-caught-up-title">{t[titleKey]}</div>
+                    <p className="all-caught-up-body">{t[bodyKey]}</p>
+                    <div className="all-caught-up-next">
+                      <span className="all-caught-up-next-label">{t.nextBookDue}:</span>
+                      <span className="all-caught-up-next-time">
+                        {nextDue ? formatNextDue(nextDue, lang) : t.nothingScheduled}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Tier-stack progress bar. Replaces the binary mastered/
                   not-mastered linear bar. Each segment is one tier, in
@@ -721,19 +729,6 @@ function App() {
                   <span className="btn-icon">🔗</span>
                   <span>{t.share}</span>
                 </button>
-                <button className="btn reset-btn" onClick={resetProgress}>
-                  <span className="btn-icon">🗑️</span>
-                  <span>{t.resetProgress}</span>
-                </button>
-                {confirmReset && (
-                  <div className="reset-confirm-panel">
-                    <span className="reset-confirm-msg">{t.confirmResetMsg}</span>
-                    <div className="reset-confirm-buttons">
-                      <button className="btn-confirm-reset" onClick={doResetProgress}>{t.confirmReset}</button>
-                      <button className="btn-cancel-reset" onClick={() => setConfirmReset(false)}>{t.cancelReset}</button>
-                    </div>
-                  </div>
-                )}
                 {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
                 {stats.dueNow === 0 && (
                   <p className="extra-practice-hint">{t.extraPracticeHint}</p>
@@ -787,6 +782,7 @@ function App() {
               }}
               currentUser={currentUser}
               onRestore={handleRestore}
+              onResetProgress={doResetProgress}
             />
           )}
 

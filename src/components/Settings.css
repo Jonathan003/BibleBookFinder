@@ -301,6 +301,38 @@
   background: rgba(16, 185, 129, 0.25);
 }
 
+/* Destructive reset button — orange tint to match the deutan-safe
+   palette used elsewhere (no red). Disabled while the confirm panel is
+   open so it can't be re-clicked while waiting on confirmation. */
+.btn-reset-progress {
+  background: rgba(249, 115, 22, 0.10);
+  color: var(--wrong);
+}
+
+.btn-reset-progress:hover:not(:disabled) {
+  background: rgba(249, 115, 22, 0.20);
+}
+
+.btn-reset-progress:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Visual separator between the export/import block and the destructive
+   Reset Progress block. Reset is intentionally below the divider so it's
+   spatially separated from the safer data-management actions above. */
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.5rem 0 1rem;
+}
+
+.data-section-heading {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
 .data-feedback {
   text-align: center;
   padding: 0.5rem;

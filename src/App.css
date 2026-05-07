@@ -605,15 +605,6 @@
   transform: translateY(-2px);
 }
 
-.reset-btn {
-  background: rgba(249, 115, 22, 0.08);
-  color: var(--wrong);
-}
-
-.reset-btn:hover {
-  background: rgba(249, 115, 22, 0.18);
-}
-
 .reset-confirm-panel {
   grid-column: 1 / -1; /* span both columns of the menu-buttons grid */
   display: flex;

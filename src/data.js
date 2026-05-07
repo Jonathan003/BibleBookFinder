@@ -148,6 +148,9 @@ export const translations = {
     confirmReset: 'Wissen',
     confirmResetMsg: 'Weet je zeker dat je je voortgang wilt wissen? Dit kan niet ongedaan worden gemaakt.',
     cancelReset: 'Annuleer',
+    // Reset section in Settings → Data (where the Reset button lives now)
+    resetSectionTitle: 'Voortgang resetten',
+    resetSectionDesc: 'Wis al je voortgang en begin opnieuw. Dit kan niet ongedaan worden gemaakt.',
     confirmImport: 'Herstel',
     cancelImport: 'Annuleer',
     confirmImportMsg: 'Dit overschrijft jouw huidige voortgang en voorkeuren. Apparaat-specifieke instellingen (kolommen, afkortingen, OT/NT layout) blijven van dit toestel.',
@@ -282,8 +285,21 @@ export const translations = {
     // due right now. Replaces the Quiz Mode primary button so the
     // user isn't tempted to over-rehearse stable cards (which FSRS
     // research shows hurts retention vs. waiting).
+    // Three-level celebration: shown when dueNow=0. The level is chosen
+    // by getCelebrationLevel() based on how far away the next book is.
+    // Old single allCaughtUpTitle/Body kept for backwards compat in any
+    // edge case the level helper can't classify.
     allCaughtUpTitle: '✓ Klaar voor vandaag',
     allCaughtUpBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
+    // 'session-end' — next book due within an hour
+    sessionEndTitle: '✓ Sessie klaar',
+    sessionEndBody: 'Je sessie is af. Het volgende boek komt zo terug — neem even pauze.',
+    // 'today' — next book due later today
+    doneForTodayTitle: '✓ Klaar voor vandaag',
+    doneForTodayBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
+    // 'multi-day' — next book is tomorrow or later
+    doneForDaysTitle: '✓ Klaar — geniet van de rust',
+    doneForDaysBody: 'Niets gepland tot je volgende boek terugkomt. Je geheugen consolideert tussen herhalingen — dit is het belangrijkste deel.',
     nextBookDue: 'Volgende boek',
     nothingScheduled: 'Niks ingepland',
     extraPracticeHint: 'Toch oefenen? Studie Modus telt niet mee voor je schema.',
@@ -322,6 +338,9 @@ export const translations = {
     confirmReset: 'Reset',
     confirmResetMsg: 'Are you sure you want to reset your progress? This cannot be undone.',
     cancelReset: 'Cancel',
+    // Reset section in Settings → Data (where the Reset button lives now)
+    resetSectionTitle: 'Reset progress',
+    resetSectionDesc: 'Wipe all your progress and start over. This cannot be undone.',
     confirmImport: 'Restore',
     cancelImport: 'Cancel',
     confirmImportMsg: 'This will overwrite your current progress and preferences. Device-specific settings (columns, abbreviations, OT/NT layout) stay on this device.',
@@ -449,8 +468,18 @@ export const translations = {
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Progress by tier',
     // Menu — "all caught up" celebration
+    // Three-level celebration — see NL section for design rationale.
     allCaughtUpTitle: '✓ Done for today',
     allCaughtUpBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
+    // 'session-end' — next book due within an hour
+    sessionEndTitle: '✓ Session complete',
+    sessionEndBody: 'Your session is done. The next book comes back soon — take a breather.',
+    // 'today' — next book due later today
+    doneForTodayTitle: '✓ Done for today',
+    doneForTodayBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
+    // 'multi-day' — next book is tomorrow or later
+    doneForDaysTitle: '✓ Done — enjoy the rest',
+    doneForDaysBody: 'Nothing scheduled until your next book comes back. Your memory consolidates between reviews — this is the most important part.',
     nextBookDue: 'Next book',
     nothingScheduled: 'Nothing scheduled',
     extraPracticeHint: 'Want extra practice? Study Mode does not affect your schedule.',

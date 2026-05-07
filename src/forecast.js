@@ -103,6 +103,36 @@ export function formatNextDue(date, lang = 'nl', now = new Date()) {
   return date.toLocaleDateString(lang === 'nl' ? 'nl-BE' : 'en-US', { day: 'numeric', month: 'short' });
 }
 
+// Determine which "rest level" the user is in when dueNow=0. The original
+// design showed "Done for today" regardless of how far away the next book
+// was, which is misleading when the next book comes due in 5 minutes.
+// Three honest levels instead:
+//
+//   'session-end' — next book is due within 1 hour. The user just
+//     finished a session; they're not "done for today", they're between
+//     bursts. Soft celebration, short message.
+//   'today'       — next book is due later today (1h to end-of-day).
+//     Real rest, but more is coming. Standard celebration.
+//   'multi-day'   — next book is due tomorrow or later. The user has
+//     genuinely finished for the day. Strongest celebration.
+//
+// When `nextDue` is null (no future due — everything is overdue or there
+// are no cards yet), there's no rest to celebrate; caller should not
+// invoke this. The `level` is only meaningful when stats.dueNow === 0.
+export function getCelebrationLevel(nextDue, now = new Date()) {
+  if (!nextDue) return 'session-end';
+  const diffMs = nextDue.getTime() - now.getTime();
+  const oneHour = 60 * 60 * 1000;
+  if (diffMs <= oneHour) return 'session-end';
+
+  // End of today (local midnight). If the next due is before midnight,
+  // it's still "today". Otherwise it's tomorrow or later.
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (nextDue < endOfToday) return 'today';
+
+  return 'multi-day';
+}
+
 // Short label for a forecast bar segment ("Vandaag", "Ma", "Di", ...).
 // Day 0 is always shown as "Vandaag" / "Today" regardless of weekday;
 // day 1 onward use 2-letter weekday abbreviations.
