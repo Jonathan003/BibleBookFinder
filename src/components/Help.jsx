@@ -16,8 +16,12 @@ const helpContent = {
         text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime snelheidslimiet (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
       },
       {
-        icon: '🔄',
-        text: 'Als je alle 66 boeken beheerst: reset je voortgang en begin opnieuw met een kortere snelheidslimiet (bijv. 7 seconden). Zo bouw je stap voor stap op.',
+        icon: '🪜',
+        text: 'Boeken klimmen door zes niveaus: Onbekend → Geleerd → Vertrouwd → Beheerst → Verankerd → Permanent. Een boek "Beheerst" krijgen duurt enkele weken; alle 66 boeken op Verankerd ~2-3 maanden; alle 66 op Permanent een half jaar. Dat is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen blijft hangen zonder te vergeten, hoe sterker het in je geheugen zit.',
+      },
+      {
+        icon: '⏸️',
+        text: 'Wanneer "Klaar om te oefenen" op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. De app toont je dan wanneer het volgende boek terugkomt. Wil je toch oefenen? Studie Modus telt niet mee voor het schema.',
       },
       {
         icon: '⚙️',
@@ -85,20 +89,36 @@ const helpContent = {
 
       // ─── Voortgang begrijpen ────────────────────────────────────────
       {
+        q: 'Wat zijn de zes niveaus (Onbekend, Geleerd, Vertrouwd, Beheerst, Verankerd, Permanent)?',
+        a: 'Elk boek klimt geleidelijk omhoog naarmate je het correct beantwoordt en het algoritme zekerheid opbouwt. Onbekend = nog nooit gezien. Geleerd = voor het eerst geantwoord, maar nog onstabiel (uren tot een dag). Vertrouwd = enkele keren correct, het algoritme begint je intervallen op te schalen. Beheerst = stabiel voor minstens een week (dit was vroeger het enige eindniveau). Verankerd = stabiel voor een maand of meer. Permanent = stabiel voor een half jaar of meer — dit is wat het algoritme als "verankerd in lange-termijngeheugen" beschouwt. Het halen van alle 66 boeken op Permanent duurt natuurlijk maanden. Dat is geen probleem — het is precies wat lange-termijnleren betekent.',
+      },
+      {
+        q: 'Waarom kan ik niet doortrainen als "Klaar om te oefenen" op 0 staat?',
+        a: 'Je kunt wel — maar je voordeel ervan is bijna nul, en je kunt zelfs licht slechter af zijn. Het idee achter spaced repetition is dat je geheugen sterker wordt door de pauze tussen herhalingen, niet door extra herhalingen op iets dat al zit. Een boek dat al "Beheerst" is opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer. Voor de uren of dagen waarin een boek "rust" doet je brein onbewust werk — daarom voelt het de volgende keer makkelijker. Wil je toch verder oefenen, gebruik dan Studie Modus: die houdt het FSRS-schema schoon.',
+      },
+      {
         q: 'Welke boeken zijn het moeilijkst?',
         a: 'De 17 profetische boeken zijn voor de meesten het lastigst — ze liggen dicht bij elkaar in het rooster. Extra oefening op deze groep helpt het meest.',
       },
       {
         q: 'Wat betekent "Klaar om te oefenen" op het startscherm?',
-        a: 'Het toont hoeveel boeken het algoritme voorstelt om nu te herhalen — boeken die je nog niet hebt gezien en boeken waarvan het herhaalinterval is verlopen. Een handig richtgetal voor regelmaat. Maar of je vandaag eindigt op 0 of op 11 maakt voor je langetermijngeheugen niet uit; één dag uitstellen is geen probleem. Wel goed om niet meerdere dagen achter elkaar over te slaan, anders loopt het op.',
+        a: 'Het toont hoeveel boeken het algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. Wanneer dit getal op 0 staat verschijnt in plaats daarvan een "Klaar voor vandaag"-kaart met de tijd tot het volgende boek due is. Eén dag uitstellen is geen probleem; meerdere dagen achter elkaar overslaan loopt op.',
+      },
+      {
+        q: 'Wat is de "dagen op rij" met het vlammetje?',
+        a: 'Je streak: het aantal opeenvolgende dagen waarop je minstens één quiz-sessie hebt gedaan. Eén dag overslaan breekt de streak; de dag erna terugkomen begint opnieuw bij 1. Dit is bedoeld als zachte aansporing tot dagelijkse consistentie — wat voor lange-termijngeheugen veel meer doet dan eens per week een uur trainen. De best-streak ernaast toont je langste streak ooit.',
+      },
+      {
+        q: 'Wat toont de "Komende 7 dagen"-balk?',
+        a: 'Een vooruitblik: hoeveel boeken op elke dag van de komende week voor herhaling klaarstaan. Dit helpt je plannen — je kunt zien wanneer een drukke dag aankomt en eventueel iets vooruit doen, of een rustige dag verwachten. Er is geen verplichting; het is informatief.',
       },
       {
         q: 'Wat is de gouden lijn onder sommige boeken?',
-        a: 'Dat geeft aan dat je het boek beheerst — het algoritme beschouwt het als stabiel in je geheugen. Aan of uit te zetten via Instellingen.',
+        a: 'Dat geeft aan dat je het boek hebt bereikt op niveau Beheerst of hoger — het algoritme beschouwt het als stabiel in je geheugen. Aan of uit te zetten via Instellingen.',
       },
       {
         q: 'Wat als ik de app lang niet gebruik?',
-        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt staan er meer boeken als "Klaar om te oefenen". Pak gewoon op waar je gebleven was.',
+        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt staan er meer boeken als "Klaar om te oefenen". Pak gewoon op waar je gebleven was. Je streak resetset wel, maar je tier-vooruitgang en je beste-streak blijven bewaard.',
       },
 
       // ─── Instellingen / Aanpassingen ────────────────────────────────
@@ -147,8 +167,12 @@ const helpContent = {
         text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous mastery speed (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
       },
       {
-        icon: '🔄',
-        text: 'Once you\'ve mastered all 66 books: reset your progress and start again with a shorter mastery speed (e.g. 7 seconds). This way you build up step by step.',
+        icon: '🪜',
+        text: 'Books climb through six tiers: Unseen → Learning → Familiar → Mastered → Anchored → Permanent. Getting a book to "Mastered" takes a few weeks; all 66 books to Anchored ~2-3 months; all 66 to Permanent about half a year. That\'s not slowness — that *is* the learning. The longer a book stays in memory between reviews without being forgotten, the deeper it\'s rooted.',
+      },
+      {
+        icon: '⏸️',
+        text: 'When "Ready to practice" reads 0: stop. Drilling stable books does not strengthen memory — waiting does. The app then shows when the next book comes due. Want extra practice anyway? Study Mode does not affect the schedule.',
       },
       {
         icon: '⚙️',
@@ -216,20 +240,36 @@ const helpContent = {
 
       // ─── Understanding progress ─────────────────────────────────────
       {
+        q: 'What are the six tiers (Unseen, Learning, Familiar, Mastered, Anchored, Permanent)?',
+        a: 'Each book climbs as you answer it correctly and the algorithm builds confidence. Unseen = never answered. Learning = answered for the first time but still unstable (hours to a day). Familiar = a few correct answers, intervals are starting to stretch. Mastered = stable for at least a week (this used to be the only end-state). Anchored = stable for a month or more. Permanent = stable for half a year or more — what the algorithm considers "rooted in long-term memory". Getting all 66 books to Permanent naturally takes months. That\'s not a flaw — it\'s exactly what long-term retention means.',
+      },
+      {
+        q: 'Why can\'t I keep training when "Ready to practice" reads 0?',
+        a: 'You can — but the benefit is near zero, and you may even be slightly worse off. Spaced repetition works because your memory strengthens *during* the wait between reviews, not from extra reps on something already stable. Re-drilling a Mastered book adds no new strength; it just resets the timer. During the hours or days a book "rests", your brain quietly does work — that\'s why the next time feels easier. If you want to keep practicing, use Study Mode: it leaves the FSRS schedule untouched.',
+      },
+      {
         q: 'Which books are the hardest?',
         a: 'The 17 prophetic books are the toughest for most people — they sit close together in the grid. Extra practice on this group helps the most.',
       },
       {
         q: 'What does "Ready to practice" mean on the home screen?',
-        a: 'It shows how many books the algorithm suggests you review now — unseen books and books whose review interval has passed. A useful number for keeping a regular rhythm. But whether you finish today on 0 or on 11 doesn\'t matter for your long-term memory; postponing one day is no problem. Just don\'t skip many days in a row, otherwise it piles up.',
+        a: 'It shows how many books the algorithm wants to review now — unseen books plus books whose review interval has passed. When this number reaches 0, a "Done for today" card appears in its place with the time until the next book is due. Postponing one day is fine; skipping multiple days in a row piles up.',
+      },
+      {
+        q: 'What is the "day streak" with the flame?',
+        a: 'Your streak: the number of consecutive days on which you\'ve done at least one quiz session. Skipping a day breaks the streak; coming back the day after starts at 1 again. It\'s a gentle nudge toward daily consistency — which does more for long-term memory than a one-hour session once a week. The "Best" next to it shows your longest streak ever.',
+      },
+      {
+        q: 'What does the "Next 7 days" bar show?',
+        a: 'A look-ahead: how many books are scheduled for review on each upcoming day this week. Useful for planning — you can see when a busy day is coming and pull a few forward, or anticipate a quiet one. There\'s no obligation; it\'s informational.',
       },
       {
         q: 'What is the gold line at the bottom of some book cells?',
-        a: 'That indicates a mastered book — the algorithm considers it stable in your memory. Toggle it on or off in Settings.',
+        a: 'That marks a book at tier Mastered or higher — the algorithm considers it stable in your memory. Toggle it on or off in Settings.',
       },
       {
         q: "What happens if I don't use the app for a while?",
-        a: 'Nothing bad. There is no penalty for taking a break. When you come back, more books will show as "Ready to practice". Just pick up where you left off.',
+        a: 'Nothing bad. There is no penalty for taking a break. When you come back, more books will show as "Ready to practice". Just pick up where you left off. Your streak will reset, but your tier progress and best-streak record stay intact.',
       },
 
       // ─── Settings & adjustments ─────────────────────────────────────
