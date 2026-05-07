@@ -647,60 +647,6 @@
   min-height: 60vh;
 }
 
-/* Caught-up screen: shown when all 66 books are mastered AND nothing is due.
-   Visually mirrors summary-screen layout — centered card-style content —
-   but with celebratory tone (icon, congratulatory title) and two clear
-   actions: practice ahead anyway, or done (saves session and exits). */
-.caught-up-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1.5rem;
-  min-height: 60vh;
-}
-
-.caught-up-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 1.25rem;
-  max-width: 480px;
-}
-
-.caught-up-icon {
-  font-size: 3.5rem;
-  line-height: 1;
-}
-
-.caught-up-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--accent);
-  margin: 0;
-}
-
-.caught-up-body {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-secondary, #555);
-  margin: 0;
-}
-
-.caught-up-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 320px;
-  margin-top: 0.5rem;
-}
-
-.caught-up-actions .btn {
-  width: 100%;
-}
-
 .summary-title {
   font-size: 1.4rem;
   font-weight: 700;
