@@ -86,8 +86,9 @@ export function logBookPick(book, cardData, branch, dueBooks, unseenBooks, allBo
   const masteryFlag = wasMastered ? ' [MASTERED]' : '';
   const branchColor = branch === 'random-from-66' ? '#F97316' : '#3B82F6';
 
+  const bookName = book.en || book.nl || `id:${book.id}`;
   console.log(
-    `%c[Q${questionCounter}]%c ${book.name.padEnd(15)} | ${stateStr} ${repStr} ${stabStr} ${dueStr} | %cbranch:${branch}%c | pool: due=${dueBooks.length} unseen=${unseenBooks.length} mastered=${masteredCount}/66${masteryFlag}`,
+    `%c[Q${questionCounter}]%c ${bookName.padEnd(15)} | ${stateStr} ${repStr} ${stabStr} ${dueStr} | %cbranch:${branch}%c | pool: due=${dueBooks.length} unseen=${unseenBooks.length} mastered=${masteredCount}/66${masteryFlag}`,
     'color:#7C3AED;font-weight:bold',
     'color:inherit',
     `color:${branchColor};font-weight:bold`,
@@ -104,7 +105,7 @@ export function logAnswerResult(book, prevCardData, newCardData, rating) {
   const justMastered = !wasMastered && isNowMastered;
 
   if (justMastered && sessionStats) {
-    sessionStats.newlyMastered.push(book.name);
+    sessionStats.newlyMastered.push(book.en || book.nl || `id:${book.id}`);
   }
 
   const ratingNames = { 1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy' };
@@ -149,7 +150,7 @@ export function logSessionEnd(fsrsCards, allBooks) {
   const nonMastered = allBooks
     .filter(b => fsrsCards[b.id] && !isMastered(fsrsCards[b.id]))
     .map(b => ({
-      name: b.name,
+      name: b.en || b.nl || `id:${b.id}`,
       reps: fsrsCards[b.id].reps || 0,
       stability: fsrsCards[b.id].stability || 0,
     }))
