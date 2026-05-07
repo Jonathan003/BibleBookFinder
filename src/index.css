@@ -18,6 +18,16 @@
   --mastery: #f59e0b;
   --border: #e0e0e0;
   --tile-gap: 2px;
+  /* Tier palette — gradient from neutral grey through deepening blue,
+     ending in gold for "permanent" (parallels WaniKani's Burned tier
+     and matches the existing --mastery gold line under mastered books).
+     All blues; no green (deutan-safe per app-wide colorblind guard). */
+  --tier-unseen:    #d1d5db;
+  --tier-learned:   #bfdbfe;
+  --tier-familiar:  #60a5fa;
+  --tier-mastered:  #3b82f6;
+  --tier-anchored:  #1d4ed8;
+  --tier-permanent: #f59e0b;
 }
 
 html, body, #root {

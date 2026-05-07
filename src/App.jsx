@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useMemo } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
-import { getBookStats } from './fsrs';
+import { getBookStats, getTierStats, TIERS } from './fsrs';
+import { computeForecast, getNextDueTime, formatNextDue, forecastDayLabel } from './forecast';
+import { computeStreakInfo } from './streak';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
 import { InitialAvatar } from './components/Icons';
@@ -297,6 +299,30 @@ function App() {
   const fsrsCards = currentUser?.fsrsCards || {};
   const stats = getBookStats(fsrsCards, bibleBooks);
 
+  // Tier breakdown — discrete progression layer on top of FSRS state.
+  // Memoized because it walks all 66 cards on every recompute and the
+  // menu re-renders on every state change (welcome banner dismissal,
+  // share feedback, etc.) where the cards themselves haven't changed.
+  const tierStats = useMemo(() => getTierStats(fsrsCards, bibleBooks), [fsrsCards]);
+
+  // Review forecast for the next 7 days. computeForecast is pure and
+  // cheap (one pass over 66 books × 7 days = 462 ops) but memoizing
+  // saves the same recompute on every menu re-render and gives a
+  // stable array reference for any descendant memoization.
+  const forecast = useMemo(() => computeForecast(fsrsCards, bibleBooks, 7), [fsrsCards]);
+
+  // Next future due — used for the "all caught up" countdown label.
+  // Recomputed only when fsrsCards changes; the displayed string
+  // (formatNextDue) regenerates on each render to stay fresh as time
+  // passes within a session.
+  const nextDue = useMemo(() => getNextDueTime(fsrsCards, bibleBooks), [fsrsCards]);
+
+  // Streak from quizHistory — purely derived, no separate state.
+  const streakInfo = useMemo(
+    () => computeStreakInfo(currentUser?.quizHistory || []),
+    [currentUser?.quizHistory]
+  );
+
   // Open the inline confirm panel instead of the default browser dialog.
   // The panel appears below the menu buttons and matches the style used
   // for user deletion confirmation in UserSelect.
@@ -531,40 +557,166 @@ function App() {
                   {welcomeMessage === '7d' ? t.welcomeBack7d : t.welcomeBack24h}
                 </div>
               )}
-              <div className="stats">
-                <div className="stat-card">
-                  <span className="stat-number">{stats.mastered}</span>
-                  <span className="stat-label">{t.mastered} {t.of} 66</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">{stats.dueNow}</span>
-                  <span className="stat-label">{t.readyToPractice}</span>
-                </div>
-              </div>
 
-              <div className="progress-section">
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${(stats.mastered / 66) * 100}%` }}>
-                    {stats.mastered > 0 && (
-                      <span className="progress-text">{Math.round((stats.mastered / 66) * 100)}%</span>
-                    )}
+              {/* Hero card. Two states based on whether there's anything
+                  to do right now:
+                    - dueNow > 0 → standard "X klaar om te oefenen" stats
+                      with Quiz Mode prominent below.
+                    - dueNow === 0 → "All caught up" celebration with
+                      countdown to the next due book and a nudge toward
+                      Study Mode for users who want to keep practicing.
+                  This split prevents the over-rehearsal trap where the
+                  Quiz button leads to FSRS branch 4 (random-from-66),
+                  which is what triggered the original UX redesign. */}
+              {stats.dueNow > 0 ? (
+                <div className="stats">
+                  <div className="stat-card">
+                    <span className="stat-number">{tierStats.mastered + tierStats.anchored + tierStats.permanent}</span>
+                    <span className="stat-label">{t.mastered} {t.of} 66</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-number">{stats.dueNow}</span>
+                    <span className="stat-label">{t.readyToPractice}</span>
                   </div>
                 </div>
-                <span className="progress-label">{stats.mastered}/66 {t.mastered?.toLowerCase()}</span>
+              ) : (
+                <div className="all-caught-up">
+                  <div className="all-caught-up-title">{t.allCaughtUpTitle}</div>
+                  <p className="all-caught-up-body">{t.allCaughtUpBody}</p>
+                  <div className="all-caught-up-next">
+                    <span className="all-caught-up-next-label">{t.nextBookDue}:</span>
+                    <span className="all-caught-up-next-time">
+                      {nextDue ? formatNextDue(nextDue, lang) : t.nothingScheduled}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tier-stack progress bar. Replaces the binary mastered/
+                  not-mastered linear bar. Each segment is one tier, in
+                  promotion order; segment width is proportional to that
+                  tier's count. The 'unseen' tier is included so the bar
+                  always sums to 66 and the user sees how much ground is
+                  left to cover. Color tokens come from --tier-* CSS
+                  variables in App.css. */}
+              <div className="tier-section">
+                <div className="tier-bar">
+                  {TIERS.map(tier => (
+                    tierStats[tier] > 0 && (
+                      <div
+                        key={tier}
+                        className={`tier-segment tier-${tier}`}
+                        style={{ width: `${(tierStats[tier] / 66) * 100}%` }}
+                        title={`${t['tier' + tier.charAt(0).toUpperCase() + tier.slice(1)]}: ${tierStats[tier]}`}
+                      >
+                        {tierStats[tier] >= 5 && <span className="tier-segment-count">{tierStats[tier]}</span>}
+                      </div>
+                    )
+                  ))}
+                </div>
+                <div className="tier-legend">
+                  {/* Show only non-empty tiers in the legend to avoid clutter
+                      on fresh accounts. Order is fixed (promotion order)
+                      regardless of which tiers are populated. */}
+                  {TIERS.filter(tier => tierStats[tier] > 0).map(tier => (
+                    <span key={tier} className={`tier-chip tier-${tier}`}>
+                      <span className="tier-chip-dot" />
+                      <span className="tier-chip-label">
+                        {t['tier' + tier.charAt(0).toUpperCase() + tier.slice(1)]}
+                      </span>
+                      <span className="tier-chip-count">{tierStats[tier]}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
 
+              {/* Streak indicator + 7-day forecast. Both are derived from
+                  existing state (quizHistory and fsrsCards respectively);
+                  neither needs any persistence. Streak hidden when zero
+                  to avoid scolding the fresh user with "0 day streak".
+                  Forecast shown only when there's data — empty fresh
+                  account would render a meaningless flat bar. */}
+              {(streakInfo.current > 0 || forecast.some(d => d.count > 0)) && (
+                <div className="momentum-section">
+                  {streakInfo.current > 0 && (
+                    <div className="streak-card">
+                      <span className="streak-flame">🔥</span>
+                      <span className="streak-number">{streakInfo.current}</span>
+                      <span className="streak-label">
+                        {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
+                        {streakInfo.longest > streakInfo.current && (
+                          <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {forecast.some(d => d.count > 0) && (
+                    <div className="forecast-card">
+                      <div className="forecast-title">{t.forecastTitle}</div>
+                      <div className="forecast-bars">
+                        {(() => {
+                          // Normalize bar heights against the 7-day max so
+                          // the visual scale is always meaningful regardless
+                          // of absolute counts. Min 4px so days with >0
+                          // due books are at least visible — purely-zero
+                          // days stay flat.
+                          const maxCount = Math.max(1, ...forecast.map(d => d.count));
+                          return forecast.map((day, i) => {
+                            const heightPct = day.count === 0 ? 0 : Math.max(8, (day.count / maxCount) * 100);
+                            return (
+                              <div key={i} className="forecast-day">
+                                <div className="forecast-bar-track">
+                                  <div
+                                    className={`forecast-bar-fill ${day.count > 0 ? 'has-due' : ''}`}
+                                    style={{ height: `${heightPct}%` }}
+                                  />
+                                </div>
+                                <span className="forecast-count">{day.count || ''}</span>
+                                <span className="forecast-label">{forecastDayLabel(day.date, i, lang)}</span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="menu-buttons">
-                <button className="btn study-btn" onClick={() => setView('study')}>
-                  <span className="btn-icon">📖</span>
-                  <span>{t.studyMode}</span>
-                </button>
-                <button className="btn quiz-btn" onClick={() => {
-                  setQuizPhase('playing');
-                  setView('quiz');
-                }}>
-                  <span className="btn-icon">🎯</span>
-                  <span>{t.quizMode}</span>
-                </button>
+                {/* Button order changes with state: when there's work to
+                    do, Quiz is primary (top-right, gradient); when caught
+                    up, Study takes the prominent spot and Quiz is
+                    de-emphasized to discourage over-rehearsal. */}
+                {stats.dueNow > 0 ? (
+                  <>
+                    <button className="btn study-btn" onClick={() => setView('study')}>
+                      <span className="btn-icon">📖</span>
+                      <span>{t.studyMode}</span>
+                    </button>
+                    <button className="btn quiz-btn" onClick={() => {
+                      setQuizPhase('playing');
+                      setView('quiz');
+                    }}>
+                      <span className="btn-icon">🎯</span>
+                      <span>{t.quizMode}</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn study-btn study-btn-primary" onClick={() => setView('study')}>
+                      <span className="btn-icon">📖</span>
+                      <span>{t.studyMode}</span>
+                    </button>
+                    <button className="btn quiz-btn quiz-btn-secondary" onClick={() => {
+                      setQuizPhase('playing');
+                      setView('quiz');
+                    }}>
+                      <span className="btn-icon">🎯</span>
+                      <span>{t.quizMode}</span>
+                    </button>
+                  </>
+                )}
                 <button className="btn share-btn" onClick={share}>
                   <span className="btn-icon">🔗</span>
                   <span>{t.share}</span>
@@ -583,6 +735,9 @@ function App() {
                   </div>
                 )}
                 {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
+                {stats.dueNow === 0 && (
+                  <p className="extra-practice-hint">{t.extraPracticeHint}</p>
+                )}
               </div>
             </div>
           )}

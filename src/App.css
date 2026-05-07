@@ -226,6 +226,307 @@
   text-align: center;
 }
 
+/* ─── All-caught-up celebration card ────────────────────────────────
+   Shown on the menu when stats.dueNow === 0 — replaces the prominent
+   Quiz Mode button so the user isn't tempted to over-rehearse stable
+   cards. Visual style intentionally calm rather than confetti-loud:
+   "you finished" should feel like satisfaction, not interruption. */
+.all-caught-up {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(29,78,216,0.04));
+  border: 1px solid rgba(59,130,246,0.18);
+  border-radius: 14px;
+  padding: 1.25rem 1.25rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  animation: slideUp 0.3s ease;
+}
+
+.all-caught-up-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--correct);
+}
+
+.all-caught-up-body {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.all-caught-up-next {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(59,130,246,0.15);
+}
+
+.all-caught-up-next-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.all-caught-up-next-time {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ─── Tier bar + legend ──────────────────────────────────────────────
+   Stacked horizontal bar showing the count in each tier, plus a legend
+   of chips below for tiers that are non-empty. Replaces the previous
+   binary mastered/not progress-bar with a richer six-tier ladder. */
+.tier-section {
+  width: 100%;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tier-bar {
+  width: 100%;
+  height: 22px;
+  background: var(--bg-secondary);
+  border-radius: 11px;
+  overflow: hidden;
+  display: flex;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.tier-segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.5s ease;
+  position: relative;
+  min-width: 0;
+}
+
+.tier-segment-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  white-space: nowrap;
+}
+
+/* Tier-specific colors. Light tiers get dark text on the legend chip
+   (set on the chip, not the segment — segment counts always sit on
+   colored fill). */
+.tier-segment.tier-unseen    { background: var(--tier-unseen); }
+.tier-segment.tier-learned   { background: var(--tier-learned); }
+.tier-segment.tier-familiar  { background: var(--tier-familiar); }
+.tier-segment.tier-mastered  { background: var(--tier-mastered); }
+.tier-segment.tier-anchored  { background: var(--tier-anchored); }
+.tier-segment.tier-permanent { background: var(--tier-permanent); }
+
+/* Light tiers — count text needs darker color to stay readable. */
+.tier-segment.tier-unseen .tier-segment-count,
+.tier-segment.tier-learned .tier-segment-count {
+  color: var(--text-primary);
+  text-shadow: none;
+}
+
+.tier-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+}
+
+.tier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.tier-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tier-chip.tier-unseen    .tier-chip-dot { background: var(--tier-unseen); }
+.tier-chip.tier-learned   .tier-chip-dot { background: var(--tier-learned); }
+.tier-chip.tier-familiar  .tier-chip-dot { background: var(--tier-familiar); }
+.tier-chip.tier-mastered  .tier-chip-dot { background: var(--tier-mastered); }
+.tier-chip.tier-anchored  .tier-chip-dot { background: var(--tier-anchored); }
+.tier-chip.tier-permanent .tier-chip-dot { background: var(--tier-permanent); }
+
+.tier-chip-label {
+  color: var(--text-secondary);
+}
+
+.tier-chip-count {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ─── Streak + forecast row ──────────────────────────────────────────
+   Two compact cards side by side on tablet+, stacked on phone. Both
+   are derived state — streak from quizHistory, forecast from FSRS due
+   dates — so they're cheap to render and always in sync with the
+   underlying data. */
+.momentum-section {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 520px) {
+  .momentum-section {
+    grid-template-columns: auto 1fr;
+  }
+}
+
+.streak-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+}
+
+.streak-flame {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.streak-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mastery);
+  line-height: 1;
+}
+
+.streak-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.streak-best {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.forecast-card {
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.forecast-title {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.forecast-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.25rem;
+  height: 60px;
+}
+
+.forecast-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  height: 100%;
+  min-width: 0;
+}
+
+.forecast-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.forecast-bar-fill {
+  width: 70%;
+  max-width: 14px;
+  background: var(--tier-unseen);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+}
+
+.forecast-bar-fill.has-due {
+  background: var(--tier-mastered);
+}
+
+.forecast-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  height: 0.85rem;
+  line-height: 0.85rem;
+}
+
+.forecast-label {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+/* Hint paragraph below the menu buttons in caught-up state. Reminds
+   the user that Study Mode exists for those who want extra practice
+   without polluting the FSRS schedule. */
+.extra-practice-hint {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 0.4rem 0.5rem 0;
+  line-height: 1.4;
+}
+
+/* In caught-up state the Quiz button is visually de-emphasized — same
+   functional access (no dead button, no hidden feature), but it no
+   longer dominates the visual hierarchy. Study takes the gradient
+   treatment instead so the eye lands on the recommended action. */
+.quiz-btn-secondary {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border);
+  box-shadow: none !important;
+}
+
+.quiz-btn-secondary:hover {
+  background: var(--bg-primary) !important;
+  transform: none !important;
+}
+
+.study-btn-primary {
+  background: linear-gradient(135deg, #2563eb, var(--correct)) !important;
+}
+
 /* Button base */
 .btn {
   padding: 0.875rem 1.5rem;
