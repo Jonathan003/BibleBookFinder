@@ -34,6 +34,40 @@ export function reviewBook(scheduler, card, rating) {
   return result;
 }
 
+// ─── Learn Ahead Limit ────────────────────────────────────────────────
+// Cards in Learning or Relearning state typically have very short
+// intervals (minutes, not days). Without this limit, a card scheduled
+// 90 seconds in the future shows the menu as "DUE = 0", but the moment
+// the user closes the screen and reopens it, the same card snaps to
+// "DUE = 1" — confusing and slightly demoralizing.
+//
+// Pattern from RemNote / Anki: count short-interval cards as currently
+// due if they're within ~15 minutes of being due. The user is in a
+// session anyway; pulling the next short-interval review forward by a
+// few minutes has negligible effect on FSRS calibration (early reviews
+// give smaller stability gains automatically) and removes the UX
+// flicker entirely.
+//
+// The limit applies to Learning and Relearning only — Review-state
+// cards have intervals measured in days, so a "15 minutes early" pull
+// against a multi-day interval would actually distort scheduling.
+export const LEARN_AHEAD_MS = 15 * 60 * 1000;
+
+// Single source of truth for "is this card due right now?". Used by
+// getDueBooks (drives pickNextBook) and getBookStats (drives the menu's
+// readyToPractice / dueNow stat). Keeping these aligned matters: if the
+// menu says DUE=0 but pickNextBook can still find a Learning card 5
+// minutes out, the eliminated-Branch-4 session-complete screen would
+// briefly flash before pickNextBook handed back a card.
+export function isDueNow(cardData, now = new Date()) {
+  if (!cardData) return false; // unseen handled separately by callers
+  const due = cardData.due instanceof Date ? cardData.due : new Date(cardData.due);
+  if (due <= now) return true;
+  const isShortInterval = cardData.state === State.Learning || cardData.state === State.Relearning;
+  if (!isShortInterval) return false;
+  return due.getTime() - now.getTime() <= LEARN_AHEAD_MS;
+}
+
 // Get books that are due for review
 export function getDueBooks(fsrsCards, allBooks) {
   const now = new Date();
@@ -44,12 +78,15 @@ export function getDueBooks(fsrsCards, allBooks) {
     const cardData = fsrsCards[book.id];
     if (!cardData) {
       unseen.push(book);
-    } else {
+    } else if (isDueNow(cardData, now)) {
       const dueDate = new Date(cardData.due);
-      if (dueDate <= now) {
-        const overdueDays = (now - dueDate) / (1000 * 60 * 60 * 24);
-        due.push({ book, overdueDays });
-      }
+      // overdueDays is negative for Learn-Ahead-Limit pulls (card is
+      // technically a few minutes in the future). Negative values sort
+      // below truly-overdue cards in the descending sort below, which
+      // is what we want — pull legitimately-overdue first, then
+      // about-to-be-due Learning cards.
+      const overdueDays = (now - dueDate) / (1000 * 60 * 60 * 24);
+      due.push({ book, overdueDays });
     }
   });
 
@@ -61,6 +98,59 @@ export function getDueBooks(fsrsCards, allBooks) {
     unseenBooks: unseen,
     totalDue: due.length,
     totalUnseen: unseen.length,
+  };
+}
+
+// Books NOT currently due but with a card — i.e. legitimate Train Ahead
+// candidates. Returned sorted by `due` ascending (closest-to-due first),
+// matching the spec's "FSRS-ordered, NOT random" requirement.
+//
+// Unseen books are excluded: they're already picked up by Branch 2 of
+// pickNextBook before the session-complete screen ever activates.
+// Including them as Train Ahead candidates would let the user "train
+// ahead" on books FSRS already considers due, which is just confusing.
+export function getTrainAheadCandidates(fsrsCards, allBooks, now = new Date()) {
+  const candidates = [];
+  allBooks.forEach(book => {
+    const card = fsrsCards[book.id];
+    if (!card) return;
+    if (isDueNow(card, now)) return;
+    candidates.push({ book, due: new Date(card.due) });
+  });
+  candidates.sort((a, b) => a.due - b.due);
+  return candidates;
+}
+
+// Build a Train Ahead queue for a given horizon. Returns an array of
+// books in due-ascending order (the order they'll be presented in the
+// quiz). Horizons:
+//   'count5'    — 5 closest-to-due
+//   'count10'   — 10 closest-to-due
+//   'week'      — all books due within the next 7 days (calendar)
+//   'remaining' — every non-due book with a card
+export function buildTrainAheadQueue(fsrsCards, allBooks, horizon, now = new Date()) {
+  const candidates = getTrainAheadCandidates(fsrsCards, allBooks, now);
+  if (horizon === 'count5')    return candidates.slice(0, 5).map(c => c.book);
+  if (horizon === 'count10')   return candidates.slice(0, 10).map(c => c.book);
+  if (horizon === 'remaining') return candidates.map(c => c.book);
+  if (horizon === 'week') {
+    const cutoff = now.getTime() + 7 * 24 * 60 * 60 * 1000;
+    return candidates.filter(c => c.due.getTime() <= cutoff).map(c => c.book);
+  }
+  return [];
+}
+
+// Counts per horizon — used to disable submenu options that would
+// produce zero books, and to disable the parent Train Ahead button
+// itself when no horizon has any candidates.
+export function getTrainAheadCounts(fsrsCards, allBooks, now = new Date()) {
+  const candidates = getTrainAheadCandidates(fsrsCards, allBooks, now);
+  const cutoff = now.getTime() + 7 * 24 * 60 * 60 * 1000;
+  return {
+    count5: Math.min(5, candidates.length),
+    count10: Math.min(10, candidates.length),
+    week: candidates.filter(c => c.due.getTime() <= cutoff).length,
+    remaining: candidates.length,
   };
 }
 
@@ -196,7 +286,13 @@ export function getBookStats(fsrsCards, allBooks) {
     } else {
       learning++;
     }
-    if (new Date(cardData.due) <= now) {
+    // Use the same Learn-Ahead-Limit-aware predicate as getDueBooks so
+    // the menu's "Klaar om te oefenen" count matches what pickNextBook
+    // will actually find. Without this, a Learning card scheduled in
+    // 5 minutes shows dueNow=0 on the menu but pickNextBook would still
+    // find it — causing the new session-complete screen to flash and
+    // immediately disappear.
+    if (isDueNow(cardData, now)) {
       dueNow++;
     }
   });

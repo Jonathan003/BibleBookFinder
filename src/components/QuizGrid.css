@@ -830,3 +830,272 @@
     gap: 0.6rem;
   }
 }
+
+/* ─── Session-complete screen ──────────────────────────────────────────
+   Shown when DUE+unseen=0 (normal segment) or when a Train Ahead queue
+   empties. Layout mirrors the existing .summary-screen for visual
+   consistency, but content is restructured around three explicit
+   choices (End / Study / Train ahead). */
+.session-complete-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  padding: 2rem 1.25rem;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.session-complete-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.session-complete-next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.95rem;
+}
+
+.session-complete-next-label {
+  color: var(--text-secondary, #555);
+}
+
+.session-complete-next-time {
+  color: var(--text-primary, #1a1a2e);
+  font-weight: 600;
+}
+
+/* Rest message: the two-line "Stoppen versterkt..." / "Wachten is..." block.
+   Uses the secondary background as a subtle card so it reads as a separate
+   thought from the next-due line above. */
+.session-complete-rest {
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  max-width: 440px;
+  width: 100%;
+}
+
+.session-complete-rest-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+  margin: 0 0 0.4rem;
+  line-height: 1.4;
+}
+
+.session-complete-rest-body {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #555);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Daily totals — single line of factual numbers. Muted so it doesn't
+   compete with the rest-message above (the message is the takeaway;
+   the numbers are just data). */
+.session-complete-today {
+  font-size: 0.88rem;
+  color: var(--text-secondary, #666);
+  margin: 0;
+  max-width: 440px;
+  line-height: 1.4;
+}
+
+.session-complete-today strong {
+  color: var(--text-primary, #1a1a2e);
+  font-weight: 600;
+}
+
+/* Buttons stack — column on mobile, fits 1 button per row up to ~360px wide.
+   Width-capped at 320px so they don't span the full screen on tablets,
+   which would feel awkward. */
+.session-complete-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.25rem;
+}
+
+.session-complete-buttons .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--border, #ddd);
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #1a1a2e);
+  min-height: 44px;
+}
+
+.session-complete-buttons .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* End-session is the primary "this is done" action — matches the existing
+   .quiz-btn / accent-purple gradient used for "Done" on the summary screen,
+   so the user's hand can move to it without re-learning the visual hierarchy. */
+.session-complete-finish {
+  background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Study Mode — neutral secondary, matches the existing menu-screen
+   "Study Mode" button styling. Icon is left-aligned via flex-gap above. */
+.session-complete-study {
+  /* default neutral .btn styling — no override */
+}
+
+/* Train Ahead container holds the parent button + collapsible submenu.
+   When .open is set, the parent button has its bottom corners flat so
+   the submenu reads as a continuation of the same control. */
+.session-complete-trainahead {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+}
+
+.session-complete-trainahead-btn {
+  width: 100%;
+}
+
+.session-complete-trainahead.open .session-complete-trainahead-btn {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.trainahead-caret {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+}
+
+/* Submenu — flat-top so it visually attaches to the parent button.
+   Each option is a horizontal row: label on the left, candidate count
+   on the right, separated by space-between. The count helps the user
+   choose: "5 boeken (5)" vs "alle resterende (61)" makes the scope
+   immediately clear. */
+.trainahead-menu {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border, #ddd);
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: var(--bg-secondary, #fff);
+  overflow: hidden;
+}
+
+.trainahead-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--text-primary, #1a1a2e);
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;          /* keep tap target ≥44px on mobile */
+  border-top: 1px solid var(--border, #ddd);
+}
+
+.trainahead-option:first-child {
+  border-top: none;
+}
+
+.trainahead-option:disabled {
+  color: var(--text-secondary, #888);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.trainahead-option:not(:disabled):hover,
+.trainahead-option:not(:disabled):focus-visible {
+  background: var(--bg-primary, #f5f5f7);
+}
+
+.trainahead-option-label {
+  flex: 1;
+}
+
+.trainahead-option-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  background: var(--bg-primary, #f0f0f0);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.85rem;
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+.trainahead-option:disabled .trainahead-option-count {
+  opacity: 0.5;
+}
+
+/* ─── Train Ahead in-quiz pill ────────────────────────────────────────
+   Sits in the topbar, between prompt-row and quiz-stats. Subtle so it
+   doesn't compete with the prompt; uses the accent (purple) so the user
+   knows this is a deliberately-different mode from regular due-driven
+   play. Compact — single line, narrow padding — to fit phone landscape. */
+.trainahead-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: center;
+  margin: 0.25rem 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #7C3AED) 12%, transparent);
+  color: var(--accent, #7C3AED);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phone landscape: compress vertical spacing so the session-complete
+   screen fits without scrolling on short viewports (e.g. iPhone SE
+   landscape ~320px tall content area). */
+@media (orientation: landscape) and (max-height: 500px) {
+  .session-complete-screen {
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    min-height: 0;
+  }
+  .session-complete-title {
+    font-size: 1.2rem;
+  }
+  .session-complete-rest {
+    padding: 0.6rem 0.9rem;
+  }
+  .session-complete-rest-title {
+    font-size: 0.92rem;
+    margin-bottom: 0.2rem;
+  }
+  .session-complete-rest-body {
+    font-size: 0.82rem;
+  }
+}

@@ -1,3 +1,5 @@
+import { isDueNow } from './fsrs';
+
 // Review forecast helpers — derive "what's coming" information directly
 // from the FSRS card data without persisting any new state. All
 // calculations are pure functions of fsrsCards + allBooks + the current
@@ -50,6 +52,12 @@ export function computeForecast(fsrsCards, allBooks, days = 7) {
 // Find the next future due time across all books, or null if nothing
 // is scheduled in the future (everything is already due now or there
 // are no cards yet). Used to render "Volgende boek: morgen 09:14".
+//
+// Cards already considered "due now" by the Learn-Ahead-Limit (Learning
+// or Relearning state, due within the next 15 minutes) are excluded
+// from the search — the menu treats them as currently due, so they must
+// not also be the answer to "when is the *next* book?" or the celebration
+// card shows a contradiction (dueNow=0 + nextBookDue=in 5 minutes).
 export function getNextDueTime(fsrsCards, allBooks) {
   const now = new Date();
   let earliest = null;
@@ -57,6 +65,7 @@ export function getNextDueTime(fsrsCards, allBooks) {
   allBooks.forEach(book => {
     const card = fsrsCards[book.id];
     if (!card) return; // unseen books are not "future" — they're due now
+    if (isDueNow(card, now)) return; // already counted as currently due
     const due = new Date(card.due);
     if (due > now) {
       if (!earliest || due < earliest) earliest = due;

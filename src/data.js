@@ -231,6 +231,17 @@ export const translations = {
     paceRelaxedHint: 'Boeken komen minder vaak terug — ideaal als je af en toe oefent',
     paceBalancedHint: 'Aanbevolen — goede balans tussen inspanning en voortgang',
     paceIntensiveHint: 'Boeken komen vaak terug — ideaal als je regelmatig oefent',
+    // Two keys exist for the same FSRS due-count by design — this is
+    // intentional and should NOT be unified:
+    //   - readyToPractice ("Klaar om te oefenen") is the home-menu label.
+    //     It frames the count as a preparation invitation: "here's what's
+    //     waiting for you when you start a session".
+    //   - due ("Te doen") is the in-quiz / Train-Ahead label. It frames
+    //     the same count as a session countdown: "this is how many books
+    //     remain in the current run". "Klaar om te oefenen" inside the
+    //     quiz would read oddly — you ARE practicing.
+    // Help.jsx has a dedicated FAQ entry explaining both terms refer to
+    // the same number, just in different contexts.
     due: 'Te doen',
     readyToPractice: 'Klaar om te oefenen',
     practiced: 'Geoefend',
@@ -329,6 +340,42 @@ export const translations = {
     // Welcome back
     welcomeBack24h: 'Welkom terug! Laten we kijken wat je nog weet.',
     welcomeBack7d: 'Welkom terug! Ga verder waar je gebleven was — geen druk.',
+    // ─── Session-complete screen ──────────────────────────────────────
+    // Shown when DUE=0 with no unseen books, OR when a Train Ahead batch
+    // finishes. Replaces the eliminated "random from all 66" Branch 4 in
+    // pickNextBook — the user has genuinely finished and any further
+    // training is a deliberate choice (Study Mode, or Train Ahead).
+    sessionCompleteTitle: '✨ Sessie compleet',
+    sessionCompleteNextLabel: 'Volgend boek (volgens schema)',
+    sessionCompleteRestTitle: '🧠 Stoppen versterkt je geheugen meer dan doortrainen.',
+    sessionCompleteRestBody: 'Wachten is geen pauze — het is wanneer je geheugen het werk doet.',
+    // Today's totals line. {N} {M} {T} are filled in by the component.
+    // "boeken" here counts unique book IDs seen today (sessions saved
+    // with seenBookIds). For legacy entries without that field the
+    // component falls back to total questions answered.
+    sessionCompleteTodayLabel: 'Vandaag',
+    sessionCompleteBooks: 'boeken',
+    sessionCompleteSessions: 'sessies',
+    sessionCompleteSessionSingle: 'sessie',
+    sessionCompleteMinutes: 'minuten getraind',
+    sessionCompleteFinish: 'Sessie afsluiten',
+    sessionCompleteStudy: 'Studie Modus',
+    sessionCompleteTrainAhead: 'Train vooruit',
+    // ─── Train Ahead ──────────────────────────────────────────────────
+    // The submenu opens after tapping "Train vooruit". Each option shows
+    // its candidate count from getTrainAheadCounts(); options with 0
+    // candidates render as disabled. The parent button itself is
+    // disabled when every horizon has 0 candidates.
+    trainAheadHorizonCount5: '5 boeken',
+    trainAheadHorizonCount10: '10 boeken',
+    trainAheadHorizonWeek: 'deze week (7 dagen)',
+    trainAheadHorizonRemaining: 'alle resterende',
+    // In-quiz status when a Train Ahead session is in progress. The
+    // countdown reuses t.due ("Te doen") rather than a new label —
+    // semantically it's the same thing: how many books left in the run.
+    trainAheadInProgress: 'Train vooruit',
+    // Back-button confirmation text on the session-complete screen.
+    // Same wording as the regular summary's `done` for consistency.
   },
   en: {
     title: 'Bible Book Finder',
@@ -428,6 +475,15 @@ export const translations = {
     paceRelaxedHint: 'Books come back less often — best if you practice occasionally',
     paceBalancedHint: 'Recommended — good balance between effort and progress',
     paceIntensiveHint: 'Books come back frequently — best if you practice often',
+    // Two keys exist for the same FSRS due-count by design — this is
+    // intentional and should NOT be unified. See the corresponding NL
+    // block for the full rationale; in short:
+    //   - readyToPractice ("Ready to practice") frames the menu count
+    //     as a preparation invitation.
+    //   - due ("Due") frames the same count inside the quiz / Train
+    //     Ahead as a session countdown.
+    // Help.jsx has a dedicated FAQ entry explaining both terms refer to
+    // the same number.
     due: 'Due',
     readyToPractice: 'Ready to practice',
     practiced: 'Practiced',
@@ -508,5 +564,26 @@ export const translations = {
     // Welcome back
     welcomeBack24h: 'Welcome back! Let\'s see what you remember.',
     welcomeBack7d: 'Welcome back! Pick up where you left off — no pressure.',
+    // ─── Session-complete screen ──────────────────────────────────────
+    // See NL section for design rationale.
+    sessionCompleteTitle: '✨ Session complete',
+    sessionCompleteNextLabel: 'Next book (per schedule)',
+    sessionCompleteRestTitle: '🧠 Stopping strengthens your memory more than pushing through.',
+    sessionCompleteRestBody: 'The wait is not a pause — it\'s when your memory does the work.',
+    sessionCompleteTodayLabel: 'Today',
+    sessionCompleteBooks: 'books',
+    sessionCompleteSessions: 'sessions',
+    sessionCompleteSessionSingle: 'session',
+    sessionCompleteMinutes: 'minutes trained',
+    sessionCompleteFinish: 'End session',
+    sessionCompleteStudy: 'Study Mode',
+    sessionCompleteTrainAhead: 'Train ahead',
+    // ─── Train Ahead ──────────────────────────────────────────────────
+    // See NL section for design rationale.
+    trainAheadHorizonCount5: '5 books',
+    trainAheadHorizonCount10: '10 books',
+    trainAheadHorizonWeek: 'this week (7 days)',
+    trainAheadHorizonRemaining: 'all remaining',
+    trainAheadInProgress: 'Train ahead',
   }
 };

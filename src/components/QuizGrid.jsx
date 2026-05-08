@@ -6,9 +6,12 @@ import { useTimeoutManager } from '../useTimeoutManager';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
-  Rating, getBookStats, isMastered
+  Rating, getBookStats, isMastered,
+  buildTrainAheadQueue, getTrainAheadCounts,
 } from '../fsrs';
-import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd, logBranch4Warning } from '../debug';
+import { getNextDueTime, formatNextDue } from '../forecast';
+import { computeTodayStats } from '../streak';
+import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
 import { formatDuration } from '../timeFormat';
 import './QuizGrid.css';
 
@@ -26,7 +29,9 @@ import './QuizGrid.css';
 //
 // The cap protects the share-message claim ("X books mastered in Y time")
 // from being inflated by AFK moments. Without it, a single sleeping-with-
-// the-app-open incident could add hours of fake training time.
+// the-app-open incident could add hours of fake training time. The same
+// cap is applied per-question to the per-segment `sessionMs` accumulator
+// (see resetSegment) so segment durationMs is honest too.
 const MAX_ANSWER_MS = 30000;
 
 // How long to pause between a correct answer and picking the next book.
@@ -51,7 +56,12 @@ function autoPickDelayMs(masteryMs) {
   return Math.min(800, Math.max(250, Math.round(masteryMs * 0.5)));
 }
 
-export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime, bestStreak, setBestStreak, addQuizSession, addTrainingTime, totalQuizMs = 0, onBack, onPhaseChange }) {
+export default function QuizGrid({
+  ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime,
+  bestStreak, setBestStreak, addQuizSession, addTrainingTime,
+  totalQuizMs = 0, quizHistory = [],
+  onBack, onGoToStudy, onPhaseChange,
+}) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -60,14 +70,24 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const [responseTime, setResponseTime] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [responseTimes, setResponseTimes] = useState([]);
-  
+
   const [hintVisible, setHintVisible] = useState(false);
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
   const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
+  // Every book that appeared in the current segment, regardless of
+  // whether it was answered right, wrong, with hint, etc. Used to
+  // populate quizHistory.seenBookIds, which the session-complete
+  // screen aggregates for "Vandaag: N boeken". Sets are serialized
+  // to arrays at save time.
+  const [sessionSeenBooks, setSessionSeenBooks] = useState(new Set());
   const [correctBookId, setCorrectBookId] = useState(null);
   const [sessionNewBests, setSessionNewBests] = useState(0);
-  const [sessionStartTime] = useState(() => Date.now());
+  // Per-segment accumulator of capped per-question elapsed times. Sums
+  // both correct and wrong answers (capped at MAX_ANSWER_MS each) so
+  // the saved durationMs reflects engagement-time, not wall-clock time
+  // (which would include idle/AFK).
+  const [sessionMs, setSessionMs] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [milestone, setMilestone] = useState(null); // message string | null
   const [showNewBest, setShowNewBest] = useState(false);
@@ -78,7 +98,38 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   // briefly render. Reading from this snapshot ensures the badge always
   // shows the time that actually earned it.
   const [newBestTime, setNewBestTime] = useState(null);
-  
+
+  // ─── Session-complete + Train Ahead state ─────────────────────────
+  // sessionComplete replaces the eliminated Branch 4. When true, the
+  // component renders the session-complete screen instead of the book
+  // grid. Triggered when (a) initial pick has no due+no unseen books,
+  // (b) the last due book is answered, or (c) a Train Ahead queue is
+  // exhausted.
+  const [sessionComplete, setSessionComplete] = useState(false);
+  // Submenu open/closed state for the "Train vooruit ▾" expander.
+  const [trainAheadMenuOpen, setTrainAheadMenuOpen] = useState(false);
+  // The Train Ahead queue, when an extra-practice run is in progress.
+  // null  = no Train Ahead session active (regular due-book flow).
+  // []    = transient empty state (immediately transitions to complete).
+  // [...] = books to ask in order (FSRS-ordered, closest-to-due first).
+  //
+  // Stored in BOTH a ref and state. The ref is the synchronous source
+  // of truth (read inside callbacks like pickNextBook); the state copy
+  // is solely for triggering re-renders. Without the ref, scheduled
+  // pickNextBook calls would fire with a stale closure (trainAheadQueue
+  // = whatever it was at scheduling time, not what setState just wrote).
+  // Both are updated through setTrainAheadQueue below — never separately.
+  const trainAheadQueueRef = useRef(null);
+  const [trainAheadQueue, _setTrainAheadQueueState] = useState(null);
+  const setTrainAheadQueue = useCallback((q) => {
+    trainAheadQueueRef.current = q;
+    _setTrainAheadQueueState(q);
+  }, []);
+  // Total length of the Train Ahead queue when it was started — used to
+  // render the "X / N" countdown. (queue.length alone gives only the
+  // remaining count.)
+  const [trainAheadInitialCount, setTrainAheadInitialCount] = useState(0);
+
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
   const fsrsCardsRef = useRef(fsrsCards);
@@ -86,6 +137,12 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
+
+  // Mode of the *current* in-flight segment (the one not yet saved to
+  // quizHistory). Stored as a ref because the autosave-on-unmount
+  // closure runs on cleanup and would otherwise capture a stale value.
+  // Updated synchronously alongside resetSegment().
+  const sessionModeRef = useRef('normal');
 
   // Schedule timeouts that auto-clear on unmount. Without this,
   // tapping Back mid-session triggers a pending pickNextBook() or
@@ -112,31 +169,48 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     correct: score.correct,
     total: score.total,
     responseTimes,
+    sessionMs,
+    seenIds: sessionSeenBooks,
     masteredIds: sessionMasteredBooks,
     hintedIds: sessionHintedBooks,
     wrongIds: sessionWrongBooks,
+    mode: sessionModeRef.current,
   };
+
+  // Build a session entry from the current snapshot. Centralized here
+  // so the unmount cleanup, finishSession, and the segment-end save
+  // (saveCurrentSegment) all produce the same shape.
+  const buildSessionEntry = (snap) => {
+    const avgTime = snap.responseTimes.length > 0
+      ? Math.round(snap.responseTimes.reduce((a, b) => a + b, 0) / snap.responseTimes.length)
+      : 0;
+    return {
+      correct: snap.correct,
+      total: snap.total,
+      avgTime,
+      durationMs: snap.sessionMs,
+      seenBookIds: [...snap.seenIds],
+      masteredBookIds: [...snap.masteredIds],
+      hintedBookIds: [...snap.hintedIds],
+      wrongBookIds: [...snap.wrongIds],
+      mode: snap.mode || 'normal',
+    };
+  };
+
   useEffect(() => () => {
     const { saved, snapshot } = sessionDataRef.current;
     if (saved || !snapshot || snapshot.total <= 0) return;
-    const avgTime = snapshot.responseTimes.length > 0
-      ? Math.round(snapshot.responseTimes.reduce((a, b) => a + b, 0) / snapshot.responseTimes.length)
-      : 0;
-    addQuizSession(ownerUserIdRef.current, {
-      correct: snapshot.correct,
-      total: snapshot.total,
-      avgTime,
-      masteredBookIds: [...snapshot.masteredIds],
-      hintedBookIds: [...snapshot.hintedIds],
-      wrongBookIds: [...snapshot.wrongIds],
-    });
+    addQuizSession(ownerUserIdRef.current, buildSessionEntry(snapshot));
   }, [addQuizSession]);
 
   // Report phase upward so App's header knows whether to show focus-mode
-  // (quiz actively playing) or full nav (summary/pause state).
+  // (quiz actively playing) or full nav (summary/pause/session-complete).
   useEffect(() => {
-    if (onPhaseChange) onPhaseChange(showSummary ? 'paused' : 'playing');
-  }, [showSummary, onPhaseChange]);
+    if (onPhaseChange) {
+      const paused = showSummary || sessionComplete;
+      onPhaseChange(paused ? 'paused' : 'playing');
+    }
+  }, [showSummary, sessionComplete, onPhaseChange]);
 
   // Measure prompt row height to perfectly position overlay
   useEffect(() => {
@@ -157,15 +231,93 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
 
   const { orientation, testamentsLayout, otColumns, ntColumns, displayMode, gridRef } = useGridLayout();
 
-  // FSRS-driven book selection — pure FSRS, no heuristics.
+  // Flush the current segment to quizHistory and mark it saved. Used
+  // when transitioning between segments (regular → Train Ahead, or
+  // Train Ahead → Train Ahead) and when the user taps End session.
+  // Idempotent — once `saved` is set, repeat calls are no-ops, so the
+  // unmount cleanup won't double-write.
+  const saveCurrentSegment = useCallback(() => {
+    const { saved, snapshot } = sessionDataRef.current;
+    if (saved || !snapshot || snapshot.total <= 0) return;
+    addQuizSession(ownerUserIdRef.current, buildSessionEntry(snapshot));
+    sessionDataRef.current.saved = true;
+  }, [addQuizSession]);
+
+  // Reset all per-segment state for a new segment (typically a Train
+  // Ahead run starting after a regular session-complete). Keeps
+  // best-streak / bestTimes / fsrsCards / totalQuizMs untouched —
+  // those are user-level, not segment-level.
+  const resetSegment = useCallback((newMode) => {
+    setScore({ correct: 0, total: 0 });
+    setStreak(0);
+    setResponseTimes([]);
+    setSessionMs(0);
+    setSessionSeenBooks(new Set());
+    setSessionMasteredBooks(new Set());
+    setSessionHintedBooks(new Set());
+    setSessionWrongBooks(new Set());
+    setSessionNewBests(0);
+    sessionModeRef.current = newMode || 'normal';
+    sessionDataRef.current.saved = false;
+  }, []);
+
+  // FSRS-driven book selection.
   //
-  //   1. Due books exist → 20% unseen for variety, otherwise random from
-  //      top-8 most-overdue. FSRS decides what's due; we just pick.
+  // Branch order:
+  //   0. Train Ahead queue active → pick next book from queue. When
+  //      empty, transition to session-complete.
+  //   1. Due books exist → 20% unseen for variety, otherwise random
+  //      from top-8 most-overdue. FSRS decides what's due; we just pick.
   //   2. No due, but unseen exist → pick a random unseen book.
-  //   3. No due, no unseen → random pick from all 66 (free practice).
+  //   3. No due, no unseen → session-complete screen. (The old "random
+  //      from all 66" Branch 4 was eliminated — drilling stable cards
+  //      adds no new strength and confuses FSRS calibration. The
+  //      session-complete screen offers Train Ahead and Study Mode for
+  //      users who genuinely want to keep practicing.)
   const pickNextBook = useCallback(() => {
     feedbackRef.current = false;
     const cards = fsrsCardsRef.current || {};
+
+    // Branch 0: Train Ahead queue (read from ref so scheduled callbacks
+    // see the freshest value, not whatever was captured at scheduling
+    // time — see setTrainAheadQueue's comment block above).
+    const queue = trainAheadQueueRef.current;
+    if (queue !== null) {
+      if (queue.length === 0) {
+        setTrainAheadQueue(null);
+        setSessionComplete(true);
+        return;
+      }
+      const [head, ...rest] = queue;
+      setTrainAheadQueue(rest);
+      setTargetBook(head);
+      setSessionSeenBooks(prev => {
+        if (prev.has(head.id)) return prev;
+        const next = new Set(prev);
+        next.add(head.id);
+        return next;
+      });
+      setStartTime(Date.now());
+      setResponseTime(null);
+      setFeedback(null);
+      setHintVisible(false);
+      // Train Ahead respects the same auto-scroll setting as regular play.
+      if (config.quiz.autoScroll !== false && testamentsLayout !== 'sideBySide') {
+        schedule(() => {
+          const el = scrollRef.current;
+          if (!el) return;
+          if (head.testament === 'OT') el.scrollTo({ top: 0, behavior: 'smooth' });
+          else el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }, 400);
+      } else {
+        scrollRef.current?.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      }
+      logBookPick(head, cards[head.id], 'train-ahead', [], [], bibleBooks, cards);
+      return;
+    }
+
+    // Regular due/unseen flow
     const { dueBooks, unseenBooks } = getDueBooks(cards, bibleBooks);
 
     let selected;
@@ -184,15 +336,22 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
       branch = 'unseen';
     } else {
-      const masteredCount = bibleBooks.filter(b => cards[b.id] && isMastered(cards[b.id])).length;
-      logBranch4Warning(masteredCount, bibleBooks.length);
-      selected = bibleBooks[Math.floor(Math.random() * bibleBooks.length)];
-      branch = 'random-from-66';
+      // Branch 4 (random-from-66) eliminated. Show the session-complete
+      // screen so the user can either stop, start Train Ahead, or
+      // switch to Study Mode.
+      setSessionComplete(true);
+      return;
     }
 
     logBookPick(selected, cards[selected.id], branch, dueBooks, unseenBooks, bibleBooks, cards);
 
     setTargetBook(selected);
+    setSessionSeenBooks(prev => {
+      if (prev.has(selected.id)) return prev;
+      const next = new Set(prev);
+      next.add(selected.id);
+      return next;
+    });
     setStartTime(Date.now());
     setResponseTime(null);
     setFeedback(null);
@@ -218,34 +377,24 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       scrollRef.current?.scrollTo(0, 0);
       window.scrollTo(0, 0);
     }
-  }, [config.quiz.autoScroll, testamentsLayout]);
+  }, [config.quiz.autoScroll, testamentsLayout, schedule, setTrainAheadQueue]);
 
   useEffect(() => {
     logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
     pickNextBook();
     window.scrollTo(0, 0);
-  }, [pickNextBook]);
+    // First pick only — pickNextBook is called manually after each
+    // answer, so we don't want a re-run when its identity changes
+    // (e.g. when trainAheadQueue updates). Including it would cause
+    // a runaway re-pick loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const finishSession = useCallback(() => {
-    // Mark as saved before triggering onBack so the unmount cleanup
-    // doesn't write a duplicate entry to quizHistory.
-    sessionDataRef.current.saved = true;
     logSessionEnd(fsrsCardsRef.current || {}, bibleBooks);
-    if (score.total > 0) {
-      const avgTime = responseTimes.length > 0
-        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
-        : 0;
-      addQuizSession(ownerUserIdRef.current, {
-        correct: score.correct,
-        total: score.total,
-        avgTime,
-        masteredBookIds: [...sessionMasteredBooks],
-        hintedBookIds: [...sessionHintedBooks],
-        wrongBookIds: [...sessionWrongBooks],
-      });
-    }
+    saveCurrentSegment();
     onBack();
-  }, [score, responseTimes, addQuizSession, onBack, sessionMasteredBooks, sessionHintedBooks, sessionWrongBooks]);
+  }, [saveCurrentSegment, onBack]);
 
   const handleBack = useCallback(() => {
     if (score.total > 0) {
@@ -254,6 +403,41 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       onBack();
     }
   }, [score.total, onBack]);
+
+  // Start a Train Ahead segment with the chosen horizon. Saves the
+  // current segment first (so a finished regular run is recorded as
+  // mode='normal' before the new Train Ahead run begins as
+  // mode='trainAhead'). Then resets per-segment state and primes the
+  // queue. Picking is invoked synchronously — pickNextBook reads the
+  // queue from trainAheadQueueRef which is updated *before* pickNextBook
+  // runs (setTrainAheadQueue writes the ref synchronously), so the
+  // pick sees the fresh queue regardless of React's batching.
+  const handleStartTrainAhead = useCallback((horizon) => {
+    const queue = buildTrainAheadQueue(fsrsCardsRef.current || {}, bibleBooks, horizon);
+    if (queue.length === 0) return;
+    saveCurrentSegment();
+    resetSegment('trainAhead');
+    setTrainAheadInitialCount(queue.length);
+    setTrainAheadQueue(queue);
+    setTrainAheadMenuOpen(false);
+    setSessionComplete(false);
+    pickNextBook();
+  }, [saveCurrentSegment, resetSegment, setTrainAheadQueue, pickNextBook]);
+
+  // End-session button on the session-complete screen — saves and
+  // returns to menu, same as finishSession.
+  const handleEndSession = useCallback(() => {
+    finishSession();
+  }, [finishSession]);
+
+  // Study-mode button on the session-complete screen — saves the
+  // current segment, then asks App to switch the view to Study Mode.
+  // Falls back to onBack if the parent didn't wire onGoToStudy.
+  const handleGoToStudy = useCallback(() => {
+    saveCurrentSegment();
+    if (typeof onGoToStudy === 'function') onGoToStudy();
+    else onBack();
+  }, [saveCurrentSegment, onGoToStudy, onBack]);
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
@@ -272,21 +456,23 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
       feedbackRef.current = true;
       setHintVisible(false);
       const timeTaken = Date.now() - startTime;
+      const cappedMs = Math.min(timeTaken, MAX_ANSWER_MS);
       setResponseTime(timeTaken);
       setResponseTimes(prev => [...prev, timeTaken]);
+      setSessionMs(s => s + cappedMs);
 
-      // Cumulative training time: cap per-question at MAX_ANSWER_MS so
-      // AFK moments don't inflate the share-message claim. See constant
-      // definition for rationale.
+      // Cumulative training time: same cap applied here too.
       if (addTrainingTime) {
-        addTrainingTime(Math.min(timeTaken, MAX_ANSWER_MS));
+        addTrainingTime(cappedMs);
       }
 
       const isWithinTime = timeTaken <= config.quiz.masteryMs;
       const rating = ratingFromSpeed(timeTaken, config.quiz.masteryMs);
       setFeedback(isWithinTime ? 'correct' : 'slow');
 
-      // Update FSRS card
+      // Update FSRS card (same logic for normal AND Train Ahead — the
+      // spec is explicit that Train Ahead lets FSRS do its thing; early
+      // reviews give smaller stability gains automatically).
       const currentCard = fsrsCards[targetBook.id]
         ? deserializeCard(fsrsCards[targetBook.id])
         : createBookCard();
@@ -371,12 +557,14 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     setCorrectBookId(targetBook.id);
 
     // Track time spent on this question for the cumulative training
-    // counter. Wrong answers get the same per-question cap as correct
-    // ones — what matters for "time spent training" is engagement, not
-    // outcome. See MAX_ANSWER_MS for rationale.
+    // counter and the per-segment sessionMs accumulator. Wrong answers
+    // get the same per-question cap as correct ones — what matters for
+    // "time spent training" is engagement, not outcome.
     const timeTaken = Date.now() - startTime;
+    const cappedMs = Math.min(timeTaken, MAX_ANSWER_MS);
+    setSessionMs(s => s + cappedMs);
     if (addTrainingTime) {
-      addTrainingTime(Math.min(timeTaken, MAX_ANSWER_MS));
+      addTrainingTime(cappedMs);
     }
     // Scroll to the correct book after React commits the state change.
     // Double rAF: first frame runs after commit, second frame runs after
@@ -440,6 +628,20 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
   // Stats for display
   const stats = useMemo(() => getBookStats(fsrsCards, bibleBooks), [fsrsCards]);
 
+  // The in-quiz "Te doen" stat shows different things based on segment
+  // type:
+  //   - Normal segment: stats.dueNow (true FSRS due count, Learn-Ahead-
+  //     Limit aware).
+  //   - Train Ahead segment: queue.length + 1 while a target book is
+  //     showing (the +1 accounts for the currently-displayed book; it
+  //     was shifted out of the queue at pick-time but is logically
+  //     still a "to-do" until answered). After the answer commits and
+  //     before the next pick, dueDisplay falls to queue.length —
+  //     matching the visual decrement on each correct answer.
+  const dueDisplay = trainAheadQueue !== null
+    ? trainAheadQueue.length + (targetBook && !feedbackRef.current ? 1 : 0)
+    : stats.dueNow;
+
   const renderBookCell = (book) => {
     const cardData = fsrsCards[book.id];
     const bookIsMastered = isMastered(cardData);
@@ -478,11 +680,116 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
     );
   };
 
+  // ─── Session-complete screen ─────────────────────────────────────────
+  // Shown when DUE+unseen=0 (normal segment) or when a Train Ahead queue
+  // empties. The user gets three explicit choices: end the session,
+  // switch to Study Mode (no schedule impact), or Train Ahead with a
+  // chosen horizon. Daily totals are factual — no judgment, no graduated
+  // nudges; the rest message above conveys the learning-science point.
+  if (sessionComplete) {
+    const counts = getTrainAheadCounts(fsrsCards, bibleBooks);
+    const trainAheadAvailable = counts.remaining > 0;
+    const nextDue = getNextDueTime(fsrsCards, bibleBooks);
+    // Today's totals: combine saved quizHistory (everything before this
+    // segment) with the live in-flight snapshot (the segment that just
+    // wrapped, not yet saved). The snapshot may be empty (e.g. user
+    // tapped Quiz from menu when DUE was already 0) — handle that.
+    const today = computeTodayStats(quizHistory);
+    const liveBooks = sessionSeenBooks.size;
+    const liveSessions = score.total > 0 ? 1 : 0;
+    const liveMs = sessionMs;
+    const todayBooks = today.books + liveBooks;
+    const todaySessions = today.sessions + liveSessions;
+    const todayMs = today.durationMs + liveMs;
+    const todayMinutes = Math.max(0, Math.round(todayMs / 60000));
+    const sessionsLabel = todaySessions === 1 ? t.sessionCompleteSessionSingle : t.sessionCompleteSessions;
+    const horizons = [
+      { id: 'count5',    label: t.trainAheadHorizonCount5,    count: counts.count5 },
+      { id: 'count10',   label: t.trainAheadHorizonCount10,   count: counts.count10 },
+      { id: 'week',      label: t.trainAheadHorizonWeek,      count: counts.week },
+      { id: 'remaining', label: t.trainAheadHorizonRemaining, count: counts.remaining },
+    ];
+    return (
+      <div className="quiz-grid session-complete-screen">
+        <h2 className="session-complete-title">{t.sessionCompleteTitle}</h2>
+
+        <div className="session-complete-next">
+          <span className="session-complete-next-label">{t.sessionCompleteNextLabel}:</span>
+          <span className="session-complete-next-time">
+            {nextDue ? formatNextDue(nextDue, lang) : t.nothingScheduled}
+          </span>
+        </div>
+
+        <div className="session-complete-rest">
+          <p className="session-complete-rest-title">{t.sessionCompleteRestTitle}</p>
+          <p className="session-complete-rest-body">{t.sessionCompleteRestBody}</p>
+        </div>
+
+        {/* Daily totals — only shown if there's anything to report. A
+            line of zeros on a fresh-account first-run would feel like
+            scolding. */}
+        {(todayBooks > 0 || todaySessions > 0) && (
+          <p className="session-complete-today">
+            <strong>{t.sessionCompleteTodayLabel}:</strong>{' '}
+            {todayBooks} {t.sessionCompleteBooks}
+            {' · '}{todaySessions} {sessionsLabel}
+            {todayMs > 0 && (<>{' · '}{todayMinutes} {t.sessionCompleteMinutes}</>)}
+          </p>
+        )}
+
+        <div className="session-complete-buttons">
+          <button className="btn session-complete-finish" onClick={handleEndSession}>
+            {t.sessionCompleteFinish}
+          </button>
+
+          <button className="btn session-complete-study" onClick={handleGoToStudy}>
+            <span className="btn-icon">📖</span>
+            <span>{t.sessionCompleteStudy}</span>
+          </button>
+
+          <div className={`session-complete-trainahead ${trainAheadMenuOpen ? 'open' : ''}`}>
+            <button
+              className="btn session-complete-trainahead-btn"
+              onClick={() => setTrainAheadMenuOpen(o => !o)}
+              disabled={!trainAheadAvailable}
+              aria-expanded={trainAheadMenuOpen}
+            >
+              <span className="btn-icon">⏩</span>
+              <span>{t.sessionCompleteTrainAhead}</span>
+              <span className="trainahead-caret" aria-hidden="true">{trainAheadMenuOpen ? '▴' : '▾'}</span>
+            </button>
+            {trainAheadMenuOpen && trainAheadAvailable && (
+              <div className="trainahead-menu" role="menu">
+                {horizons.map(h => (
+                  <button
+                    key={h.id}
+                    className="trainahead-option"
+                    role="menuitem"
+                    disabled={h.count === 0}
+                    onClick={() => handleStartTrainAhead(h.id)}
+                  >
+                    <span className="trainahead-option-label">{h.label}</span>
+                    <span className="trainahead-option-count">{h.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!targetBook) return null;
 
   // Session summary screen
   if (showSummary) {
-    const durationMin = Math.max(1, Math.round((Date.now() - sessionStartTime) / 60000));
+    // sessionMs is the per-question-capped accumulator; using it here
+    // (rather than wall-clock Date.now() - sessionStartTime) means the
+    // displayed minutes reflect actual training engagement, not idle
+    // tab time. Floors at 1 min so a sub-minute productive session
+    // doesn't read as "0 min".
+    const durationMin = Math.max(1, Math.round(sessionMs / 60000));
     return (
       <div className="quiz-grid summary-screen">
         <h2 className="summary-title">{t.sessionSummaryTitle}</h2>
@@ -560,6 +867,15 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
             }
           </div>
         </div>
+        {/* Train Ahead pill: small visual marker so the user knows this
+            run is extra-practice, not a regular FSRS-driven session.
+            Sits above the stats row in the topbar. Progress = books
+            already moved out of the queue (= initialCount - remaining). */}
+        {trainAheadQueue !== null && (
+          <div className="trainahead-pill" aria-live="polite">
+            ⏩ {t.trainAheadInProgress} · {trainAheadInitialCount - trainAheadQueue.length}/{trainAheadInitialCount}
+          </div>
+        )}
         <div className="quiz-stats">
           <div className="stat">
             <span className="stat-value">{score.correct}/{score.total}</span>
@@ -570,7 +886,7 @@ export default function QuizGrid({ ownerUserId, fsrsCards, updateFsrsCard, bestT
             <span className="stat-label">{t.streak}</span>
           </div>
           <div className="stat">
-            <span className="stat-value">{stats.dueNow}</span>
+            <span className="stat-value">{dueDisplay}</span>
             <span className="stat-label">{t.due || 'Due'}</span>
           </div>
           <button className={`hint-btn ${hintVisible ? 'active' : ''}`} onClick={handleHint}>

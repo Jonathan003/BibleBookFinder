@@ -795,9 +795,18 @@ function App() {
                 addQuizSession={addQuizSession}
                 addTrainingTime={addTrainingTime}
                 totalQuizMs={currentUser.totalQuizMs || 0}
+                quizHistory={currentUser.quizHistory || []}
                 onBack={() => {
                   setQuizPhase(null);
                   setView('menu');
+                }}
+                onGoToStudy={() => {
+                  // From the session-complete screen "Studie Modus"
+                  // button. Tear down the quiz phase (so the QuizGrid
+                  // unmounts and triggers its autosave-on-unmount) and
+                  // navigate to the study-mode group picker.
+                  setQuizPhase(null);
+                  setView('study');
                 }}
                 onPhaseChange={setQuizPhase}
               />
