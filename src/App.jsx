@@ -12,6 +12,7 @@ import { InitialAvatar } from './components/Icons';
 import UserSelect from './components/UserSelect';
 import StudyGrid from './components/StudyGrid';
 import QuizGrid from './components/QuizGrid';
+import BoxMode from './components/BoxMode';
 import Settings from './components/Settings';
 import Help from './components/Help';
 import './App.css';
@@ -30,6 +31,9 @@ export const defaultConfig = {
     landscapeSideBySideNT: 3,
   },
   quiz: { masteryMs: 10000, learningPace: 'intensive', autoScroll: true },
+  // Box Mode (Doos Modus) settings — single-session Leitner cram.
+  // failMode: 'soft' = drop one box on wrong (default); 'strict' = back to box 1.
+  boxMode: { failMode: 'soft' },
   display: {
     lang: detectedLang,
     highlightFound: true,
@@ -84,6 +88,7 @@ export function mergeConfig(saved) {
   return {
     grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
     quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
+    boxMode: { ...defaultConfig.boxMode, ...(saved.boxMode || {}) },
     display,
     study: { ...defaultConfig.study, ...(saved.study || {}) },
   };
@@ -142,9 +147,13 @@ function App() {
   // "Focus mode" = the user is actively doing a task; the header should
   // show only the language toggle to reduce distraction. From the summary
   // screen (a deliberate pause) or from Settings/Help, full nav returns.
+  // Box Mode's selecting/complete phases are pause-like, but the
+  // component is self-contained — we keep focus-mode on for any
+  // boxMode view to keep the header clean.
   const inFocusMode =
     (view === 'quiz' && quizPhase === 'playing') ||
-    view === 'study';
+    view === 'study' ||
+    view === 'boxMode';
 
   // Keep <html lang> in sync with the active app language so screen
   // readers pronounce content correctly when the user toggles NL/EN.
@@ -758,6 +767,14 @@ function App() {
                     </button>
                   </>
                 )}
+                {/* Box Mode (Doos Modus): cram-only Leitner training, no
+                    FSRS impact. Sits between the schedule-driven modes
+                    (Quiz/Study) and Share so it reads as "an extra
+                    training option" rather than a primary daily action. */}
+                <button className="btn boxmode-menu-btn" onClick={() => setView('boxMode')}>
+                  <span className="btn-icon">📦</span>
+                  <span>{t.boxModeBtnLabel}</span>
+                </button>
                 <button className="btn share-btn" onClick={share}>
                   <span className="btn-icon">🔗</span>
                   <span>{t.share}</span>
@@ -778,6 +795,13 @@ function App() {
                 ...config,
                 study: { ...config.study, selectedGroups: groups }
               })}
+              onBack={() => setView('menu')}
+            />
+          )}
+
+          {view === 'boxMode' && (
+            <BoxMode
+              ownerUserId={currentUser.id}
               onBack={() => setView('menu')}
             />
           )}

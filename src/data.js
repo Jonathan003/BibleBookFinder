@@ -376,6 +376,33 @@ export const translations = {
     trainAheadInProgress: 'Train vooruit',
     // Back-button confirmation text on the session-complete screen.
     // Same wording as the regular summary's `done` for consistency.
+
+    // ─── Box Mode (Doos Modus) ─────────────────────────────────────
+    // Cram-style training. All selected books start in box 1; correct
+    // answers move them up, wrong answers move them down. Goal: get
+    // every book to box 5. Personal-best tracked per scope, no FSRS
+    // impact. See research notes in transcript for design rationale.
+    boxModeTitle: 'Doos Modus',
+    boxModeIntro: 'Een snelle, op zichzelf staande oefensessie. Alle gekozen boeken beginnen in doos 1. Goede antwoorden gaan een doos hoger, foute antwoorden een doos lager. Klaar als alles in doos 5 staat.',
+    boxModeScopeAll: 'Alle 66 boeken',
+    boxModeStart: 'Start sessie',
+    boxModeDisclaimer: 'Doos Modus heeft geen invloed op je gewone schema. Het is puur extra oefening.',
+    boxModeInProgress: 'Doos Modus',
+    boxModeHintMarker: 'hint gebruikt',
+    boxModeHintCost: '(Boek blijft staan op deze beurt)',
+    // {count} = aantal boeken, {scope} = scope-naam (bijv. "Pentateuch")
+    boxModeCompleteTitle: 'Alle {count} in doos 5! 🎯',
+    boxModeFirstClear: 'Eerste keer geklaard!',
+    boxModeStatTime: 'Tijd',
+    boxModeStatMistakes: 'Fouten',
+    boxModeStatStreak: 'Langste reeks',
+    boxModeNewRecord: 'Nieuw record',
+    boxModePrevBest: 'Vorige beste',
+    boxModeAnotherSelection: 'Andere selectie',
+    boxModeAgain: 'Opnieuw',
+    boxModeFinish: 'Sluiten',
+    // Home-screen button label
+    boxModeBtnLabel: 'Doos Modus',
   },
   en: {
     title: 'Bible Book Finder',
@@ -585,5 +612,26 @@ export const translations = {
     trainAheadHorizonWeek: 'this week (7 days)',
     trainAheadHorizonRemaining: 'all remaining',
     trainAheadInProgress: 'Train ahead',
+
+    // ─── Box Mode ──────────────────────────────────────────────────
+    boxModeTitle: 'Box Mode',
+    boxModeIntro: 'A quick, standalone practice session. Every selected book starts in box 1. Correct answers move a book up, wrong answers move it down. You\'re done when everything reaches box 5.',
+    boxModeScopeAll: 'All 66 books',
+    boxModeStart: 'Start session',
+    boxModeDisclaimer: 'Box Mode does not affect your regular schedule. It\'s pure extra practice.',
+    boxModeInProgress: 'Box Mode',
+    boxModeHintMarker: 'hint used',
+    boxModeHintCost: '(Book stays put on this turn)',
+    boxModeCompleteTitle: 'All {count} in box 5! 🎯',
+    boxModeFirstClear: 'First clear!',
+    boxModeStatTime: 'Time',
+    boxModeStatMistakes: 'Mistakes',
+    boxModeStatStreak: 'Longest streak',
+    boxModeNewRecord: 'New record',
+    boxModePrevBest: 'Previous best',
+    boxModeAnotherSelection: 'Other selection',
+    boxModeAgain: 'Again',
+    boxModeFinish: 'Close',
+    boxModeBtnLabel: 'Box Mode',
   }
 };

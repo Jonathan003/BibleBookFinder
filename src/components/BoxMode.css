@@ -1,0 +1,457 @@
+/* ─── Box Mode (Doos Modus) styles ─────────────────────────────────── */
+
+/* The whole Box Mode UI inherits .quiz-grid layout from QuizGrid.css for
+   the playing screen — same .book-cell, .book-grid, .section, etc. The
+   styles below add the Box-Mode-specific bits: boxes display, recent
+   dots, selection screen, end screen, and a few state tweaks for cells
+   that have reached the top box ("rooted"). */
+
+/* ─── Boxes display (the 5-box strip across the top) ─────────────── */
+.boxmode-boxes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0.4rem 0;
+  padding: 0;
+}
+
+.boxmode-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.5rem 0.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, #ddd);
+  background: var(--bg-secondary, #ffffff);
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Gradient feel: cool slate tones for boxes 1-3, warming through 4, amber
+   for box 5 (the "rooted" tier). All deutan-safe — no green/red. */
+.boxmode-box.box-1 { border-color: color-mix(in srgb, #6366f1 25%, var(--border, #ddd)); }
+.boxmode-box.box-2 { border-color: color-mix(in srgb, #6366f1 35%, var(--border, #ddd)); }
+.boxmode-box.box-3 { border-color: color-mix(in srgb, #7c3aed 35%, var(--border, #ddd)); }
+.boxmode-box.box-4 { border-color: color-mix(in srgb, #f59e0b 30%, var(--border, #ddd)); }
+.boxmode-box.box-5 {
+  border-color: color-mix(in srgb, #f59e0b 50%, var(--border, #ddd));
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg-secondary, #ffffff));
+}
+
+.boxmode-box.empty {
+  opacity: 0.55;
+}
+
+.boxmode-box.top-box .boxmode-box-count {
+  color: #b45309;
+}
+
+.boxmode-box-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  line-height: 1.1;
+}
+
+.boxmode-box-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #666);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Highlight glow: applied transiently when a book advances into this box */
+.boxmode-box.highlight {
+  background: color-mix(in srgb, #f59e0b 20%, var(--bg-secondary, #ffffff));
+  border-color: #f59e0b;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boxmode-box,
+  .boxmode-box.highlight {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ─── Recent-answers dot strip ──────────────────────────────────── */
+.boxmode-recent-dots {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  align-items: center;
+  margin: 0.25rem 0 0.4rem;
+  min-height: 0.6rem;
+}
+
+.boxmode-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.boxmode-dot.correct { background: #3b82f6; }
+.boxmode-dot.wrong   { background: #f97316; }
+.boxmode-dot.empty   {
+  background: transparent;
+  border: 1px solid var(--border, #ddd);
+}
+
+/* ─── In-quiz Box Mode pill (sits between prompt and stats) ───────── */
+.boxmode-pill {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #b45309;
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
+}
+
+/* ─── Home-screen menu button ───────────────────────────────────── */
+/* Visual pattern matches .share-btn (tinted secondary action) but in
+   amber to match the Box-5 "rooted" colour. Deliberately less prominent
+   than Study/Quiz — those drive the daily routine; Box Mode is the
+   "extra session" option, like Share. */
+.boxmode-menu-btn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.boxmode-menu-btn:hover {
+  background: rgba(245, 158, 11, 0.22);
+  transform: translateY(-2px);
+}
+
+.boxmode-hint-marker {
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+/* ─── Hint button in the prompt row ─────────────────────────────── */
+.boxmode-hint-btn {
+  border: 1px solid var(--border, #ddd);
+  background: var(--bg-secondary, #fff);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.boxmode-hint-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.boxmode-hint-overlay .boxmode-hint-cost {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+  opacity: 0.85;
+}
+
+/* ─── Rooted books (in box 5) — visual marker on the grid ────────── */
+.book-cell.boxmode-rooted {
+  position: relative;
+  box-shadow: inset 0 -3px 0 #f59e0b;
+}
+
+.book-cell.boxmode-rooted::after {
+  content: "✦";
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+  color: #f59e0b;
+  pointer-events: none;
+}
+
+.book-cell.boxmode-out-of-scope {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Selection screen ──────────────────────────────────────────── */
+.boxmode-selecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem;
+  max-width: 600px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.boxmode-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.boxmode-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text-primary, #1a1a2e);
+}
+
+.boxmode-intro {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #555);
+  line-height: 1.4;
+  margin: 0;
+  text-align: center;
+}
+
+.boxmode-scope-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .boxmode-scope-options {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.boxmode-scope-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--border, #ddd);
+  border-radius: 12px;
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #1a1a2e);
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-align: left;
+  min-height: 48px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.boxmode-scope-option.selected {
+  border-color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 8%, var(--bg-secondary, #fff));
+}
+
+.boxmode-scope-option:not(.selected):hover,
+.boxmode-scope-option:not(.selected):focus-visible {
+  border-color: var(--accent, #7C3AED);
+}
+
+.scope-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.scope-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-secondary, #666);
+  background: var(--bg-primary, #f0f0f0);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  min-width: 1.8rem;
+  text-align: center;
+}
+
+.boxmode-scope-option.selected .scope-count {
+  background: color-mix(in srgb, #f59e0b 20%, var(--bg-primary, #f0f0f0));
+  color: #b45309;
+}
+
+.boxmode-start-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.85rem 2rem;
+  margin-top: 0.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.boxmode-disclaimer {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #888);
+  text-align: center;
+  margin: 0.5rem 0 0;
+  line-height: 1.4;
+  max-width: 480px;
+}
+
+/* ─── End screen ───────────────────────────────────────────────── */
+.boxmode-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem;
+  max-width: 540px;
+  margin: 0 auto;
+  gap: 1rem;
+  text-align: center;
+}
+
+.boxmode-celebration-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.boxmode-complete-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.boxmode-first-clear {
+  font-size: 1rem;
+  color: #b45309;
+  font-weight: 600;
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+}
+
+.boxmode-complete-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.boxmode-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.85rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, #ddd);
+  background: var(--bg-secondary, #fff);
+  position: relative;
+  min-height: 90px;
+}
+
+.boxmode-stat-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.boxmode-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+.boxmode-record-badge {
+  margin-top: 0.4rem;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.boxmode-prev-best {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.prev-best-label { font-weight: 600; }
+
+.boxmode-complete-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.5rem;
+}
+
+.boxmode-complete-buttons .btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--border, #ddd);
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #1a1a2e);
+}
+
+.boxmode-restart-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: transparent;
+}
+
+.boxmode-finish-btn {
+  background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ─── Responsive trims for narrow phones ─────────────────────────── */
+@media (max-width: 380px) {
+  .boxmode-box {
+    padding: 0.4rem 0.25rem;
+  }
+  .boxmode-box-label {
+    font-size: 0;          /* hide label text on very narrow screens */
+  }
+  .boxmode-box-label::before {
+    /* Show just the number as the label, not the word */
+    content: attr(data-num);
+    font-size: 0.7rem;
+  }
+}
+
+/* Phone landscape: short height — compress box-display vertical padding */
+@media (orientation: landscape) and (max-height: 500px) {
+  .boxmode-boxes {
+    margin: 0.2rem 0;
+  }
+  .boxmode-box {
+    padding: 0.3rem 0.3rem;
+  }
+  .boxmode-box-count {
+    font-size: 0.95rem;
+  }
+  .boxmode-box-label {
+    font-size: 0.65rem;
+  }
+  .boxmode-recent-dots {
+    margin: 0.15rem 0 0.25rem;
+  }
+}

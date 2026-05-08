@@ -59,6 +59,21 @@ const helpContent = {
         q: 'Wat als ik elke dag Train Vooruit doe tot alles Beheerst is?',
         a: 'Mag prima — het is geen "verkeerd gebruik" en de app blokkeert het niet. Wel een paar nuances. Je kunt op die manier alle 66 boeken sneller naar Beheerst tillen (ruwweg 1-2 weken bij intensief vooruit-trainen), naar Verankerd in 1-2 maanden, en naar Permanent in ongeveer een half jaar. Maar: meerdere herhalingen op dezelfde dag tellen niet evenveel als evenveel herhalingen verspreid over weken. FSRS schaalt de stabiliteitswinst met de retrievability (hoe ver weg het volgende moment was) — dezelfde dag is dichtbij, dus de winst per herhaling is kleiner. Je verspilt geen tijd, maar je krijgt minder rendement per minuut dan bij een gewone schema-volger. Geen oordeel: doe wat voor jou werkt. Het algoritme houdt het bij.',
       },
+      // ─── 4b. NEW: Box Mode introduction ─────────────────────────────
+      {
+        q: 'Wat is Doos Modus en waarvoor dient het?',
+        a: 'Doos Modus is een aparte oefenmodus, los van het normale schema. Alle gekozen boeken beginnen in doos 1. Een goed antwoord verplaatst dat boek een doos hoger; een fout antwoord verplaatst het een doos lager. Je sessie is klaar wanneer alle gekozen boeken in doos 5 (de "verankerde" doos) staan. Het is een snelle, op zichzelf staande sessie — typisch 10-20 minuten — bedoeld voor wanneer je gewoon zin hebt om te trainen zonder je voortgang te beïnvloeden. Een persoonlijk record per selectie (alle 66, alleen Pentateuch, alleen Evangeliën, etc.) wordt bijgehouden voor tijd, fouten, en langste reeks. Je kunt zoveel sessies achter elkaar doen als je wilt; alleen je beste tijd telt mee.',
+      },
+      // ─── 4c. NEW: Box Mode vs the other modes ───────────────────────
+      {
+        q: 'Wat is het verschil tussen Doos Modus, Quiz Modus en Train Vooruit?',
+        a: 'Quiz Modus volgt het FSRS-schema — je werkt aan boeken die volgens het algoritme nu aan de beurt zijn. Train Vooruit haalt boeken eerder naar voren dan gepland (bonus-oefening op de eerstvolgende boeken). Doos Modus negeert het schema volledig: je kiest een selectie (alle 66 of een groep), elk boek begint in doos 1, en je werkt totdat alles in doos 5 staat. Het is een cram-modus zonder schema-impact: je beheersniveaus, gouden lijntjes, streak en herhaalintervallen veranderen er niet door. Gebruik Quiz voor lange-termijngeheugen, Doos Modus voor een korte intensieve sessie wanneer je iets even goed wilt vastzetten — bijvoorbeeld voor een vergadering waarin je snel moet kunnen opzoeken.',
+      },
+      // ─── 4d. NEW: Box Mode and the schedule ─────────────────────────
+      {
+        q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
+        a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status blijft hetzelfde. Je dagelijkse streak telt alleen Quiz Modus-sessies, dus een Doos Modus-sessie alleen verdedigt je streak niet. De enige data die overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
+      },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
         q: 'Wat betekenen Ontspannen, Gebalanceerd en Intensief?',
@@ -232,6 +247,21 @@ const helpContent = {
       {
         q: 'What if I do Train Ahead every day until everything is Mastered?',
         a: 'Perfectly fine — it\'s not "wrong use" and the app doesn\'t block it. A few nuances though. You can push all 66 books to Mastered faster this way (roughly 1-2 weeks of intensive Train-Ahead use), to Anchored in about 1-2 months, and to Permanent in about half a year. But: multiple reviews in one day don\'t count as much as the same number spread across weeks. FSRS scales stability gain by retrievability (how distant the next scheduled moment was) — same-day is close, so per-rep gain is smaller. You\'re not wasting time, just getting less return per minute than a regular schedule-follower. No judgment: do what works for you. The algorithm tracks it.',
+      },
+      // ─── 4b. NEW: Box Mode introduction ─────────────────────────────
+      {
+        q: 'What is Box Mode and what is it for?',
+        a: 'Box Mode is a separate practice mode, independent of the regular schedule. Every selected book starts in box 1. A correct answer moves that book up one box; a wrong answer moves it down one box. Your session is finished when every selected book reaches box 5 (the "rooted" box). It\'s a quick, standalone session — typically 10-20 minutes — meant for moments when you simply feel like training without affecting your progress. Personal bests per selection (all 66, just Pentateuch, just Gospels, etc.) are tracked for time, mistakes, and longest streak. You can run as many sessions back-to-back as you want; only your best time counts.',
+      },
+      // ─── 4c. NEW: Box Mode vs other modes ───────────────────────────
+      {
+        q: 'How is Box Mode different from Quiz Mode and Train Ahead?',
+        a: 'Quiz Mode follows the FSRS schedule — you work on books the algorithm decides are due now. Train Ahead pulls books forward earlier than scheduled (bonus practice on the next-soonest books). Box Mode ignores the schedule entirely: you pick a selection (all 66 or a group), every book starts in box 1, and you work until everything reaches box 5. It\'s a cram mode with no schedule impact: your mastery levels, gold lines, streak, and review intervals don\'t change because of it. Use Quiz for long-term memory, Box Mode for a quick intensive session when you want to nail something down fast — for instance before a meeting where you\'ll need to look up books quickly.',
+      },
+      // ─── 4d. NEW: Box Mode and the schedule ─────────────────────────
+      {
+        q: 'Does Box Mode affect my FSRS schedule or my streak?',
+        a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status stays the same. Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won\'t defend your streak. The only data that persists is your personal best per selection (fastest time, fewest mistakes, longest streak).',
       },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
