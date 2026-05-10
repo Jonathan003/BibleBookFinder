@@ -8,91 +8,21 @@ import { computeStreakInfo } from './streak';
 import { useRefreshableMemo } from './useRefreshableMemo';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
+import { getBoxModeBests } from './boxModeStorage';
+import { defaultConfig, mergeConfig } from './appConfig';
 import { InitialAvatar } from './components/Icons';
 import UserSelect from './components/UserSelect';
-import StudyGrid from './components/StudyGrid';
 import QuizGrid from './components/QuizGrid';
 import BoxMode from './components/BoxMode';
 import Settings from './components/Settings';
 import Help from './components/Help';
 import './App.css';
 
-// Auto-detect language: Dutch for nl-speaking browsers, English for everyone else
-const detectedLang = typeof navigator !== 'undefined' && navigator.language?.startsWith('nl') ? 'nl' : 'en';
-
-export const defaultConfig = {
-  grid: {
-    portrait: 6,
-    landscape: 5,
-    orientation: 'auto',
-    // Used only when display.testamentsLayout === 'sideBySide' (landscape).
-    // Defaults mirror JW Library Study Bible landscape: 4 OT columns, 3 NT.
-    landscapeSideBySideOT: 4,
-    landscapeSideBySideNT: 3,
-  },
-  quiz: { masteryMs: 10000, learningPace: 'intensive', autoScroll: true },
-  // Box Mode (Doos Modus) settings — single-session Leitner cram.
-  // failMode: 'soft' = drop one box on wrong (default); 'strict' = back to box 1.
-  boxMode: { failMode: 'soft' },
-  display: {
-    lang: detectedLang,
-    highlightFound: true,
-    abbreviationsPortrait: 'auto',
-    abbreviationsLandscape: 'auto',
-    // 'stacked' (current behavior — OT above NT) or 'sideBySide' (JW Library
-    // landscape look — OT and NT next to each other). Only meaningful in
-    // landscape; portrait is always stacked because there's no horizontal
-    // room for two halves.
-    testamentsLayout: 'stacked',
-  },
-  study: { selectedGroups: [], bookSelection: 'focused' },
-};
-
-// Deep merge saved settings with defaults so new keys are always present
-export function mergeConfig(saved) {
-  if (!saved) return { ...defaultConfig };
-  // Handle legacy format where settings was just { lang: 'nl' }
-  if (saved.lang && !saved.display) {
-    return {
-      ...defaultConfig,
-      display: { ...defaultConfig.display, lang: saved.lang },
-    };
-  }
-  // Migrate: old single `abbreviations` field → two orientation-specific
-  // fields. If user had the old field set, apply it to both new fields
-  // so their preference carries over without surprise.
-  const display = { ...defaultConfig.display, ...(saved.display || {}) };
-  if (saved.display && typeof saved.display.abbreviations === 'string') {
-    if (saved.display.abbreviationsPortrait === undefined) {
-      display.abbreviationsPortrait = saved.display.abbreviations;
-    }
-    if (saved.display.abbreviationsLandscape === undefined) {
-      display.abbreviationsLandscape = saved.display.abbreviations;
-    }
-    delete display.abbreviations;
-  }
-  // Migrate: old 2-state values (auto/always/never) → new 4-state values
-  // (auto/full/long/short). 'always' kept its visual meaning per orientation
-  // (short in portrait, long in landscape), so we preserve that exact look:
-  //   portrait  'always' → 'short'
-  //   landscape 'always' → 'long'
-  //   any       'never'  → 'full'   (force full names — same as before)
-  // Already-new values pass through unchanged.
-  const migrateAbbr = (value, orientation) => {
-    if (value === 'always') return orientation === 'landscape' ? 'long' : 'short';
-    if (value === 'never')  return 'full';
-    return value;
-  };
-  display.abbreviationsPortrait  = migrateAbbr(display.abbreviationsPortrait,  'portrait');
-  display.abbreviationsLandscape = migrateAbbr(display.abbreviationsLandscape, 'landscape');
-  return {
-    grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
-    quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
-    boxMode: { ...defaultConfig.boxMode, ...(saved.boxMode || {}) },
-    display,
-    study: { ...defaultConfig.study, ...(saved.study || {}) },
-  };
-}
+// defaultConfig and mergeConfig are imported from a separate module so
+// App.jsx only contains React-component-shaped exports — that lets
+// vite-plugin-react Fast Refresh hot-patch components instead of doing
+// a full page reload on every save (the "consistent component exports"
+// rule). See appConfig.js for the actual definitions.
 
 const ConfigContext = createContext(null);
 
@@ -108,6 +38,11 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
+  // Home-screen mode selection (the in-page tabs pattern). Picking a card
+  // updates this state — it does NOT launch. The Start button below
+  // launches whatever's selected. Defaults to lastUsedMode so returning
+  // users land on what they were doing; 'quiz' for new users.
+  const [selectedMode, setSelectedMode] = useState('quiz');
 
   // PWA update detection via vite-plugin-pwa.
   //
@@ -152,7 +87,6 @@ function App() {
   // boxMode view to keep the header clean.
   const inFocusMode =
     (view === 'quiz' && quizPhase === 'playing') ||
-    view === 'study' ||
     view === 'boxMode';
 
   // Keep <html lang> in sync with the active app language so screen
@@ -170,6 +104,12 @@ function App() {
       const user = getUser(userId);
       if (user) {
         setCurrentUserState(user);
+        // Sync home-screen selection to the user's last-used mode.
+        // Migration: users with lastUsedMode='study' (Study Mode was
+        // removed) fall back to 'quiz'. We don't write this back to
+        // storage — it'll naturally update next time they pick a mode.
+        const last = user.lastUsedMode;
+        setSelectedMode(last === 'boxMode' ? 'boxMode' : 'quiz');
         let userConfig = mergeConfig(user.settings);
 
         // Migration: absorb old global config into this user's settings, then delete it
@@ -202,8 +142,12 @@ function App() {
   const handleUserSelect = (user) => {
     setCurrentUserState(user);
     persistCurrentUser(user.id);
+    // Sync home-screen selection (Study Mode no longer exists, so old
+    // 'study' values fall back to 'quiz').
+    const last = user.lastUsedMode;
+    setSelectedMode(last === 'boxMode' ? 'boxMode' : 'quiz');
     // Always return to the menu on user switch. Without this, switching
-    // user while Quiz/Study/Settings was open would drop the new user
+    // user while Quiz/Settings was open would drop the new user
     // straight into that screen with the previous user's state.
     setView('menu');
     setPreviousView(null);
@@ -351,6 +295,32 @@ function App() {
     [currentUser?.quizHistory]
   );
 
+  // Box Mode bests for the home-screen Box dashboard panel. Sorted by
+  // most-recent completion so the user's recent work surfaces first.
+  // Empty object if the user has never cleared a session.
+  const boxBests = useMemo(() => {
+    if (!currentUser) return [];
+    const all = getBoxModeBests(currentUser.id) || {};
+    return Object.entries(all)
+      .map(([scope, data]) => ({ scope, ...data }))
+      .sort((a, b) => (b.lastCompletedAt || 0) - (a.lastCompletedAt || 0));
+    // Re-runs when boxModeBests on user changes. We watch a stable shape
+    // since Box completions update the user object.
+  }, [currentUser?.boxModeBests, currentUser?.id]);
+
+  // Set the "last used" mode + navigate. Permissive: tap counts as use,
+  // even if the user immediately backs out from a selection screen
+  // (Box Mode). The opposite failure (user used Box Mode but the system
+  // doesn't remember) is more frustrating than the alternative of one
+  // accidental tap leaving a one-visit hint.
+  const goToMode = useCallback((mode) => {
+    if (currentUser) {
+      updateUser(currentUser.id, { lastUsedMode: mode });
+      setCurrentUserState({ ...currentUser, lastUsedMode: mode });
+    }
+    setView(mode);
+  }, [currentUser]);
+
   // Reset all progress for the current user. Confirmation is owned by
   // Settings.jsx (where the button now lives) — this just performs the
   // wipe when called. See Settings.jsx Data tab for the inline confirm
@@ -380,28 +350,56 @@ function App() {
 
   const share = async () => {
     if (!currentUser) return;
-    const speedMs = config.quiz.masteryMs;
-    const speedUnchanged = currentUser.masteryMsAtStart != null && currentUser.masteryMsAtStart === speedMs;
-    const speedStr = speedUnchanged ? ` (${(speedMs / 1000).toFixed(speedMs % 1000 ? 1 : 0)}s)` : '';
 
-    // Include training time in the share when there's any to show.
-    // Earlier design gated this behind `mastered >= 1`, but in practice
-    // that just hid the counter inexplicably for users with real time
-    // invested but no mastery yet. Two simpler rules instead:
-    //   - If totalMs is 0 (legacy account or just-imported backup with
-    //     no time tracked), the suffix is omitted — nothing to show.
-    //   - Otherwise show it. The `(10s)` speed suffix already serves
-    //     as the "this was earned legitimately" signal; an extra gate
-    //     here is redundant.
-    // The format string is the same in both NL and EN messages because
-    // "8h 32m" reads naturally to a Dutch audience too.
-    const totalMs = currentUser.totalQuizMs || 0;
-    const timeStr = totalMs > 0 ? ` in ${formatDuration(totalMs)}` : '';
-
-    const text = (lang === 'nl'
-      ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
-      : `I mastered ${stats.mastered} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`
-    );
+    // Build the share text based on which mode is currently selected on
+    // the home screen. Quiz Mode shares mastery progress (the FSRS-driven
+    // long-term metric); Box Mode shares the most-recent personal best
+    // (a single-session achievement). Different headlines, same delivery
+    // path (native share on mobile, clipboard fallback on desktop).
+    let text;
+    if (selectedMode === 'boxMode') {
+      // Use the most recently completed scope as the share subject.
+      // boxBests is already sorted by lastCompletedAt desc, so [0] is most
+      // recent. If empty, share a generic invite — the app is the
+      // headline, not the (nonexistent) personal best.
+      const top = boxBests[0];
+      const scopeLabel = (scope) => {
+        if (scope === 'all') return lang === 'nl' ? 'alle 66 boeken' : 'all 66 books';
+        // scope = 'group:law' etc. — use the group name.
+        const groupId = scope.split(':')[1];
+        const name = (translations[lang]?.groupNames?.[groupId]) || groupId;
+        return name;
+      };
+      const fmtMs = (ms) => {
+        const totalSec = Math.round(ms / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      };
+      if (top) {
+        const scopeName = scopeLabel(top.scope);
+        const time = fmtMs(top.fastestMs);
+        const mistakes = top.fewestMistakes;
+        text = (lang === 'nl'
+          ? `Box Modus: ${scopeName} uitgespeeld in ${time} met ${mistakes} fouten in Bijbelboek Zoeker!`
+          : `Box Mode: cleared ${scopeName} in ${time} with ${mistakes} mistakes in Bible Book Finder!`);
+      } else {
+        text = (lang === 'nl'
+          ? `Ik leer de bijbelboeken vinden met Bijbelboek Zoeker!`
+          : `I'm learning to find the Bible books with Bible Book Finder!`);
+      }
+    } else {
+      // Quiz Mode (default). Existing message: mastered count + cumulative
+      // training time + speed setting if unchanged from start.
+      const speedMs = config.quiz.masteryMs;
+      const speedUnchanged = currentUser.masteryMsAtStart != null && currentUser.masteryMsAtStart === speedMs;
+      const speedStr = speedUnchanged ? ` (${(speedMs / 1000).toFixed(speedMs % 1000 ? 1 : 0)}s)` : '';
+      const totalMs = currentUser.totalQuizMs || 0;
+      const timeStr = totalMs > 0 ? ` in ${formatDuration(totalMs)}` : '';
+      text = (lang === 'nl'
+        ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
+        : `I mastered ${stats.mastered} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`);
+    }
     const fullText = text + ' ' + window.location.href;
 
     // Native share on mobile only (desktop share dialogs are clunky).
@@ -475,6 +473,12 @@ function App() {
       quizHistory: userData.quizHistory || [],
       fsrsCards: userData.fsrsCards || {},
       bestTimes: userData.bestTimes || {},
+      // Box Mode per-scope personal bests. Pre-v3 backups don't have
+      // this field — `|| {}` means a legacy import resets to no-bests
+      // rather than carrying over the current device's bests (which
+      // would be misleading since they belong to the other user-state
+      // we're about to overwrite).
+      boxModeBests: userData.boxModeBests || {},
       lastActive: userData.lastActive || 0,
       // Legacy backups (pre-masteryMsAtStart) would otherwise restore as
       // null and the Share suffix would stay hidden. Fall back to the
@@ -581,16 +585,30 @@ function App() {
                 </div>
               )}
 
+              {/* The home screen now uses the in-page tabs pattern:
+                  the mode-cards below act as SELECTORS (one tap = preview),
+                  the Start button at the bottom LAUNCHES the selected
+                  mode. The dashboard panel here adapts to whichever mode
+                  is currently selected — Quiz shows FSRS metrics, Box
+                  shows personal bests. The Share button lives inside the
+                  active panel since the message it generates is
+                  mode-specific. */}
+              {selectedMode === 'quiz' && (
+              <div className="dashboard-panel">
+              <button
+                className="share-icon-btn-panel"
+                onClick={share}
+                title={t.share}
+                aria-label={t.share}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </button>
               {/* Hero card. Two states based on whether there's anything
                   to do right now:
                     - dueNow > 0 → standard "X klaar om te oefenen" stats
                       with Quiz Mode prominent below.
                     - dueNow === 0 → "All caught up" celebration with
-                      countdown to the next due book and a nudge toward
-                      Study Mode for users who want to keep practicing.
-                  This split prevents the over-rehearsal trap where the
-                  Quiz button leads to FSRS branch 4 (random-from-66),
-                  which is what triggered the original UX redesign. */}
+                      countdown to the next due book. */}
               {stats.dueNow > 0 ? (
                 <div className="stats">
                   <div className="stat-card">
@@ -732,71 +750,135 @@ function App() {
                   )}
                 </div>
               )}
-
-              <div className="menu-buttons">
-                {/* Button order changes with state: when there's work to
-                    do, Quiz is primary (top-right, gradient); when caught
-                    up, Study takes the prominent spot and Quiz is
-                    de-emphasized to discourage over-rehearsal. */}
-                {stats.dueNow > 0 ? (
-                  <>
-                    <button className="btn study-btn" onClick={() => setView('study')}>
-                      <span className="btn-icon">📖</span>
-                      <span>{t.studyMode}</span>
-                    </button>
-                    <button className="btn quiz-btn" onClick={() => {
-                      setQuizPhase('playing');
-                      setView('quiz');
-                    }}>
-                      <span className="btn-icon">🎯</span>
-                      <span>{t.quizMode}</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button className="btn study-btn study-btn-primary" onClick={() => setView('study')}>
-                      <span className="btn-icon">📖</span>
-                      <span>{t.studyMode}</span>
-                    </button>
-                    <button className="btn quiz-btn quiz-btn-secondary" onClick={() => {
-                      setQuizPhase('playing');
-                      setView('quiz');
-                    }}>
-                      <span className="btn-icon">🎯</span>
-                      <span>{t.quizMode}</span>
-                    </button>
-                  </>
-                )}
-                {/* Box Mode (Doos Modus): cram-only Leitner training, no
-                    FSRS impact. Sits between the schedule-driven modes
-                    (Quiz/Study) and Share so it reads as "an extra
-                    training option" rather than a primary daily action. */}
-                <button className="btn boxmode-menu-btn" onClick={() => setView('boxMode')}>
-                  <span className="btn-icon">📦</span>
-                  <span>{t.boxModeBtnLabel}</span>
-                </button>
-                <button className="btn share-btn" onClick={share}>
-                  <span className="btn-icon">🔗</span>
-                  <span>{t.share}</span>
-                </button>
-                {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
-                {stats.dueNow === 0 && (
-                  <p className="extra-practice-hint">{t.extraPracticeHint}</p>
-                )}
               </div>
-            </div>
-          )}
+              )}
 
-          {view === 'study' && (
-            <StudyGrid
-              fsrsCards={fsrsCards}
-              savedGroups={config.study.selectedGroups}
-              onSaveGroups={(groups) => saveConfig({
-                ...config,
-                study: { ...config.study, selectedGroups: groups }
-              })}
-              onBack={() => setView('menu')}
-            />
+              {/* Box Mode dashboard panel — shown when the Box card is
+                  the selected one. Surfaces personal bests across the
+                  scopes the user has completed; falls back to a friendly
+                  empty state for new users.
+                  Same visual weight as the Quiz panel so the page
+                  doesn't shift size when the user switches selection. */}
+              {selectedMode === 'boxMode' && (
+              <div className="dashboard-panel">
+                <button
+                  className="share-icon-btn-panel"
+                  onClick={share}
+                  title={t.share}
+                  aria-label={t.share}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+                <div className="boxmode-dashboard">
+                  <h2 className="boxmode-dashboard-title">📦 {t.boxModeBtnLabel}</h2>
+                  {/* Always render the "Personal bests" structure for
+                      visual parallelism with the Quiz Mode panel —
+                      Quiz shows zeros at empty state without a "no
+                      sessions yet" wrapper, so Box does the same:
+                      subtitle is always present, with a muted hint
+                      below when the bests list is empty. */}
+                  <div className="boxmode-dashboard-bests">
+                    <p className="boxmode-dashboard-subtitle">
+                      {lang === 'nl' ? 'Persoonlijke records' : 'Personal bests'}
+                    </p>
+                    {boxBests.length === 0 ? (
+                      <p className="boxmode-bests-empty-hint">
+                        {lang === 'nl'
+                          ? 'Voltooi een sessie om je eerste tijd vast te leggen.'
+                          : 'Complete a session to record your first time.'}
+                      </p>
+                    ) : (
+                      boxBests.slice(0, 4).map((b) => {
+                        const scopeName = b.scope === 'all'
+                          ? (lang === 'nl' ? 'Alle 66 boeken' : 'All 66 books')
+                          : (translations[lang]?.groupNames?.[b.scope.split(':')[1]] || b.scope.split(':')[1]);
+                        const totalSec = Math.round(b.fastestMs / 1000);
+                        const m = Math.floor(totalSec / 60);
+                        const s = totalSec % 60;
+                        const time = `${m}:${String(s).padStart(2, '0')}`;
+                        return (
+                          <div className="boxmode-best-row" key={b.scope}>
+                            <span className="boxmode-best-scope">{scopeName}</span>
+                            <span className="boxmode-best-stats">
+                              <span className="boxmode-best-time">{time}</span>
+                              <span className="boxmode-best-sep">·</span>
+                              <span className="boxmode-best-mistakes">
+                                {b.fewestMistakes} {b.fewestMistakes === 1
+                                  ? (lang === 'nl' ? 'fout' : 'mistake')
+                                  : (lang === 'nl' ? 'fouten' : 'mistakes')}
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+              )}
+
+              {/* Mode selector — tap to select (NOT launch). The Start
+                  button below launches whichever is selected. Box on the
+                  left as the more visible/concrete option, Quiz on the
+                  right as the more abstract scheduled-review one. */}
+              <div className="mode-cards mode-cards-selectable">
+                <button
+                  className={`mode-card${selectedMode === 'boxMode' ? ' mode-card-selected' : ''}`}
+                  aria-label={t.boxModeBtnLabel}
+                  aria-pressed={selectedMode === 'boxMode'}
+                  onClick={() => setSelectedMode('boxMode')}
+                >
+                  <span className="mode-card-icon" aria-hidden="true">📦</span>
+                  <span className="mode-card-label">{t.boxModeBtnLabel}</span>
+                </button>
+                <button
+                  className={`mode-card${selectedMode === 'quiz' ? ' mode-card-selected' : ''}`}
+                  aria-label={t.quizMode}
+                  aria-pressed={selectedMode === 'quiz'}
+                  onClick={() => setSelectedMode('quiz')}
+                >
+                  <span className="mode-card-icon" aria-hidden="true">🎯</span>
+                  <span className="mode-card-label">{t.quizMode}</span>
+                </button>
+              </div>
+
+              {/* Start button. Single CTA, label adapts to the selected
+                  mode. This is the launch action — the cards above are
+                  selectors, this is the commit. */}
+              <button
+                className="btn home-start-btn"
+                onClick={() => {
+                  if (selectedMode === 'quiz') {
+                    setQuizPhase('playing');
+                    goToMode('quiz');
+                  } else {
+                    goToMode('boxMode');
+                  }
+                }}
+              >
+                {selectedMode === 'boxMode'
+                  ? `${t.homeStartBoxMode} →`
+                  : `${t.homeStartQuiz} →`}
+              </button>
+
+              {/* Always-visible streak. Shown regardless of suggested
+                  mode because daily-engagement signal is universally
+                  motivating, not Quiz-specific. */}
+              {streakInfo.current > 0 && (
+                <div className="menu-streak-footer">
+                  <span className="streak-flame" aria-hidden="true">🔥</span>
+                  <span className="streak-number">{streakInfo.current}</span>
+                  <span className="streak-label">
+                    {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
+                    {streakInfo.longest > streakInfo.current && (
+                      <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
+            </div>
           )}
 
           {view === 'boxMode' && (
@@ -823,14 +905,6 @@ function App() {
                 onBack={() => {
                   setQuizPhase(null);
                   setView('menu');
-                }}
-                onGoToStudy={() => {
-                  // From the session-complete screen "Studie Modus"
-                  // button. Tear down the quiz phase (so the QuizGrid
-                  // unmounts and triggers its autosave-on-unmount) and
-                  // navigate to the study-mode group picker.
-                  setQuizPhase(null);
-                  setView('study');
                 }}
                 onPhaseChange={setQuizPhase}
               />

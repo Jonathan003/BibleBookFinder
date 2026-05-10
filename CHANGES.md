@@ -1,126 +1,194 @@
-# Polish update — wijzigingen overzicht
+# v3 polish update — wijzigingen overzicht
 
-Deze zip bevat polish-verbeteringen die we vóór Drill Modus afronden, zodat het huidige FSRS-flow zo goed mogelijk werkt voordat we een tweede leersysteem ernaast bouwen.
+Deze update voltooit de v3-rebuild door de Box/Quiz oefenervaring volledig
+gelijk te trekken, een belangrijke export/import-bug te repareren, en de
+projectdocumentatie up-to-date te brengen na de Studie Modus-verwijdering.
 
 ## Wat zit er in deze zip
 
-### 1. Drie-niveau rust-kaart op het startscherm
+### 1. Box Mode wrong-answer flow nu identiek aan Quiz Mode
 
-**Probleem:** wanneer `dueNow` op 0 staat, toonde de app altijd "Klaar voor vandaag" — ook wanneer het volgende boek in 5 minuten alweer terugkomt (Learning-tier korte intervallen). Dat was misleidend en maakte de boodschap hol.
+**Probleem:** in Box Mode advanceerde de app automatisch na een fout
+antwoord (1500 ms feedback-window). In Quiz Mode moet de gebruiker eerst
+op het blauw oplichtende correcte boek tikken om door te gaan. Dit zorgde
+voor inconsistente leerervaring tussen modi en sloeg de pedagogische
+versterking ("zie het juiste antwoord, kies het bewust") in Box Mode over.
 
-**Oplossing:** drie eerlijke niveaus, gekozen op basis van hoe ver weg het volgende boek is:
+**Oplossing:** auto-advance verwijderd. Na een fout antwoord (of
+hard-mode timeout) blijft het correcte boek blauw oplichten tot de
+gebruiker erop tikt. Andere boeken zijn gedisabled tijdens dat venster
+(deze guard bestond al in BoxMode.jsx — auto-advance schakelde er gewoon
+omheen). De prompt toont al "Fout — kijk naar het blauwe vakje!"
+(`wrongShowCorrect` translation key, ongewijzigd).
 
-| Niveau | Wanneer | Titel (NL) | Body (NL) |
-|---|---|---|---|
-| `session-end` | volgende boek <1 uur | ✓ Sessie klaar | Je sessie is af. Het volgende boek komt zo terug — neem even pauze. |
-| `today` | volgende boek 1 uur — einde dag | ✓ Klaar voor vandaag | Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet. |
-| `multi-day` | volgende boek morgen of later | ✓ Klaar — geniet van de rust | Niets gepland tot je volgende boek terugkomt. Je geheugen consolideert tussen herhalingen — dit is het belangrijkste deel. |
+**Bestanden:** `src/components/BoxMode.jsx` (nieuwe wrong-feedback branch
+in `handleBookClick`, twee `setTimeout`-blokken verwijderd, dode
+`WRONG_FEEDBACK_MS` constant + comment opgeruimd).
 
-**Bestanden:** `src/forecast.js` (nieuwe `getCelebrationLevel` helper), `src/App.jsx` (selecteert title/body via niveau), `src/data.js` (zes nieuwe i18n strings × NL/EN).
+### 2. Start-knop labels gelijkgetrokken
 
-**De drempel is 1 uur (sessie-end → today)**, gekozen omdat de meeste Learning-tier intervallen onder een uur vallen. Wil je een andere drempel (2u, 4u), dan is het één regel aanpassen in `forecast.js` regel `const oneHour = 60 * 60 * 1000;`.
+**Probleem:** "Start Box Mode" vs "Start Quiz" — inconsistente naamgeving
+tussen modi.
 
-### 2. Reset Progress verplaatst van menu naar Settings → Data
+**Oplossing:** beide knoppen gebruiken nu hetzelfde patroon:
+- EN: "Start Quiz Mode" / "Start Box Mode"
+- NL: "Start Quiz Modus" / "Start Doos Modus"
 
-**Probleem:** de Reset-knop stond op het hoofdmenu naast Quiz/Study/Share. Dat is een data-management actie die niet bij de oefen-actiestroom hoort, en geeft visuele afleiding.
+**Bestanden:** `src/data.js` (oude dode `upNext*` translation keys hernoemd
+naar `homeStart*` matching their actual use; `upNextStartStudy` verwijderd),
+`src/App.jsx` (start-button gebruikt nu `t.homeStartQuiz` / `t.homeStartBoxMode`).
 
-**Oplossing:** verplaatst naar Settings → Data, onderaan na de export/import sectie, gescheiden door een visuele divider.
+### 3. Home-screen dashboard hoogte stabiel bij modus-wisseling
 
-**Bestanden:** `src/App.jsx` (knop + bevestiging-paneel verwijderd uit menu, `confirmReset` state verwijderd, `doResetProgress` doorgegeven als prop), `src/components/Settings.jsx` (nieuwe Reset-sectie aan einde Data tab, eigen `confirmReset` state), `src/components/Settings.css` (`.btn-reset-progress`, `.settings-divider`, `.data-section-heading` stijlen toegevoegd), `src/App.css` (ongebruikte `.reset-btn` stijlen verwijderd), `src/data.js` (nieuwe `resetSectionTitle`, `resetSectionDesc` × NL/EN).
+**Probleem:** wanneer de gebruiker wisselde tussen Box-kaart en Quiz-kaart
+op het startscherm, sprong de layout omdat de Quiz dashboard veel hoger
+was (~360 px met mastery cards + tier bar + 7-dagen forecast) dan de
+Box dashboard (~140 px met alleen empty state).
 
-De bestaande bevestigings-flow blijft hetzelfde (inline panel, niet browser-confirm), met dezelfde `.reset-confirm-panel` styling als de import-bevestiging.
+**Oplossing:** `.dashboard-panel` heeft nu `min-height: 360 px` en
+flex-column display, zodat de Box dashboard zich uitstrekt om dezelfde
+ruimte te vullen. De empty-state berichtgeving in Box Mode is ook
+vereenvoudigd voor parallelliteit met Quiz Mode: "Personal bests"
+subtitle is nu altijd zichtbaar, met een muted hint-regel eronder
+wanneer er nog geen records zijn — geen aparte "no sessions yet"
+verbose wrapper meer, parallel aan hoe Quiz Mode "show structure with
+zeros" doet zonder verklarende tekst.
 
-### 3. Help FAQ updates
+**Bestanden:** `src/App.css` (`.dashboard-panel` min-height + flex,
+`.boxmode-dashboard` flex 1, nieuwe `.boxmode-bests-empty-hint`),
+`src/App.jsx` (Box dashboard JSX altijd dezelfde structuur — subtitle
++ content area).
 
-Drie FAQ's bijgewerkt in zowel NL als EN:
+### 4. Backup/restore omvat nu Box Mode data — bug fix
 
-- **"Wat betekent Klaar om te oefenen op het startscherm?"** — beschrijft nu de drie verschillende rust-kaarten (Sessie klaar / Klaar voor vandaag / Klaar — geniet van de rust)
-- **"Wat doet de Delen-knop?"** — pad naar Reset bijgewerkt: "Instellingen → Data → 🗑️ Voortgang wissen" in plaats van alleen de knop-naam
+**Probleem:** twee aparte data-paden ontbraken in de export/import:
+- `config.boxMode` (failMode, timePressure) was niet in de exported
+  settings opgenomen — backup/restore reset deze stilletjes naar default
+- `currentUser.boxModeBests` (per-scope persoonlijke records) was niet
+  in de exported user-data opgenomen — een geslaagde "alle 66 in 2:30
+  met 3 fouten" record overleefde geen backup/restore round-trip
+- `handleRestore` in App.jsx restoorde `boxModeBests` evenmin
 
-**Bestand:** `src/components/Help.jsx`
+Aanwezig sinds Box Mode werd toegevoegd; we hebben deze niet veroorzaakt
+maar wel ontdekt tijdens de v3 push-voorbereiding.
 
-### 4. README.md uitgebreid
+**Oplossing:** beide velden toegevoegd aan export shape, restore handelt
+ze af met `|| {}` fallback voor pre-v3 backups. Schema bumped naar v3
+met expliciete comment over wat er nieuw is. Geen migratie nodig — oude
+backups laden gewoon zonder Box Mode data, wat correct gedrag is.
 
-Features-sectie aangevuld met de tier-ladder, 7-day forecast, day streak, drie-niveau rest celebration, en learning pace settings. Reset-pad bijgewerkt.
+**Bestanden:** `src/components/Settings.jsx` (export shape uitgebreid,
+`_schemaVersion: 3`), `src/App.jsx` (`handleRestore` herstelt
+`boxModeBests`).
 
-## Wat is BEWUST niet in deze zip
+### 5. Stuk "Studie Modus"-knop verwijderd uit session-complete scherm — bug fix
 
-Deze zaken stonden op de polish-checklist maar zijn uitgesteld omdat ze verdere ontwerpbeslissingen vereisen die jij nog niet hebt gemaakt. Ze zijn voor "Sprint 2" — na deze polish, voor of parallel aan Drill Modus.
+**Probleem:** wanneer de gebruiker een Quiz-sessie afmaakte (Due → 0)
+toonde het session-complete-scherm drie knoppen: Sessie afsluiten /
+Studie Modus / Train vooruit. De "Studie Modus"-knop riep
+`onGoToStudy()` aan, wat `setView('study')` deed — maar de
+`view === 'study'` render-branch was in v3 verwijderd. Klikken zette
+de app dus in een gebroken staat (state zegt 'study' maar niets
+rendert daarvoor). Voor de meeste gebruikers ongezien omdat ze zelden
+het session-complete-scherm bereiken (vereist Due + unseen = 0), maar
+een echte gebroken-knop bug. Aanwezig sinds v3 home-rebuild.
 
-### Statistieken-pagina (D2)
+**Oplossing:** knop volledig verwijderd. Train vooruit is de enige
+overgebleven "ik wil verder oefenen"-optie en dekt het use-case af.
+Alle bijbehorende code opgeruimd: `handleGoToStudy` callback,
+`onGoToStudy` prop in QuizGrid, `setView('study')` callback in App.jsx,
+`sessionCompleteStudy` translation key (NL+EN), `.session-complete-study`
+CSS rule, en stale comments die de drie-keuzes flow beschreven.
 
-Idee: Share-knop vervangen door Statistieken-pagina (of het toevoegen van een tweede knop). De Share-knop blijft in deze zip ongewijzigd werken zoals voorheen.
+**Bestanden:** `src/components/QuizGrid.jsx`, `src/App.jsx`,
+`src/data.js`, `src/components/QuizGrid.css`.
 
-**Wat ontbreekt:** ontwerpbeslissingen over wat er op de Statistieken-pagina komt — totaal trainingstijd, beste-tijden per boek, streak history, milestones bereikt? Wat is de hiërarchie?
+### 6. HMR Fast Refresh fix
 
-### Speed-tracking en mijlpalen (G3-G7)
+**Probleem:** Vite's React plugin gaf elke save de waarschuwing
+"Could not Fast Refresh ('defaultConfig' export is incompatible)" en
+deed een full page reload, omdat App.jsx zowel React-componenten
+exporteerde als plain-data exports (`defaultConfig`, `mergeConfig`).
 
-Idee: detect wanneer de gebruiker een persoonlijk record breekt op een boek, of een gemiddelde-tijd-drempel kruist (bijv. eerste keer onder 5s/3s/2s gemiddeld), en toon een mijlpaal-modal.
+**Oplossing:** `defaultConfig` en `mergeConfig` verplaatst naar nieuwe
+`src/appConfig.js`. App.jsx exporteert nu alleen `useAppConfig` (hook)
+en de default `App` component — Fast Refresh compatible.
 
-**Wat ontbreekt:** antwoorden op de vragen die ik je eerder stelde:
-1. Welke gemiddelde-tijd-drempels (5s / 3s / 2s / 1.5s)?
-2. Welke streak-mijlpalen (7 / 30 / 100 of 7 / 14 / 30 / 60 / 100 / 365)?
-3. Speedrun-modus apart of natuurlijk uit normale quizzes?
+**Bestanden:** `src/appConfig.js` (nieuw), `src/App.jsx` (import in
+plaats van inline definitions, dode module-level `detectedLang`
+opgeruimd).
 
-De data is er al (`bestTimes`, `bestStreak`, `quizHistory`) — alleen de detectie en presentatie ontbreken.
+### 7. Studie Modus references opgeruimd
 
-### Achievements / share-card systeem
+**Probleem:** Studie Modus is in de v3 home-rebuild verwijderd, maar
+referenties bleven verspreid:
+- Help.jsx had nog een hele "Studie Modus" sectie met intro + 4-stappen
+  build-up lijst, plus 3 obsolete FAQs (Study-vs-Quiz, Random/Focused,
+  Up Next), plus 6 incidentele Study Mode-vermeldingen verspreid over
+  andere FAQ antwoorden, in zowel NL als EN
+- `data.js` had 8 dode translation keys (`studyMode`, `bookSelection*`,
+  `studyChooseGroup`, `startStudy`, `settingsSubsectionStudy`)
+- `Settings.jsx` had ongebruikte `study` in de destructure
+- README beschreef Study Mode in het features-overzicht, miste
+  Box Mode helemaal
 
-Idee: detecteer mijlpalen (33/66 boeken beheerst, hele OT/NT klaar, 30-dag streak, alle boeken op niveau Anchored, etc.) en toon een mooie share-card.
+**Oplossing:** alle dode references verwijderd; FAQ entries die
+Studie Modus tangentieel noemden zijn herschreven naar Box Mode of
+Quiz Mode waar logisch. README features-sectie heeft nu de Box Mode
+beschrijving op de plek waar Study Mode stond. JW Library Studie-
+bijbel verwijzingen blijven (echte publicatie, niet de app-modus).
 
-**Wat ontbreekt:** Statistieken-pagina is een prerequisite hiervoor — share-cards halen hun content meestal uit dezelfde data.
+**Bestanden:** `src/components/Help.jsx`, `src/data.js`,
+`src/components/Settings.jsx`, `README.md`.
 
 ## Test instructies
 
-1. Pak de zip uit in `C:\qwencode\BibleBookFinder` — overschrijf bestaande bestanden.
+1. Pak de zip uit in `C:\qwencode\BibleBookFinder` — overschrijf
+   bestaande bestanden. Verwijder `src/components/UpNextPanel.css`,
+   `src/components/UpNextPanel.jsx`, en `src/suggestedMode.js` als ze
+   nog op disk staan (oude v3-resten die nooit werden opgeruimd).
 2. `npm install` (indien nodig)
 3. `npm run dev` om lokaal te testen
 4. Test in de browser:
-   - **Drie-niveau celebratie:** in localhost waar je weinig/geen due hebt, kijk welke variant verschijnt en of het klopt met `Volgende boek: ...`
-   - **Reset Progress:** ga naar Instellingen → Data → scroll naar beneden → "🗑️ Voortgang wissen" → Annuleer (test eerst zonder te wissen!) → klik weer → "Wissen" → controleer dat alles terug op nul staat
-   - **Help FAQs:** open Help → expand "Wat betekent Klaar om te oefenen..." en "Wat doet de Delen-knop?" → controleer de nieuwe teksten
-5. `npm run build` om production-build te valideren (mocht localhost iets missen)
+   - **Box Mode wrong-answer:** start een sessie, tik op een fout boek
+     → het juiste boek licht blauw op → wacht 5 seconden, niets gebeurt
+     (geen auto-advance) → tik op het blauwe boek → advanceert
+   - **Hard-mode timeout:** Settings → Doos Modus → Tijdsdruk: streng,
+     start sessie, laat timer aflopen → identiek wrong-answer-gedrag
+   - **Start-knop labels:** wissel tussen Box/Quiz selector cards op
+     home → label past zich aan ("Start Box Mode" / "Start Quiz Mode")
+   - **Layout-stabiliteit:** wissel snel heen en weer tussen Box en
+     Quiz selector cards → cards en knoppen eronder verschuiven niet
+   - **Backup round-trip:** wijzig Box Mode tijdsdruk-instelling, behaal
+     een Box Mode persoonlijk record, exporteer backup, reset progress,
+     importeer backup → instelling EN record moeten terugkomen
+   - **HMR:** edit een willekeurige .jsx of .css file in dev-mode →
+     hot patch (geen full page reload, geen "Could not Fast Refresh"
+     waarschuwing in terminal)
+5. `npm run build` om production-build te valideren
 6. Indien alles goed is: commit en push.
 
-## Voorgestelde commit-messages
-
-Kun je naar wens aanpassen, maar deze structuur werkt goed met je een-commit-per-onderwerp aanpak:
+## Voorgestelde commit-message
 
 ```
-feat: three-level rest celebration based on next-due distance
+v3 polish: uniform Box/Quiz UX, backup completeness, doc cleanup
 
-Replace single "Klaar voor vandaag" message with three honest levels:
-- session-end (next book <1h) → "Sessie klaar"
-- today (next book later today) → "Klaar voor vandaag"
-- multi-day (next book tomorrow+) → "Klaar — geniet van de rust"
+Box Mode now mirrors Quiz Mode for wrong answers (tap correct book to
+advance, no auto-advance after 1.5s). Start button labels uniform
+across modes/languages. Home dashboard panel height-stabilized so
+mode-card switching no longer shifts layout below.
 
-Adds getCelebrationLevel() helper in forecast.js. Picks title/body
-key based on level in App.jsx. Six new i18n strings (NL+EN).
+Backup/restore bug fix: config.boxMode and user.boxModeBests are now
+included in export and restored on import (schema v3). Both fields
+existed since Box Mode was added but were silently omitted from the
+export shape, causing a backup round-trip to lose Box Mode settings
+and personal bests.
 
-Avoids the misleading "Done for today" appearance when Learning-tier
-short intervals mean a book is back in 5 minutes.
+HMR Fast Refresh fix via new src/appConfig.js so App.jsx only exports
+React-component-shaped values. Saves no longer trigger full reload.
+
+Documentation: README modes section updated (Study Mode out, Box Mode
+in); CHANGES.md rewritten for this round; all Study Mode references
+removed from in-app Help (FAQ entries, intro text, JSX section);
+8 dead translation keys removed; upNext* keys renamed to homeStart*.
 ```
-
-```
-refactor: move Reset Progress from home menu to Settings → Data
-
-Reset is data-management, not practice flow — it belongs alongside
-backup/restore. Home menu now stays focused on Quiz/Study/Share.
-
-Settings.jsx owns the confirmation state internally (matches the
-existing pendingImport pattern). App.jsx passes doResetProgress as
-a prop. Inline confirm panel reuses the .reset-confirm-panel styling
-from the import flow. Visual divider separates safe data actions
-(export/import) from the destructive reset.
-```
-
-```
-docs: update Help FAQs and README for tier system, forecast, streak
-
-- "Ready to practice" FAQ now describes the three rest-card variants
-- Share FAQ updates the path to Reset (Settings → Data instead of menu)
-- README features section expanded: six-tier ladder, 7-day forecast,
-  day streak, three-level celebration, learning pace
-```
-
-(Of doe het in één commit als je dat liever hebt — de bovenstaande splitsing is alleen een suggestie.)

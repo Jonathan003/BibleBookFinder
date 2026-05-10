@@ -957,12 +957,6 @@
   border-color: transparent;
 }
 
-/* Study Mode — neutral secondary, matches the existing menu-screen
-   "Study Mode" button styling. Icon is left-aligned via flex-gap above. */
-.session-complete-study {
-  /* default neutral .btn styling — no override */
-}
-
 /* Train Ahead container holds the parent button + collapsible submenu.
    When .open is set, the parent button has its bottom corners flat so
    the submenu reads as a continuation of the same control. */

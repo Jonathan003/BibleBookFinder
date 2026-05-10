@@ -157,7 +157,6 @@ export const translations = {
     confirmImportCrossMsg: '⚠️ Deze back-up is van "{backup}", je bent ingelogd als "{current}". Dit overschrijft {current}\'s voortgang en voorkeuren met die van {backup}. Apparaat-specifieke instellingen blijven van dit toestel.',
     errorMaxUsers: 'Maximum 10 gebruikers bereikt',
     errorDuplicate: 'Deze naam bestaat al',
-    studyMode: 'Studie Modus',
     quizMode: 'Quiz Modus',
     score: 'Score',
     streak: 'Streak',
@@ -198,13 +197,9 @@ export const translations = {
     slow: 'Rustig',
     highlightFound: 'Beheerste boeken',
     highlightFoundDesc: '(markeer boeken die je beheerst)',
-    autoScroll: 'Automatisch scrollen (Quiz & Studie)',
+    autoScroll: 'Automatisch scrollen',
     autoScrollDesc: '(scroll naar het gevraagde boek bij elke vraag)',
     dataTab: 'Data',
-    bookSelection: 'Boekselectie',
-    bookSelectionDesc: '(in Studie Modus)',
-    bookSelectionRandom: 'Willekeurig',
-    bookSelectionFocused: 'Gefocust',
     dataTitle: 'Back-up',
     dataDesc: 'Maak of herstel een back-up van je voortgang en instellingen.',
     exportBtn: '📥 Maak back-up',
@@ -247,8 +242,6 @@ export const translations = {
     practiced: 'Geoefend',
     allBooks: 'Alle boeken',
     books: 'boeken',
-    studyChooseGroup: 'Kies groepen om te oefenen',
-    startStudy: 'Start',
     wrongShowCorrect: 'Fout — kijk naar het blauwe vakje!',
     // Session summary (renamed from "Sessie afgerond" → "Tussenstand"
     // because the screen isn't truly an end-state: Keep going lets you
@@ -359,7 +352,6 @@ export const translations = {
     sessionCompleteSessionSingle: 'sessie',
     sessionCompleteMinutes: 'minuten getraind',
     sessionCompleteFinish: 'Sessie afsluiten',
-    sessionCompleteStudy: 'Studie Modus',
     sessionCompleteTrainAhead: 'Train vooruit',
     // ─── Train Ahead ──────────────────────────────────────────────────
     // The submenu opens after tapping "Train vooruit". Each option shows
@@ -403,6 +395,46 @@ export const translations = {
     boxModeFinish: 'Sluiten',
     // Home-screen button label
     boxModeBtnLabel: 'Doos Modus',
+
+    // ─── v2 home screen (Up Next panel) ──────────────────────────
+    upNextEyebrow: 'Volgende',
+    homeStartQuiz: 'Start Quiz Modus',
+    homeStartBoxMode: 'Start Doos Modus',
+    upNextQuizDue: '{n} boek(en) klaar om te oefenen',
+    upNextStudyWeak: 'Focus op je zwakste boeken — {n} hebben nog aandacht nodig',
+    upNextStudyAll: 'Vrij oefenen — geen schema-druk',
+    upNextStudyLastGroups: 'Laatste sessie',
+    upNextBoxModeNoHistory: 'Nog geen score — kies een selectie en start je eerste sessie',
+    upNextBoxModeResume: 'Ga verder waar je stopte',
+    upNextBoxModeBestFor: 'Beste',
+
+    // ─── v2 settings subsections ─────────────────────────────────
+    trainingTab: 'Training',
+    settingsSubsectionShared: 'Algemeen',
+    settingsSubsectionQuiz: 'Quiz Modus',
+    settingsSubsectionBoxMode: 'Doos Modus',
+
+    // ─── v2 Box Mode time pressure setting ───────────────────────
+    boxModeFailModeLabel: 'Bij fout antwoord',
+    boxModeFailModeDesc: '',
+    boxModeFailModeSoft: 'Eén doos terug',
+    boxModeFailModeStrict: 'Terug naar doos 1',
+    boxModeTimePressureLabel: 'Tijdsdruk',
+    boxModeTimePressureDesc: '(tijdslimiet per vraag)',
+    boxModeTimePressureOff: 'Uit',
+    boxModeTimePressureSoft5:  'Zacht, 5s',
+    boxModeTimePressureSoft8:  'Zacht, 8s',
+    boxModeTimePressureSoft10: 'Zacht, 10s (standaard)',
+    boxModeTimePressureSoft15: 'Zacht, 15s',
+    boxModeTimePressureSoft20: 'Zacht, 20s',
+    boxModeTimePressureHard5:  'Streng, 5s',
+    boxModeTimePressureHard8:  'Streng, 8s',
+    boxModeTimePressureHard10: 'Streng, 10s',
+    boxModeTimePressureHard15: 'Streng, 15s',
+    boxModeTimePressureHard20: 'Streng, 20s',
+    boxModeTimePressureSoftHint: 'Te traag = correct, maar geen vooruitgang',
+    boxModeTimePressureHardHint: 'Te traag = fout (toon antwoord + zak één doos)',
+    boxModeTimePressureSlowMarker: 'te traag',
   },
   en: {
     title: 'Bible Book Finder',
@@ -428,7 +460,6 @@ export const translations = {
     confirmImportCrossMsg: '⚠️ This backup is from "{backup}", you are logged in as "{current}". This will overwrite {current}\'s progress and preferences with {backup}\'s. Device-specific settings stay on this device.',
     errorMaxUsers: 'Maximum 10 users reached',
     errorDuplicate: 'This name already exists',
-    studyMode: 'Study Mode',
     quizMode: 'Quiz Mode',
     score: 'Score',
     streak: 'Streak',
@@ -469,13 +500,9 @@ export const translations = {
     slow: 'Relaxed',
     highlightFound: 'Mastered books',
     highlightFoundDesc: '(highlight mastered books)',
-    autoScroll: 'Auto-scroll (Quiz & Study)',
+    autoScroll: 'Auto-scroll',
     autoScrollDesc: '(scroll to the asked book on each question)',
     dataTab: 'Data',
-    bookSelection: 'Book selection',
-    bookSelectionDesc: '(in Study Mode)',
-    bookSelectionRandom: 'Random',
-    bookSelectionFocused: 'Focused',
     dataTitle: 'Backup',
     dataDesc: 'Create or restore a backup of your progress and settings.',
     exportBtn: '📥 Create Backup',
@@ -516,8 +543,6 @@ export const translations = {
     practiced: 'Practiced',
     allBooks: 'All Books',
     books: 'books',
-    studyChooseGroup: 'Choose groups to study',
-    startStudy: 'Start',
     wrongShowCorrect: 'Wrong — look for the blue cell!',
     // Session summary (renamed from "Session complete" → "Stats so far"
     // because the screen isn't truly an end-state: Keep going lets you
@@ -603,7 +628,6 @@ export const translations = {
     sessionCompleteSessionSingle: 'session',
     sessionCompleteMinutes: 'minutes trained',
     sessionCompleteFinish: 'End session',
-    sessionCompleteStudy: 'Study Mode',
     sessionCompleteTrainAhead: 'Train ahead',
     // ─── Train Ahead ──────────────────────────────────────────────────
     // See NL section for design rationale.
@@ -633,5 +657,45 @@ export const translations = {
     boxModeAgain: 'Again',
     boxModeFinish: 'Close',
     boxModeBtnLabel: 'Box Mode',
+
+    // ─── v2 home screen (Up Next panel) ──────────────────────────
+    upNextEyebrow: 'Up next',
+    homeStartQuiz: 'Start Quiz Mode',
+    homeStartBoxMode: 'Start Box Mode',
+    upNextQuizDue: '{n} book(s) ready to practice',
+    upNextStudyWeak: 'Focus on your weakest books — {n} still need attention',
+    upNextStudyAll: 'Practice freely — no schedule pressure',
+    upNextStudyLastGroups: 'Last session',
+    upNextBoxModeNoHistory: 'No best yet — pick a selection and start your first session',
+    upNextBoxModeResume: 'Pick up where you left off',
+    upNextBoxModeBestFor: 'Best',
+
+    // ─── v2 settings subsections ─────────────────────────────────
+    trainingTab: 'Training',
+    settingsSubsectionShared: 'Shared',
+    settingsSubsectionQuiz: 'Quiz Mode',
+    settingsSubsectionBoxMode: 'Box Mode',
+
+    // ─── v2 Box Mode time pressure setting ───────────────────────
+    boxModeFailModeLabel: 'On wrong answer',
+    boxModeFailModeDesc: '',
+    boxModeFailModeSoft: 'Drop one box',
+    boxModeFailModeStrict: 'Back to box 1',
+    boxModeTimePressureLabel: 'Time pressure',
+    boxModeTimePressureDesc: '(time limit per question)',
+    boxModeTimePressureOff: 'Off',
+    boxModeTimePressureSoft5:  'Soft, 5s',
+    boxModeTimePressureSoft8:  'Soft, 8s',
+    boxModeTimePressureSoft10: 'Soft, 10s (default)',
+    boxModeTimePressureSoft15: 'Soft, 15s',
+    boxModeTimePressureSoft20: 'Soft, 20s',
+    boxModeTimePressureHard5:  'Hard, 5s',
+    boxModeTimePressureHard8:  'Hard, 8s',
+    boxModeTimePressureHard10: 'Hard, 10s',
+    boxModeTimePressureHard15: 'Hard, 15s',
+    boxModeTimePressureHard20: 'Hard, 20s',
+    boxModeTimePressureSoftHint: 'Slow correct = no advancement',
+    boxModeTimePressureHardHint: 'Slow = wrong (auto-reveal + demote)',
+    boxModeTimePressureSlowMarker: 'too slow',
   }
 };

@@ -455,3 +455,72 @@
     margin: 0.15rem 0 0.25rem;
   }
 }
+
+/* ─── Box Mode timer bar (v2) ─────────────────────────────────── */
+/* Depleting bar shown above the book grid when timePressure is on.
+   Uses transform: scaleX() rather than width: % because transforms
+   are GPU-composited and don't cause layout thrash. The bar is amber
+   (--accent-warm) for a "warning" feel; full color blindness still
+   sees the shrinking width unambiguously. */
+
+.boxmode-timer-bar {
+  width: 100%;
+  height: 4px;
+  margin: 0.4rem 0;
+  background: var(--border, #e5e7eb);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.boxmode-timer-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-warm, #F97316);
+  transform-origin: left center;
+  transition: transform 0.1s linear;
+  border-radius: 2px;
+}
+
+/* Hard mode visual: same amber, but slightly thicker bar to subtly
+   convey "this matters more." Not relying on color difference for
+   semantic distinction — the user knows the mode from the setting. */
+.boxmode-timer-hard {
+  height: 6px;
+}
+
+/* Slow marker styled like the hint marker — uses the same warm accent
+   so it reads as "you got a soft penalty." */
+.boxmode-slow-marker {
+  color: var(--accent-warm, #F97316);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boxmode-timer-bar-fill {
+    transition: none;
+  }
+}
+
+/* ─── Box Mode topbar layout in landscape ─────────────────────────── */
+/* Box Mode reuses .quiz-top, which switches to flex-direction: row in
+   landscape. That's fine — packing all topbar elements onto one row
+   saves vertical space the same way it does for Quiz Mode. The
+   problem was that .boxmode-boxes (above) declares `width: 100%`,
+   which was correct for portrait (column flex parent — fill the
+   column) but wrong for landscape (row flex parent — claims the
+   entire row, fighting .quiz-prompt-row's `flex: 1`, causing visible
+   overlap on wide viewports).
+   In landscape, override boxes to size from content (5 boxes × natural
+   width). Same for the recent-dots strip. Now prompt-row (flex: 1)
+   gets the remaining space, and everything packs cleanly: back/prompt,
+   pill, boxes, dots — left to right. */
+@media (orientation: landscape) {
+  .boxmode-playing .boxmode-boxes {
+    width: auto;
+    flex: 0 0 auto;
+  }
+  .boxmode-playing .boxmode-recent-dots {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}

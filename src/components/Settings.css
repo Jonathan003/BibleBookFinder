@@ -442,3 +442,22 @@
   color: var(--text-secondary, #999);
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Settings subsection headers (v2) ─────────────────────────── */
+/* Used inside the Training tab to group settings by the mode they
+   affect: Shared / Quiz / Study / Box Mode. Visually quieter than
+   the tab title (h3) so the hierarchy reads tab → subsection → row. */
+.settings-subsection {
+  margin: 1.2rem 0 0.4rem;
+  padding-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #666);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.settings-subsection:first-child {
+  margin-top: 0.2rem;
+}

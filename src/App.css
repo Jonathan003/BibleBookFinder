@@ -760,3 +760,294 @@
   font-size: 0.9rem;
   cursor: pointer;
 }
+
+/* ─── Stable mode-cards grid (v2 home screen) ───────────────────── */
+/* Three identical mode buttons. NO color-swap, NO fill swap, NO size
+   variation based on suggestedMode. The "next action" guidance comes
+   from the UpNextPanel's CTA button above. These cards exist for the
+   user to explicitly pick a different mode if they want.
+
+   aria-current="true" is the sole marker that one of these is the
+   current suggestion — for screen readers. Sighted users see the
+   suggestion via the panel above (which is visually unambiguous).
+   This satisfies WCAG 1.4.1: information conveyed by color must also
+   be available via another means. */
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 520px;
+  margin: 0.75rem auto 0;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 88px;
+  padding: 0.85rem 0.5rem;
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  color: var(--text-primary, #1a1a2e);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.mode-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: var(--accent, #7C3AED);
+}
+
+.mode-card:active {
+  transform: scale(0.98);
+}
+
+.mode-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.mode-card-label {
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-card:hover  { transform: none; }
+  .mode-card:active { transform: none; }
+}
+
+/* Subtle marker for the suggested card. Border-only (no fill swap)
+   so it's both subtle and color-blind safe — even users with no color
+   perception at all see a thicker outline. */
+.mode-card[aria-current="true"] {
+  border-color: var(--accent, #7C3AED);
+  box-shadow: 0 0 0 1px var(--accent, #7C3AED) inset;
+}
+
+/* ─── Streak footer (v2) ────────────────────────────────────────── */
+.menu-streak-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem auto 0;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  width: fit-content;
+}
+
+.menu-streak-footer .streak-flame {
+  font-size: 1.1rem;
+}
+
+.menu-streak-footer .streak-number {
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Share icon in header ───────────────────────────────────────── */
+.share-icon-btn {
+  background: transparent;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  padding: 0.4rem;
+  color: var(--text-primary, #1a1a2e);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.share-icon-btn:hover {
+  border-color: var(--accent, #7C3AED);
+  color: var(--accent, #7C3AED);
+}
+
+/* Phone-portrait trims */
+@media (max-width: 380px) {
+  .mode-cards {
+    gap: 0.5rem;
+  }
+  .mode-card {
+    min-height: 78px;
+    padding: 0.7rem 0.4rem;
+    font-size: 0.85rem;
+  }
+  .mode-card-icon {
+    font-size: 1.4rem;
+  }
+}
+
+/* ─── Home-screen dashboard panel (v3) ──────────────────────────── */
+/* Wrapper around the mode-specific dashboard content (Quiz stats vs.
+   Box bests). Provides a positioning context for the share-icon button
+   pinned in the top-right corner. The panel itself is transparent —
+   the visual structure (cards, hero, etc.) lives inside.
+
+   min-height matches the Quiz panel's natural content height (~360px:
+   stat cards + tier bar + 7-day forecast) so switching between
+   Quiz and Box selection in the home screen doesn't shift the
+   surrounding layout. The flex-column display lets the inner Box
+   dashboard expand vertically to fill the same space. */
+.dashboard-panel {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.share-icon-btn-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.share-icon-btn-panel:hover {
+  background: var(--bg-secondary, #f9fafb);
+  border-color: var(--accent, #7C3AED);
+  color: var(--accent, #7C3AED);
+}
+
+.share-icon-btn-panel:active {
+  transform: scale(0.95);
+}
+
+/* ─── Box Mode home-screen dashboard ────────────────────────────── */
+.boxmode-dashboard {
+  padding: 1rem 1.25rem;
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  /* Fill the dashboard-panel height so the Box block matches the
+     Quiz block visually regardless of how many bests the user has. */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.boxmode-dashboard-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* Subtle helper line shown when the user has no bests yet. Visually
+   parallel to the "Personal bests" subtitle + list pattern: same
+   container, same subtitle, just a muted hint instead of rows.
+   No "no sessions yet" framing — Quiz Mode doesn't say "no quiz
+   sessions yet" either, it just shows structure with zeros. */
+.boxmode-bests-empty-hint {
+  margin: 0;
+  padding: 0.5rem 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.boxmode-dashboard-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #666);
+}
+
+.boxmode-dashboard-bests {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.boxmode-best-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+}
+
+.boxmode-best-row:last-child {
+  border-bottom: none;
+}
+
+.boxmode-best-scope {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a2e);
+}
+
+.boxmode-best-stats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary, #666);
+  font-size: 0.9rem;
+}
+
+.boxmode-best-time {
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+}
+
+.boxmode-best-sep {
+  opacity: 0.5;
+}
+
+/* ─── Selectable mode-cards (v3 in-page tabs) ───────────────────── */
+/* When mode-cards-selectable is added, the cards behave as a tab-like
+   selector: tap = select (NOT launch). Selection styling uses a thicker
+   border + tinted background, NOT a fill swap that would conflict with
+   color-blindness. The Start button below is the explicit launch CTA. */
+.mode-cards-selectable {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.mode-card-selected {
+  border-color: var(--accent, #7C3AED);
+  box-shadow: 0 0 0 2px var(--accent, #7C3AED) inset;
+  background: color-mix(in srgb, var(--accent, #7C3AED) 4%, var(--bg-secondary, #fff));
+}
+
+/* ─── Home Start button (v3 launch CTA) ─────────────────────────── */
+.home-start-btn {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin: 1rem auto 0;
+  padding: 0.95rem 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}

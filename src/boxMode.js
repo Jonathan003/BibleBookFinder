@@ -75,6 +75,12 @@ export function createInitialState({ books, scope, failMode = 'soft', now = Date
     // Hint flag: cleared on each new pick. If true when answer commits,
     // the book's box is NOT advanced (hint = no progress on this turn).
     hintUsedOnCurrent: false,
+    // Slow flag: set when the soft timer expires before the user
+    // answers. Like hintUsedOnCurrent, blocks advancement on a correct
+    // answer but doesn't trigger demotion. Cleared on each new pick.
+    // Hard-timer mode never sets this — it triggers an auto-wrong
+    // answer instead, which is handled at the UI layer.
+    slowOnCurrent: false,
     // Timing
     startedAt: now,
     endedAt: null,
@@ -150,8 +156,8 @@ export function applyAnswer(state, { bookId, correct, now = Date.now() }) {
   let nextBox = currentBox;
 
   if (correct) {
-    // Hint blocks advancement. Box stays where it is.
-    if (!state.hintUsedOnCurrent) {
+    // Hint OR slow-answer flag blocks advancement. Box stays where it is.
+    if (!state.hintUsedOnCurrent && !state.slowOnCurrent) {
       nextBox = Math.min(TOP_BOX, currentBox + 1);
     }
   } else {
@@ -188,8 +194,18 @@ export function applyAnswer(state, { bookId, correct, now = Date.now() }) {
     ...state,
     bookBoxes: { ...state.bookBoxes, [bookId]: nextBox },
     lastAskedBookId: bookId,
-    currentBookId: null,                 // cleared until next pick
+    // currentBookId is intentionally NOT cleared here — it must stay set
+    // through the entire feedback window (the correct/wrong color flash
+    // on the clicked cell). Clearing it caused the BoxMode render guard
+    // `if (state.currentBookId == null) return null;` to unmount the
+    // whole UI for the ~700ms between answer commit and next pick,
+    // which killed the feedback animation. setCurrentBook overwrites
+    // currentBookId with the next book ID, so this isn't a leak —
+    // it's just keeping the value alive across one render cycle.
+    // Re-click protection is handled at the click-handler layer via
+    // the `feedback` state guard.
     hintUsedOnCurrent: false,            // reset for next turn
+    slowOnCurrent: false,                 // reset for next turn
     consecutiveWrong,
     recoveryTurnsRemaining,
     currentStreak,
@@ -209,10 +225,21 @@ export function markHintUsed(state) {
 }
 
 /**
+ * Mark that the soft timer expired on the current turn. Same effect as
+ * markHintUsed for the advancement-suppression rule, but tracked
+ * separately so the UI can distinguish "hint" vs "too slow" feedback to
+ * the user. Hard-timer mode does NOT call this — it triggers an
+ * applyAnswer({ correct: false }) directly to mimic a wrong answer.
+ */
+export function markSlow(state) {
+  return { ...state, slowOnCurrent: true };
+}
+
+/**
  * Set the next book to ask. Called after pickNextBookId returns a value.
  */
 export function setCurrentBook(state, bookId) {
-  return { ...state, currentBookId: bookId, hintUsedOnCurrent: false };
+  return { ...state, currentBookId: bookId, hintUsedOnCurrent: false, slowOnCurrent: false };
 }
 
 /**

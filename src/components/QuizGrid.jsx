@@ -60,7 +60,7 @@ export default function QuizGrid({
   ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime,
   bestStreak, setBestStreak, addQuizSession, addTrainingTime,
   totalQuizMs = 0, quizHistory = [],
-  onBack, onGoToStudy, onPhaseChange,
+  onBack, onPhaseChange,
 }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
@@ -272,8 +272,8 @@ export default function QuizGrid({
   //   3. No due, no unseen → session-complete screen. (The old "random
   //      from all 66" Branch 4 was eliminated — drilling stable cards
   //      adds no new strength and confuses FSRS calibration. The
-  //      session-complete screen offers Train Ahead and Study Mode for
-  //      users who genuinely want to keep practicing.)
+  //      session-complete screen offers Train Ahead for users who
+  //      genuinely want to keep practicing past the schedule.)
   const pickNextBook = useCallback(() => {
     feedbackRef.current = false;
     const cards = fsrsCardsRef.current || {};
@@ -302,7 +302,7 @@ export default function QuizGrid({
       setFeedback(null);
       setHintVisible(false);
       // Train Ahead respects the same auto-scroll setting as regular play.
-      if (config.quiz.autoScroll !== false && testamentsLayout !== 'sideBySide') {
+      if (config.display.autoScroll !== false && testamentsLayout !== 'sideBySide') {
         schedule(() => {
           const el = scrollRef.current;
           if (!el) return;
@@ -337,8 +337,7 @@ export default function QuizGrid({
       branch = 'unseen';
     } else {
       // Branch 4 (random-from-66) eliminated. Show the session-complete
-      // screen so the user can either stop, start Train Ahead, or
-      // switch to Study Mode.
+      // screen so the user can either stop or start Train Ahead.
       setSessionComplete(true);
       return;
     }
@@ -361,7 +360,7 @@ export default function QuizGrid({
     // a confusing jump with no benefit. Skip it. (On phones in landscape
     // some rows may need manual scrolling, but auto-scroll-to-top-or-bottom
     // there is still wrong since both halves are partially visible.)
-    if (config.quiz.autoScroll !== false && testamentsLayout !== 'sideBySide') {
+    if (config.display.autoScroll !== false && testamentsLayout !== 'sideBySide') {
       // Scroll after DOM updates and new book name is visible
       // OT book: scroll to top, NT book: scroll to bottom
       schedule(() => {
@@ -377,7 +376,7 @@ export default function QuizGrid({
       scrollRef.current?.scrollTo(0, 0);
       window.scrollTo(0, 0);
     }
-  }, [config.quiz.autoScroll, testamentsLayout, schedule, setTrainAheadQueue]);
+  }, [config.display.autoScroll, testamentsLayout, schedule, setTrainAheadQueue]);
 
   useEffect(() => {
     logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
@@ -429,15 +428,6 @@ export default function QuizGrid({
   const handleEndSession = useCallback(() => {
     finishSession();
   }, [finishSession]);
-
-  // Study-mode button on the session-complete screen — saves the
-  // current segment, then asks App to switch the view to Study Mode.
-  // Falls back to onBack if the parent didn't wire onGoToStudy.
-  const handleGoToStudy = useCallback(() => {
-    saveCurrentSegment();
-    if (typeof onGoToStudy === 'function') onGoToStudy();
-    else onBack();
-  }, [saveCurrentSegment, onGoToStudy, onBack]);
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
@@ -682,10 +672,10 @@ export default function QuizGrid({
 
   // ─── Session-complete screen ─────────────────────────────────────────
   // Shown when DUE+unseen=0 (normal segment) or when a Train Ahead queue
-  // empties. The user gets three explicit choices: end the session,
-  // switch to Study Mode (no schedule impact), or Train Ahead with a
-  // chosen horizon. Daily totals are factual — no judgment, no graduated
-  // nudges; the rest message above conveys the learning-science point.
+  // empties. The user gets two explicit choices: end the session, or
+  // Train Ahead with a chosen horizon. Daily totals are factual — no
+  // judgment, no graduated nudges; the rest message above conveys the
+  // learning-science point.
   if (sessionComplete) {
     const counts = getTrainAheadCounts(fsrsCards, bibleBooks);
     const trainAheadAvailable = counts.remaining > 0;
@@ -740,11 +730,6 @@ export default function QuizGrid({
         <div className="session-complete-buttons">
           <button className="btn session-complete-finish" onClick={handleEndSession}>
             {t.sessionCompleteFinish}
-          </button>
-
-          <button className="btn session-complete-study" onClick={handleGoToStudy}>
-            <span className="btn-icon">📖</span>
-            <span>{t.sessionCompleteStudy}</span>
           </button>
 
           <div className={`session-complete-trainahead ${trainAheadMenuOpen ? 'open' : ''}`}>
