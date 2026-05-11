@@ -1,3 +1,79 @@
+# v3.3 update — Reset Progress gesplitst per modus
+
+Eén "Voortgang wissen" knop in Instellingen → Data is vervangen door
+twee knoppen: "Quiz-voortgang wissen" en "Doos-voortgang wissen". Elk
+met een eigen bevestigingsdialoog die specifiek vermeldt wat verloren
+gaat. Quiz en Box Mode hebben nu volledig onafhankelijke resets.
+
+## Wat zit er in deze zip
+
+### Gedrag voor gebruiker
+
+**Quiz-voortgang wissen** wist:
+- FSRS-data: alle kaartstatussen, intervallen, due dates, mastery tiers
+- Quiz-historie: alle opgeslagen sessies, daarmee streak en "vandaag X sessies"
+- Persoonlijke records per boek (snelste tijden in Quiz Mode)
+- Beste streak
+- Totale trainingstijd
+- masteryMsAtStart baseline voor share-bericht
+
+**Doos-voortgang wissen** wist:
+- Alleen `boxModeBests`: alle persoonlijke records per selectie
+  (snelste tijd, minste fouten, langste reeks voor "Alle 66",
+  Pentateuch, Evangeliën, enz.)
+
+Beide laten persoonlijke voorkeuren (taal, leertempo, snelheidslimiet,
+kolommen, oriëntatie, layout) intact. Reset gaat over voortgang, niet
+over instellingen.
+
+### Eerdere stilzwijgende discrepantie opgelost
+
+De oude `doResetProgress` raakte `boxModeBests` niet aan — alleen Quiz
+Mode data werd gewist. De knop heette "Voortgang wissen" wat suggereert
+"alles wissen", maar de daadwerkelijke wipe was Quiz-only. Dit was niet
+documenteerd en kon misleidend zijn.
+
+In v3.3 wordt dit gedrag expliciet: de Quiz-knop doet (vrijwel) exact
+wat de oude knop deed; de Doos-knop is nieuw en doet de Box-only wipe
+die voorheen niet bestond.
+
+### Implementatie
+
+**`src/App.jsx`:**
+- `doResetProgress` (één functie) gesplitst in `doResetQuizProgress`
+  en `doResetBoxProgress`. Quiz-versie is identiek aan de oude functie;
+  Box-versie wist alleen `boxModeBests`.
+- Settings component krijgt nu twee props (`onResetQuizProgress` en
+  `onResetBoxProgress`) in plaats van één.
+
+**`src/components/Settings.jsx`:**
+- `confirmReset` state veranderd van boolean naar string (`'quiz'` |
+  `'box'` | `null`). Eén state houdt welke reset mid-confirmation is —
+  beide kunnen niet tegelijk open zijn, en dat invariant is nu
+  structureel afgedwongen door het type.
+- Eén reset-knop is vervangen door twee, elk met een eigen inline
+  confirmation panel onderaan de knop.
+
+**`src/data.js`** — translation keys:
+- `resetProgress` weggehaald
+- `resetQuizProgress` + `resetBoxProgress` toegevoegd (NL+EN)
+- `resetSectionDesc` aangepast: niet meer "wis alles", maar "wis per
+  modus"
+- `confirmResetQuizMsg` + `confirmResetBoxMsg` toegevoegd met
+  specifieke uitleg per modus. `confirmResetMsg` blijft als fallback.
+
+**`src/components/Help.jsx`** — twee FAQ-antwoorden bijgewerkt waar
+"Reset Progress" / "Voortgang wissen" werd genoemd in de context van
+share-bericht. Nu verwijst de tekst naar de specifieke "Quiz-voortgang
+wissen" knop.
+
+### Build-verificatie
+
+Clean build slaagt op vite 6 + React 19. Geen functionele wijzigingen
+in FSRS, Box Mode logic, of UI gameplay-paden.
+
+---
+
 # v3.2 update — Tussenscherm bij Terug-knop verwijderd
 
 Wanneer je tijdens een actieve Quiz Mode sessie op Terug klikt, verscheen

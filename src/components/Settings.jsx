@@ -6,7 +6,7 @@ import { bibleBooks } from '../data';
 import { APP_COMMIT, APP_BUILD_DATE } from '../version';
 import './Settings.css';
 
-export default function Settings({ config, onSave, onBack, currentUser, onRestore, onResetProgress }) {
+export default function Settings({ config, onSave, onBack, currentUser, onRestore, onResetQuizProgress, onResetBoxProgress }) {
   // All settings held in a single atomic object. A functional updater on
   // one state makes field changes race-free by construction: React's
   // reducer semantics guarantee each update sees the result of the
@@ -27,10 +27,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
   // matches the Reset Progress dialog styling.  Cross-user imports get
   // an extra warning line.
   const [pendingImport, setPendingImport] = useState(null);
-  // Reset Progress confirmation. Same pattern as pendingImport — toggles
-  // an inline confirm panel rather than using browser confirm. Lives in
-  // Settings since the Reset button moved here from the home menu.
-  const [confirmReset, setConfirmReset] = useState(false);
+  // Reset Progress confirmation. A single state holds which reset is
+  // mid-confirmation: 'quiz' for Quiz Mode reset, 'box' for Box Mode
+  // reset, null when no confirmation is open. Single state instead of
+  // two booleans because the two confirms are mutually exclusive — only
+  // one can be open at a time, and using a single string makes that
+  // invariant explicit and unbreakable.
+  const [confirmReset, setConfirmReset] = useState(null);
 
   // Hidden <input type="file"> ref. Used by the import flow as a fallback
   // when showOpenFilePicker is unavailable (Safari, Firefox) or fails.
@@ -534,28 +537,58 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
             button styling so it can't be tapped accidentally. */}
         <div className="settings-divider" />
         <h3 className="data-section-heading">{t.resetSectionTitle || 'Voortgang resetten'}</h3>
-        <p className="settings-desc">{t.resetSectionDesc || 'Wis al je voortgang en begin opnieuw. Dit kan niet ongedaan worden gemaakt.'}</p>
+        <p className="settings-desc">{t.resetSectionDesc || 'Wis je voortgang per modus. Dit kan niet ongedaan worden gemaakt.'}</p>
+
+        {/* Reset Quiz Mode — wipes FSRS, mastery, streak, best times,
+            quiz history, totalQuizMs. Box Mode bests untouched. */}
         <button
           className="btn-data btn-reset-progress"
-          onClick={() => setConfirmReset(true)}
-          disabled={confirmReset}
+          onClick={() => setConfirmReset('quiz')}
+          disabled={confirmReset !== null}
         >
-          🗑️ {t.resetProgress || 'Voortgang wissen'}
+          🗑️ {t.resetQuizProgress || 'Quiz-voortgang wissen'}
         </button>
-        {confirmReset && (
+        {confirmReset === 'quiz' && (
           <div className="reset-confirm-panel">
-            <span className="reset-confirm-msg">{t.confirmResetMsg}</span>
+            <span className="reset-confirm-msg">{t.confirmResetQuizMsg || t.confirmResetMsg}</span>
             <div className="reset-confirm-buttons">
               <button
                 className="btn-confirm-reset"
                 onClick={() => {
-                  setConfirmReset(false);
-                  if (onResetProgress) onResetProgress();
+                  setConfirmReset(null);
+                  if (onResetQuizProgress) onResetQuizProgress();
                 }}
               >
                 {t.confirmReset}
               </button>
-              <button className="btn-cancel-reset" onClick={() => setConfirmReset(false)}>{t.cancelReset}</button>
+              <button className="btn-cancel-reset" onClick={() => setConfirmReset(null)}>{t.cancelReset}</button>
+            </div>
+          </div>
+        )}
+
+        {/* Reset Box Mode — wipes per-scope personal bests only.
+            FSRS / Quiz data untouched. */}
+        <button
+          className="btn-data btn-reset-progress"
+          onClick={() => setConfirmReset('box')}
+          disabled={confirmReset !== null}
+        >
+          🗑️ {t.resetBoxProgress || 'Doos-voortgang wissen'}
+        </button>
+        {confirmReset === 'box' && (
+          <div className="reset-confirm-panel">
+            <span className="reset-confirm-msg">{t.confirmResetBoxMsg || t.confirmResetMsg}</span>
+            <div className="reset-confirm-buttons">
+              <button
+                className="btn-confirm-reset"
+                onClick={() => {
+                  setConfirmReset(null);
+                  if (onResetBoxProgress) onResetBoxProgress();
+                }}
+              >
+                {t.confirmReset}
+              </button>
+              <button className="btn-cancel-reset" onClick={() => setConfirmReset(null)}>{t.cancelReset}</button>
             </div>
           </div>
         )}

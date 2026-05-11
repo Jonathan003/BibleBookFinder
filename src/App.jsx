@@ -328,16 +328,33 @@ function App() {
     setView(mode);
   }, [currentUser]);
 
-  // Reset all progress for the current user. Confirmation is owned by
-  // Settings.jsx (where the button now lives) — this just performs the
-  // wipe when called. See Settings.jsx Data tab for the inline confirm
-  // panel that matches the import-confirm styling.
-  const doResetProgress = () => {
+  // Reset Quiz Mode progress for the current user. Wipes the FSRS-driven
+  // long-term data: card states, mastery, quiz history, streak, best
+  // times, and the cumulative training-time counter. Box Mode personal
+  // bests are NOT touched — Box Mode has its own reset.
+  // Confirmation is owned by Settings.jsx (where the button now lives) —
+  // this just performs the wipe when called. masteryMsAtStart is
+  // re-snapshotted from the current setting so the next share message
+  // reflects only post-reset training time.
+  const doResetQuizProgress = () => {
     if (!currentUser) return;
-    // Reset wipes everything earned by quiz activity, including the
-    // cumulative training-time counter. After reset, the next share
-    // message reflects only post-reset training time.
-    updateUserData({ bestStreak: 0, quizHistory: [], fsrsCards: {}, bestTimes: {}, masteryMsAtStart: config.quiz.masteryMs, totalQuizMs: 0 });
+    updateUserData({
+      bestStreak: 0,
+      quizHistory: [],
+      fsrsCards: {},
+      bestTimes: {},
+      masteryMsAtStart: config.quiz.masteryMs,
+      totalQuizMs: 0,
+    });
+  };
+
+  // Reset Box Mode progress for the current user. Wipes per-scope
+  // personal bests (fastestMs, fewestMistakes, longestStreak across all
+  // scopes — All 66, Pentateuch, Gospels, etc.). Quiz Mode data is NOT
+  // touched. Confirmation lives in Settings.jsx.
+  const doResetBoxProgress = () => {
+    if (!currentUser) return;
+    updateUserData({ boxModeBests: {} });
   };
 
   // Add to the user's cumulative training-time counter. Called per
@@ -991,7 +1008,8 @@ function App() {
               }}
               currentUser={currentUser}
               onRestore={handleRestore}
-              onResetProgress={doResetProgress}
+              onResetQuizProgress={doResetQuizProgress}
+              onResetBoxProgress={doResetBoxProgress}
             />
           )}
 
