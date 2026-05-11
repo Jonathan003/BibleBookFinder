@@ -864,11 +864,20 @@
   position: relative;
   width: 100%;
   margin: 0 auto;
-  min-height: 360px;
   display: flex;
   flex-direction: column;
   /* v4.8: max-width removed — inherits container width from .menu via
-     the .dashboard-area grid cell. */
+     the .dashboard-area grid cell.
+     v4.12: min-height: 360px removed. The grid overlay (.dashboard-area
+     grid-row: 1 / grid-column: 1 on both panels) already anchors tab
+     position by sizing the grid cell to the taller panel. The 360px
+     floor was an artifact of the v4.1 era before the grid overlay
+     existed (4.2) — back then min-height was the only thing keeping
+     the panel from collapsing when Box mode was selected. Now that
+     both panels are co-located in the same grid cell, the cell sizes
+     to whichever panel has more natural content (always Quiz on the
+     home screen), so the floor adds dead empty space without buying
+     anything. */
 }
 
 .share-icon-btn-panel {
@@ -1309,7 +1318,9 @@
 .dashboard-area > .dashboard-panel {
   grid-row: 1;
   grid-column: 1;
-  min-height: 360px;
+  /* v4.12: min-height: 360px removed here too — see .dashboard-panel
+     base rule for rationale. Grid overlay anchors via the taller panel
+     naturally. */
 }
 
 .dashboard-panel.dashboard-panel-hidden {

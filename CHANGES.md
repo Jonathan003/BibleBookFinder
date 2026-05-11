@@ -1,3 +1,81 @@
+# v4 commit 4.12 — Remove dashboard-panel min-height floor
+
+After 4.10 (compact celebration) and 4.11 (single Start button)
+shipped together, Jonathan reported the empty space in the Box
+panel was still bothering him. The 4.10 compaction did its job
+visually (celebration shrunk by ~110px), but when the celebration
+isn't currently rendering — e.g., after a reset, when confidentCount
+is 0 — the compaction has nothing to do. In that state, the
+empty Box panel comes from `.dashboard-panel { min-height: 360px }`,
+which was introduced in v4.1 as a tab anchor.
+
+**Why min-height was there:** in 4.1, when only one of the two
+panels was rendered at a time (not both in a grid overlay), the
+panel collapse on mode switch made the mode-cards row beneath it
+jump vertically. min-height: 360px fixed the floor so the
+collapse couldn't happen. That worked for what 4.1 needed.
+
+**Why it's no longer needed:** in 4.2 we introduced the grid
+overlay — both panels live in the same grid cell
+(`.dashboard-area`: 1 col, both panels at `grid-row: 1`,
+`grid-column: 1`). The grid cell sizes to the **taller of the
+two** panels' natural content. Switching modes flips visibility
+but doesn't change the grid cell's height, so the mode-cards row
+beneath stays anchored. min-height became dead weight from that
+moment on — it only contributed by adding extra empty space when
+the natural max-content height was below 360px (which is the
+typical case after a reset).
+
+**Change:** removed `min-height: 360px` from both rules:
+- `.dashboard-panel` base rule
+- `.dashboard-area > .dashboard-panel` grid-cell rule
+
+**Expected effect on Box panel empty space:**
+
+Before 4.12:
+- Quiz no-celebration (0 confident, post-reset): panel was
+  `max(stats+tier-bar ~280px, min-height 360px) = 360px`.
+  Box content ~80px, empty ~280px.
+- Quiz celebration: panel was `max(380px after 4.10 compaction,
+  min-height 360px) = 380px`. Box content ~80px, empty ~300px.
+
+After 4.12:
+- Quiz no-celebration: panel = ~280px (natural). Box empty
+  ~200px (was 280).
+- Quiz celebration: panel = ~380px (4.10-compacted natural).
+  Box empty ~300px (unchanged — celebration was already taller
+  than min-height).
+
+So the win is specifically in the non-celebration state, which is
+what Jonathan's screenshots showed. Celebration state is already
+where 4.10 wanted it.
+
+**Files touched:** `src/App.css` only. No JSX, no i18n.
+
+## Smoke test
+
+1. **Quiz Mode, post-reset (0 confident):** stats + tier-bar tightly
+   packed at top of dashboard area. Mode-cards row should sit
+   noticeably closer than before — gap drops by ~80px.
+2. **Switch to Box Mode:** white card height matches the new Quiz
+   panel height. Empty space below "Pentateuch (5 books)" should
+   visibly shrink.
+3. **Quiz Mode, all-66 celebration:** layout unchanged from 4.11
+   (celebration was already the binding constraint).
+4. **Switch between Box and Quiz tabs rapidly:** mode-cards row
+   should NOT jump vertically. Both panels' natural height is the
+   same (grid overlay matched), so tabs stay anchored.
+5. **Mobile 412px:** same effects, proportionally.
+
+If after 4.12 there's STILL too much empty space and Jonathan
+wants to attack the issue further, the next lever would be
+dropping the grid overlay entirely (tabs would jump when
+switching modes, but Box panel would collapse to its natural
+~80px height when Box is selected). That's a UX trade — we'd
+need to decide if the jump is worth the visual cleanliness.
+
+---
+
 # v4 commit 4.11 — Single "Start Quiz Mode" button (drop Quick/Standard/Full)
 
 Jonathan flagged that the three-tier Quick / Standard / Full
