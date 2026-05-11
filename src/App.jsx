@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext, useMemo } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { bibleBooks, translations } from './data';
+import { bibleBooks, translations, groupNames } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats, getTierStats, TIERS, getConfidentCount, recordConfidentAttempt, migrateConfidentBuffers } from './fsrs';
 import { applyDeviceScoped } from './settingsScope';
@@ -658,9 +658,18 @@ function App() {
                   is currently selected — Quiz shows FSRS metrics, Box
                   shows personal bests. The Share button lives inside the
                   active panel since the message it generates is
-                  mode-specific. */}
-              {selectedMode === 'quiz' && (
-              <div className="dashboard-panel">
+                  mode-specific.
+
+                  v4.2: both panels are always rendered into the same
+                  CSS-grid cell (.dashboard-area) and only the active
+                  one is visible. This anchors the mode tabs and
+                  launcher below at a stable position — without the
+                  grid overlay, the panels' natural heights differ
+                  (Quiz with celebration vs Box with 1 best), and
+                  selecting a different tab caused the tabs themselves
+                  to jump vertically. */}
+              <div className="dashboard-area">
+              <div className={`dashboard-panel${selectedMode === 'quiz' ? '' : ' dashboard-panel-hidden'}`} aria-hidden={selectedMode !== 'quiz'}>
               <button
                 className="share-icon-btn-panel"
                 onClick={share}
@@ -795,16 +804,11 @@ function App() {
                 </div>
               )}
               </div>
-              )}
 
-              {/* Box Mode dashboard panel — shown when the Box card is
-                  the selected one. Surfaces personal bests across the
-                  scopes the user has completed; falls back to a friendly
-                  empty state for new users.
-                  Same visual weight as the Quiz panel so the page
-                  doesn't shift size when the user switches selection. */}
-              {selectedMode === 'boxMode' && (
-              <div className="dashboard-panel">
+              {/* Box Mode dashboard panel — see comment on .dashboard-area
+                  above. Always rendered, visibility toggles via the
+                  dashboard-panel-hidden class. */}
+              <div className={`dashboard-panel${selectedMode === 'boxMode' ? '' : ' dashboard-panel-hidden'}`} aria-hidden={selectedMode !== 'boxMode'}>
                 <button
                   className="share-icon-btn-panel"
                   onClick={share}
@@ -833,10 +837,17 @@ function App() {
                     const scopeDisplayName = (scopeKey) => {
                       if (scopeKey === 'all') return lang === 'nl' ? 'Alle 66 boeken' : 'All 66 books';
                       const groupId = scopeKey.split(':')[1];
-                      const fullDesc = translations[lang]?.groupNames?.[groupId] || groupId;
-                      // groupNames are long descriptions like "Pentateuch (5
-                      // boeken) — ..."; for the compact list, take everything
-                      // before the em-dash and trim. Falls back to the raw
+                      // groupNames is a top-level export from data.js,
+                      // NOT a field inside translations. Pre-v4.2 code
+                      // referenced translations[lang]?.groupNames which
+                      // is always undefined, so scopes fell through to
+                      // showing the raw group id ("law", "history", …)
+                      // instead of the friendly label.
+                      const fullDesc = groupNames[lang]?.[groupId] || groupId;
+                      // groupNames entries are long descriptions like
+                      // "Pentateuch (5 books) — From creation to ...";
+                      // for the compact list, take everything before
+                      // the em-dash and trim. Falls back to the raw
                       // string if no em-dash is present.
                       return fullDesc.split('—')[0].trim();
                     };
@@ -915,7 +926,7 @@ function App() {
                   })()}
                 </div>
               </div>
-              )}
+              </div>
 
               {/* Mode selector — tap to select (NOT launch). The Start
                   button below launches whichever is selected. Box on the
@@ -1035,7 +1046,21 @@ function App() {
                       // can always push toward all-66-gold. "Full · 0"
                       // can no longer appear when confident < 66.
                       const nonConfidentCount = 66 - confidentCount;
-                      const trainingPool = stats.dueNow > 0 ? stats.dueNow : nonConfidentCount;
+                      // v4.3: trainingPool uses Math.max so the larger of
+                      // FSRS-due vs non-confident wins (previously a
+                      // dueNow>0 ternary, which hid non-confident books
+                      // whenever anything was due — even if there were
+                      // many more non-confident than due). The
+                      // maintenance fallback kicks in only when BOTH are
+                      // zero — that's the all-66-confident + nothing
+                      // FSRS-due state. Without this fallback the
+                      // launchers all hide and the user can only "Start
+                      // a new run" (reset). With it, the user can keep
+                      // training the weakest gold-lined books to
+                      // maintain coverage (pickNextBook has a matching
+                      // maintenance branch for the actual book picking).
+                      let trainingPool = Math.max(stats.dueNow, nonConfidentCount);
+                      if (trainingPool === 0) trainingPool = 66;
                       const launchers = [];
                       if (trainingPool > 5) {
                         launchers.push({ key: 'quick', label: t.sessionSizeQuick, limit: 5, count: 5 });
@@ -1043,11 +1068,6 @@ function App() {
                       if (trainingPool > 10) {
                         launchers.push({ key: 'standard', label: t.sessionSizeStandard, limit: 10, count: 10 });
                       }
-                      // Only show Full when there's actually something to
-                      // train. When confidentCount === 66 AND dueNow === 0
-                      // the celebration screen above takes over the whole
-                      // panel; the launchers would otherwise show "Full ·
-                      // 0 books" which is meaningless.
                       if (trainingPool > 0) {
                         launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: trainingPool });
                       }

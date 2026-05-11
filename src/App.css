@@ -1155,15 +1155,33 @@
   100% { transform: scaleX(1); transform-origin: left center; opacity: 1; }
 }
 
-/* ─── Dashboard panel height stability (v4.1) ───────────────────────
+/* ─── Dashboard panel height stability (v4.2) ───────────────────────
    Mode tabs (Box/Quiz) sit below the dashboard panel, so when the
    panel's height changes — different content in Quiz vs Box, or
    stats vs celebration — the tabs jumped vertically when the user
-   switched modes. Reserve enough min-height to fit the tallest
-   typical panel (Quiz with all-66 celebration), letting shorter
-   panels top-align within the reserved space. */
-.dashboard-panel {
+   switched modes. v4.1's `min-height: 360px` only worked on mobile;
+   on desktop, both panels naturally exceeded 360px with different
+   heights, so the floor didn't constrain anything.
+   v4.2 puts both panels into the same single-cell CSS grid. The
+   grid cell sizes to the taller of the two; whichever panel is
+   inactive is hidden via `visibility: hidden` (still takes layout
+   space, so the cell's max-height calculation is correct). Tabs
+   below the grid sit at a stable position regardless of which
+   panel is shown. */
+.dashboard-area {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.dashboard-area > .dashboard-panel {
+  grid-row: 1;
+  grid-column: 1;
   min-height: 360px;
+}
+
+.dashboard-panel.dashboard-panel-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ─── Box Mode scope-completion bar (v4.1) ──────────────────────────

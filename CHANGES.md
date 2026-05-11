@@ -1,4 +1,173 @@
-# v4 commit 4.1 — Bug fixes + Box Mode dashboard uniformity
+# v4 commit 4.3 — Maintenance mode at all-66-confident
+
+Quiz Mode launchers disappeared completely when all 66 books were
+confident AND nothing was FSRS-due — the celebration card sat there
+as the only thing on the home screen, and the only way to keep
+training was "Start a new run" (which resets everything). This was
+the wrong default. People who hit 66 gold should be able to keep
+their hand in without sacrificing progress.
+
+## Two-part fix
+
+**1. Launcher arithmetic in App.jsx.** Switched from
+`stats.dueNow > 0 ? stats.dueNow : nonConfidentCount` to
+`Math.max(stats.dueNow, nonConfidentCount)`, with a fallback to 66
+when both are zero. The Math.max change was a deferred optimisation
+from earlier — the all-66 case forced it. Concretely:
+
+```js
+let trainingPool = Math.max(stats.dueNow, nonConfidentCount);
+if (trainingPool === 0) trainingPool = 66;
+```
+
+In the all-66-confident + nothing-due state, `trainingPool` is now 66,
+so Quick (5), Standard (10), and Full (66) all appear as launchers.
+
+**2. `pickNextBook` maintenance branch in QuizGrid.jsx.** When there
+is no FSRS-due book, no unseen book, AND no non-confident book to
+pick (the "everything is gold" state), the picker previously fired
+`setSessionComplete(true)` immediately and the user couldn't proceed.
+Now it picks from the books with the lowest FSRS stability — those
+are the "weakest" gold-lined books, most likely to drift off the
+gold line first if not refreshed. Top 8 by stability ascending,
+then random within the pool. Same shape as the existing due-pool
+and non-confident-fallback branches.
+
+Filtered by a new `sessionSeenBooksRef` so a Full maintenance
+session (`limit: null`, count: 66) terminates naturally when every
+book has been touched once. Without the filter the same
+lowest-stability 8 would dominate every pick and the session would
+loop forever. Quick (limit=5) and Standard (limit=10) end via
+sessionLimit either way; only Full needed the filter to terminate.
+
+`sessionSeenBooksRef` follows the existing `confidentBuffersRef`
+pattern — a ref mirror of state, synced via useEffect — to avoid
+forcing `pickNextBook`'s useCallback to rebuild on every pick.
+
+## What this means for the user
+
+- All 66 confident + nothing due → Quick/Standard/Full all appear.
+- A Full maintenance session walks through every book in lowest-to-
+  highest stability order (weakest first), in groups of 8 with
+  randomisation within each group.
+- A Quick maintenance session picks 5 of the weakest 8.
+- Standard maintenance: 10 of the weakest 8-ish (the pool refreshes
+  between picks as stability changes mid-session).
+- The "Start a new run" button stays available for users who want
+  to reset and chase a faster Total Time.
+- FSRS continues to run underneath; if a maintenance answer is
+  wrong, the book drops to non-confident and rejoins the regular
+  pool on the next session.
+
+The launcher arithmetic also has a secondary effect for users who
+aren't at 66 yet: `Math.max(dueNow, nonConfidentCount)` shows a
+bigger pool when non-confident exceeds due. Previously a user with
+3 due and 30 non-confident saw Full as "3 books" (the
+non-confident books were invisible until the due pool drained).
+Now they see "Full · 30 books" — accurate to what a Full run
+actually accomplishes.
+
+## Smoke test
+
+1. With all 66 confident AND nothing FSRS-due, the Quiz Mode panel
+   shows Quick / Standard / Full launchers below the celebration.
+2. Start a Quick session in this state: 5 picks happen, weakest
+   books are surfaced more often, session ends.
+3. Start a Full session in this state: session iterates through
+   all 66 books exactly once, then ends. No infinite loop.
+4. With confident < 66 and some due, the Full count equals the
+   larger of `dueNow` and `nonConfidentCount`. (Previously it
+   was `dueNow` when due > 0.)
+5. Existing pause/resume still works in maintenance Full — the
+   session-seen Set is part of the pause snapshot, so resume
+   continues from where the user paused.
+
+---
+
+
+
+Two narrow bug fixes surfaced when smoke-testing Commit 4.1 on a wide
+viewport.
+
+## Fix A — Desktop dashboard panel still resized when switching modes
+
+Commit 4.1's `min-height: 360px` on `.dashboard-panel` anchored the
+mode tabs on mobile but didn't help on desktop, because the natural
+content height of both panels (Quiz with celebration, Box with
+multiple bests) exceeds 360px there. With different actual heights
+between modes, switching tabs still moved them vertically — the
+floor wasn't doing anything.
+
+**Fix:** put both panels in a single-cell CSS grid (`.dashboard-area`,
+`grid-template-columns: 1fr`; both children at `grid-row: 1; grid-column: 1`).
+The grid cell sizes to the taller of the two. Whichever panel is
+inactive gets `visibility: hidden` + `pointer-events: none` — it still
+occupies layout space so the cell's max-height calculation is correct,
+but it's invisible and untappable. The active panel renders normally
+on top. Mode tabs sit below the grid at a stable position regardless
+of selection.
+
+`aria-hidden` is set on the hidden panel so screen readers don't
+announce its content.
+
+The `min-height: 360px` is preserved as a floor — for fresh accounts
+with very short content in both panels, this keeps the layout from
+collapsing.
+
+JSX change: the previous `{selectedMode === 'X' && (...)}` conditionals
+become unconditional renders with a `dashboard-panel-hidden` class
+toggling visibility. No data-model changes; both panels mount, both
+compute their views, only one is visible.
+
+## Fix B — Scope label showed raw group id ("law") instead of name
+
+In the Box Mode dashboard's Personal Bests list, the "Pentateuch"
+completion was rendering as "law" — its internal group id. Root cause
+was a wrong import path in the `scopeDisplayName` helper:
+
+```js
+// Before (broken)
+const fullDesc = translations[lang]?.groupNames?.[groupId] || groupId;
+```
+
+`groupNames` is a *separate* top-level export from `data.js`, not
+nested inside `translations`. So the chain was always undefined, and
+the `|| groupId` fallback rendered the raw key. This bug actually
+existed in the original Box dashboard code before 4.1; the 4.1
+redesign just surfaced it more prominently by displaying the scope
+name in the bests list.
+
+**Fix:** import `groupNames` from `data.js` and reference it directly:
+
+```js
+const fullDesc = groupNames[lang]?.[groupId] || groupId;
+```
+
+The `.split('—')[0].trim()` afterward keeps trimming the long
+description down to just the canonical name ("Pentateuch", "Historical
+books", etc.).
+
+## What didn't change
+
+- No new mechanics, no new translations, no state model changes.
+- Box Mode scope picker UX (grey-out, multi-select) still queued for
+  Commit 5.
+- README + FAQ unchanged.
+
+## Smoke test
+
+1. Toggle Box Mode ↔ Quiz Mode tabs on the home screen at a desktop
+   viewport. The tabs themselves should stay at exactly the same
+   vertical position. (Re-test on mobile: should still work as 4.1.)
+2. Open Box Mode dashboard with at least one completed scope. The
+   Personal Bests list shows the friendly name ("Pentateuch") instead
+   of the raw group id ("law").
+3. Open the scope-completion bar: hover any segment, the tooltip shows
+   the friendly name too.
+
+---
+
+
 
 Eight focused fixes surfaced during smoke-testing Commit 4. All small
 or contained; no new mechanics, just consistency cleanup.

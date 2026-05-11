@@ -146,6 +146,13 @@ export default function QuizGrid({
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
   useEffect(() => { confidentBuffersRef.current = confidentBuffers; }, [confidentBuffers]);
 
+  // v4.3: live mirror of sessionSeenBooks for use inside pickNextBook's
+  // maintenance branch. The branch needs to filter "already touched this
+  // session" without forcing pickNextBook's useCallback to rebuild on
+  // every pick — same pattern as confidentBuffersRef above.
+  const sessionSeenBooksRef = useRef(new Set());
+  useEffect(() => { sessionSeenBooksRef.current = sessionSeenBooks; }, [sessionSeenBooks]);
+
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
   // closure runs on cleanup and would otherwise capture a stale value.
@@ -317,18 +324,46 @@ export default function QuizGrid({
       // Pick from the most-progressable non-confident pool (top 8 by
       // closeness to gold) so the user keeps making visible progress
       // instead of being told to stop. Confident books are excluded —
-      // if confidentCount === 66 we'll fall through to session-complete.
+      // if confidentCount === 66 we drop into the maintenance branch.
       const nonConfident = getNonConfidentBooks(confidentBuffersRef.current || {}, cards, bibleBooks);
       if (nonConfident.length > 0) {
         const pool = nonConfident.slice(0, Math.min(8, nonConfident.length));
         selected = pool[Math.floor(Math.random() * pool.length)];
         branch = 'non-confident-fallback';
       } else {
-        // All 66 confident AND no FSRS work — truly done. The all-66
-        // celebration screen on the home dashboard handles the
-        // long-term "you're done" state; this just ends the session.
-        setSessionComplete(true);
-        return;
+        // v4.3 maintenance branch: all 66 confident AND nothing FSRS-due.
+        // Previously this dropped straight into session-complete and the
+        // user couldn't keep training without "Start a new run" (full
+        // reset). Now: pick from the books with the lowest FSRS stability
+        // — these are the "weakest" gold-lined books, most likely to
+        // drift off the gold line first. Top 8 by stability ascending,
+        // then random within the pool (same shape as the due-pool and
+        // non-confident-fallback branches).
+        //
+        // Filtered by sessionSeenBooksRef so a Full maintenance session
+        // (limit=null, pool=66) naturally ends after touching every book
+        // once. Without the filter the same lowest-stability 8 would
+        // dominate every pick and the session would loop forever; Quick
+        // (limit=5) and Standard (limit=10) end via sessionLimit either
+        // way, but Full needs this filter to terminate.
+        //
+        // This pairs with the launcher fallback in App.jsx that sets
+        // trainingPool = 66 when both the FSRS-due and non-confident
+        // counts are zero.
+        const seen = sessionSeenBooksRef.current || new Set();
+        const candidates = bibleBooks.filter(b => !seen.has(b.id));
+        if (candidates.length === 0) {
+          setSessionComplete(true);
+          return;
+        }
+        const byStability = [...candidates].sort((a, b) => {
+          const sa = cards[a.id]?.stability || 0;
+          const sb = cards[b.id]?.stability || 0;
+          return sa - sb;
+        });
+        const pool = byStability.slice(0, Math.min(8, byStability.length));
+        selected = pool[Math.floor(Math.random() * pool.length)];
+        branch = 'maintenance';
       }
     }
 
