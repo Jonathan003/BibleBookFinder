@@ -79,6 +79,11 @@ export default function QuizGrid({
 
   const [hintVisible, setHintVisible] = useState(false);
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
+  // One-shot: id of the book that just transitioned to confident, used
+  // to apply the .just-confident class on that cell for the gold-line
+  // sweep animation. Cleared after the animation duration so a later
+  // re-render doesn't re-play the sweep.
+  const [justConfidentBookId, setJustConfidentBookId] = useState(null);
   const [sessionHintedBooks, setSessionHintedBooks] = useState(new Set());
   const [sessionWrongBooks, setSessionWrongBooks] = useState(new Set());
   // Every book that appeared in the current segment, regardless of
@@ -468,6 +473,13 @@ export default function QuizGrid({
         // race-to-66 marathon rather than weeks later.
         if (!wasConfident && isNowConfident) {
           setSessionMasteredBooks(prev => new Set(prev).add(book.id));
+          // Trigger the one-shot gold-line sweep animation on this cell.
+          // 700ms covers the 600ms keyframe plus a small safety margin
+          // before clearing the class. If the user answers another book
+          // before this fires, the previous animation gets cut off —
+          // fine, only the most recent transition is celebrated.
+          setJustConfidentBookId(targetBook.id);
+          schedule(() => setJustConfidentBookId(null), 700);
           const updatedBuffers = { ...confidentBuffers, [targetBook.id]: nextBuffer };
           const newCount = getConfidentCount(updatedBuffers, bibleBooks);
           const otBookIds = bibleBooks.filter(b => b.testament === 'OT').map(b => b.id);
@@ -624,11 +636,12 @@ export default function QuizGrid({
     else if (showWrong) bgColor = '#f97316';
 
     const showMasteryLine = config.display.highlightFound && bookIsConfident;
+    const isJustConfident = book.id === justConfidentBookId;
 
     return (
       <button
         key={book.id}
-        className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
+        className={`book-cell ${showMasteryLine ? 'mastered' : ''} ${isJustConfident ? 'just-confident' : ''} ${showCorrect && feedback === 'correct' ? 'correct' : ''} ${showCorrect && feedback === 'slow' ? 'slow' : ''} ${showWrong ? 'wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}

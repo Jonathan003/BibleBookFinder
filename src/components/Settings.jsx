@@ -398,6 +398,15 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
             <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
           </SettingRow>
+          {/* Theme: light/dark/auto. v4 dark-mode addition. 'auto' follows
+              the OS prefers-color-scheme; 'light' and 'dark' override it. */}
+          <SettingRow label={t.theme || 'Theme'} desc={t.themeDesc || ''}>
+            <select value={display.theme || 'auto'} onChange={e => updateField('display', 'theme', e.target.value)} className="setting-select">
+              <option value="auto">{t.themeAuto || 'Auto'}</option>
+              <option value="light">{t.themeLight || 'Light'}</option>
+              <option value="dark">{t.themeDark || 'Dark'}</option>
+            </select>
+          </SettingRow>
 
           {/* ─── Quiz ────────────────────────────────────────────── */}
           <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>

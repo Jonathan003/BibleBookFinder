@@ -202,6 +202,11 @@ export const translations = {
     highlightFoundDesc: '(markeer boeken die je beheerst)',
     autoScroll: 'Automatisch scrollen',
     autoScrollDesc: '(scroll naar het gevraagde boek bij elke vraag)',
+    theme: 'Thema',
+    themeDesc: '(licht of donker)',
+    themeAuto: 'Auto (systeem)',
+    themeLight: 'Licht',
+    themeDark: 'Donker',
     dataTab: 'Data',
     dataTitle: 'Back-up',
     dataDesc: 'Maak of herstel een back-up van je voortgang en instellingen.',
@@ -269,6 +274,15 @@ export const translations = {
     wrongShowCorrect: 'Fout — kijk naar het blauwe vakje!',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Totale trainingstijd',
+    // ─── All-66 celebration screen (v4) ───────────────────────────────
+    // Shown on the home screen when confidentCount === 66 — the
+    // race-to-all-gold goal of the v4 model. Replaces the 2.5s overlay
+    // banner with a persistent finishing screen.
+    celebration66Title: 'Alle 66 boeken zeker! 🎉',
+    celebration66Body: 'Je kent alle bijbelboeken vlot uit het hoofd. Top resultaat!',
+    celebrationTimeLabel: 'Totale tijd:',
+    celebration66Reset: 'Start een nieuwe ronde',
+    celebration66ResetConfirm: 'Tik nogmaals om voortgang te wissen',
     // Restore confirmation dialog
     restoreTitle: 'Back-up herstellen',
     restoreWarning: 'Dit vervangt je huidige voortgang. Deze actie kan niet ongedaan gemaakt worden.',
@@ -477,6 +491,11 @@ export const translations = {
     highlightFoundDesc: '(highlight mastered books)',
     autoScroll: 'Auto-scroll',
     autoScrollDesc: '(scroll to the asked book on each question)',
+    theme: 'Theme',
+    themeDesc: '(light or dark)',
+    themeAuto: 'Auto (system)',
+    themeLight: 'Light',
+    themeDark: 'Dark',
     dataTab: 'Data',
     dataTitle: 'Backup',
     dataDesc: 'Create or restore a backup of your progress and settings.',
@@ -533,6 +552,12 @@ export const translations = {
     wrongShowCorrect: 'Wrong — look for the blue cell!',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Total training time',
+    // See NL section for design rationale.
+    celebration66Title: 'All 66 books confident! 🎉',
+    celebration66Body: 'You know all the Bible books fluently. Outstanding!',
+    celebrationTimeLabel: 'Total time:',
+    celebration66Reset: 'Start a new run',
+    celebration66ResetConfirm: 'Tap again to wipe progress',
     // Restore confirmation dialog
     restoreTitle: 'Restore backup',
     restoreWarning: 'This will replace your current progress. This action cannot be undone.',

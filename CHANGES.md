@@ -1,4 +1,80 @@
-# v4 commit 2 — Confident gold line, total-time card, tier rename
+# v4 commit 3 — Dark mode, all-66 celebration, gold-line sweep, README
+
+Visual + structural polish for the v4 pivot. Three user-visible
+improvements plus README cleanup.
+
+**Dark mode** — adds dark CSS-variable values to `src/index.css` via
+two paths: `prefers-color-scheme: dark` (auto, default) and
+`:root[data-theme="dark"]` (manual override). `App.jsx` applies the
+`data-theme` attribute to `<html>` based on `config.display.theme`.
+The user picks **Auto / Light / Dark** in Settings → Display. Brand
+colors (`--correct`, `--wrong`, `--mastery`, the tier blue gradient)
+unchanged — they read fine on either background. Only neutrals
+(`--bg-*`, `--text-*`, `--border`, `--tier-unseen`) get dark values.
+New keys: `theme`, `themeDesc`, `themeAuto`, `themeLight`, `themeDark`.
+New default: `display.theme: 'auto'` in `appConfig.js`.
+
+**All-66 celebration screen** — when `confidentCount === 66` the home
+screen Quiz dashboard swaps to a persistent finishing screen with:
+animated trophy, "All 66 books confident!" headline, total training
+time card, share button (reuses existing `share()`), and a two-tap
+"Start a new run" reset that calls `doResetQuizProgress`. Replaces
+the 2.5-second `milestone66` overlay banner as the long-term reward
+state. The two-tap pattern: first tap arms (button turns orange,
+text becomes "Tap again to wipe progress"), auto-disarms after 4s;
+second tap fires the reset. New keys: `celebration66Title`,
+`celebration66Body`, `celebrationTimeLabel`, `celebration66Reset`,
+`celebration66ResetConfirm`. New state: `celebrationResetConfirm` in
+`App.jsx`.
+
+**Gold-line sweep animation** — when a book transitions from
+not-confident to confident, the cell briefly gets `.just-confident`
+(one-shot, 700ms). CSS keyframe `gold-sweep` animates the gold line
+in left-to-right rather than snapping it into existence. `QuizGrid.jsx`
+tracks `justConfidentBookId`, sets it on the confident transition
+inside the milestone block, and clears it after the schedule fires.
+Animation duration 600ms with 100ms safety margin before the class
+clears.
+
+**README rewrite** — removed remaining v3 chrome from the Features
+list:
+- "Quiz Mode — FSRS spaced repetition, **streaks**" → reworded to
+  reference the schedule-hidden picker
+- "Six-tier ladder" line updated: `Rooted` instead of `Mastered`,
+  framed as parallel to the gold line
+- "Day streak" bullet → "Total training time" bullet
+- New "Confident gold line" bullet at the top of Progress tracking
+- New "All-66 celebration" bullet
+- New "Theme" bullet under Display
+- "Mastered books" / "Reset Quiz progress" wording updated for the
+  v4 confident-buffer model
+
+**No state model changes in this commit.** `confidentBuffers`,
+`fsrsCards`, and `boxModeBests` shape unchanged. Migration is still a
+no-op for already-v4 users; v3 users upgrading directly to v4
+end-state will run the Commit 2 migration on first load.
+
+**Smoke test:**
+1. Settings → Display → Theme: cycle Auto/Light/Dark, verify the home
+   screen background and text colors change immediately.
+2. With OS in dark mode and Theme = Auto: app renders dark.
+3. Settings → Display → Theme = Light overrides the dark OS preference.
+4. Reset progress, then answer 3 correct-fast on any book: the gold
+   line sweeps in (left-to-right) instead of just appearing.
+5. (Hard to test without manual data) confidentCount === 66: the home
+   screen Quiz dashboard shows the trophy + total time + share +
+   reset. Tap reset once → button turns orange and says "Tap again to
+   wipe progress". Tap again → progress wipes, screen returns to the
+   normal empty-state dashboard.
+
+**Deferred to a future polish commit:** Quiz/Box uniformity audit
+(prompt header padding, session-end screen frame parity, share
+button positioning); typography pair selection (font choice would be
+guessing your aesthetic preference without input).
+
+---
+
+
 
 The core mechanic change of the v4 pivot. The gold line under a book
 cell no longer means "FSRS-mastered" (stability >7d, takes 3-4 reps

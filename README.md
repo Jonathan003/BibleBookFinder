@@ -7,22 +7,25 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 ## Features
 
 **Modes**
-- **Quiz Mode** — FSRS spaced repetition, timed responses, streaks, personal records, milestones. Launch with a session-size of your choice: **Quick** (5 books, ~1-2 min), **Standard** (10 books, ~3-4 min), or **Full** (all due books). Launchers adapt to how many books are actually due, so you never see redundant options.
-- **Box Mode** — Single-session Leitner-style cram independent of the regular schedule. Each book starts in box 1; correct answers promote, wrong answers demote, session ends when every book reaches box 5. Per-scope personal bests (all 66, individual groups) for time, mistakes, and longest streak. Tap-to-continue on wrong answers (consistent with Quiz Mode). No FSRS impact, no streak impact — a clean cram tool for short focused sessions.
+- **Quiz Mode** — FSRS picks the next book based on stability and difficulty, but the calendar is hidden. The home screen shows your confident count, total training time, and three session-size launchers: **Quick** (5 books, ~1-2 min), **Standard** (10 books, ~3-4 min), or **Full** (all currently due). Launchers adapt to your actual due count so you never see redundant options.
+- **Box Mode** — Single-session Leitner-style cram independent of the FSRS schedule. Each book starts in box 1; correct answers promote, wrong answers demote, session ends when every book reaches box 5. Per-scope personal bests (all 66, individual groups) for time, mistakes, and longest streak. No FSRS impact, no progress impact — a clean cram tool.
 
 **Progress tracking**
-- **Six-tier ladder** — Books climb Unseen → Learning → Familiar → Mastered → Anchored → Permanent as the FSRS algorithm builds confidence. Replaces the binary mastered/not-mastered split with a tangible long-term goal (Permanent ≈ 6+ months stability)
-- **Day streak** — Consecutive-days counter (with grace day for "yesterday" so night owls aren't punished by midnight rollover); your best streak ever is shown alongside
-- **Session-complete screen** — When all books in the chosen session are answered, the quiz pauses on a clear stopping point (rather than refilling with random books). One action: end the session — "stop" is the obvious default rather than an act of will
-- **Learning pace** (advanced) — Flexible / Relaxed / Balanced / Intensive control FSRS `request_retention`. Hidden behind Settings → Advanced since the schedule-free home screen makes this lever rarely needed. Switching is safe: existing FSRS data stays intact, only future repetitions use the new setting
+- **Confident gold line** — The gold line under a book cell appears when your last 3 answers on that book were all correct AND within your speed limit. Achievable in a single ~30-minute session if you already know the layout. One miss removes the line; 3 more correct-fast answers earn it back.
+- **Six-tier ladder** — A parallel FSRS-driven long-term measure: Unseen → Learning → Familiar → Rooted → Anchored → Permanent. Independent of the gold line; this is the "stuck in long-term memory" axis (Permanent ≈ 6+ months stability).
+- **Total training time** — Cumulative active-quiz time. Replaces the day-streak card so irregular practice isn't punished.
+- **All-66 celebration** — When you hit 66 confident, the home screen swaps to a finishing screen with total time, a share button, and a "Start a new run" reset for chasing a faster time.
+- **Session-complete screen** — When the chosen session size is done, the quiz pauses on a clear stopping point. One action: end the session.
+- **Learning pace** (advanced) — Flexible / Relaxed / Balanced / Intensive control FSRS `request_retention`. Hidden behind Settings → Advanced since the schedule-free model rarely needs it; default is Intensive.
 
 **Your data**
-- **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
-- **Backup & restore** — JSON export/import with free choice of save location (any cloud drive or local folder). Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
-- **Reset progress** — Per-mode in Settings → Data: Reset Quiz progress wipes FSRS data, mastery, streak, and history; Reset Box progress wipes per-scope personal bests. Independent so you can reset one without losing the other
+- **Multi-user** — Up to 10 profiles with separate progress, settings, FSRS data, and confident buffers
+- **Backup & restore** — JSON export/import with free choice of save location. Device-specific layout settings (column counts, abbreviation modes, OT/NT layout, theme) stay local on each device so backups don't disturb screen-tuned settings on the importing device
+- **Reset progress** — Per-mode in Settings → Data. Reset Quiz progress wipes FSRS data, confident buffers, history, and training time. Reset Box progress wipes per-scope personal bests. Independent so you can reset one without the other.
 - **Bilingual** — Dutch and English, auto-detected from browser language
 
 **Display**
+- **Theme** — Light, dark, or auto (follows OS `prefers-color-scheme`). Settings → Display
 - **Responsive** — Portrait and landscape with smart abbreviation switching
 - **OT/NT layout** — Landscape mode supports stacked (default) or side-by-side testaments (JW Library Study Bible style), with independent column counts per testament
 - **Colorblind-safe** — Blue (#3B82F6) for correct, orange (#F97316) for wrong (deutan-friendly; no green/red anywhere)

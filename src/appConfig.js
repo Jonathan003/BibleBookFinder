@@ -40,6 +40,12 @@ export const defaultConfig = {
   boxMode: { failMode: 'soft', timePressure: 'soft-10s' },
   display: {
     lang: detectedLang,
+    // v4 theme: 'auto' follows the OS/browser prefers-color-scheme,
+    // 'light' or 'dark' override it. Wired in App.jsx by setting
+    // <html data-theme="..."> for the explicit values; for 'auto'
+    // the attribute is removed and the @media query in index.css
+    // takes over.
+    theme: 'auto',
     highlightFound: true,
     abbreviationsPortrait: 'auto',
     abbreviationsLandscape: 'auto',

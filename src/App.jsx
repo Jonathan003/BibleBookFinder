@@ -35,6 +35,11 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
+  // Two-tap confirmation for the "Start a new run" reset on the all-66
+  // celebration screen. First tap arms (button switches to "Tap again
+  // to confirm"); second tap fires doResetQuizProgress. Auto-clears
+  // when the user navigates away.
+  const [celebrationResetConfirm, setCelebrationResetConfirm] = useState(false);
   // Home-screen mode selection (the in-page tabs pattern). Picking a card
   // updates this state — it does NOT launch. The Start button below
   // launches whatever's selected. Defaults to lastUsedMode so returning
@@ -100,6 +105,19 @@ function App() {
       document.documentElement.lang = lang;
     }
   }, [lang]);
+
+  // Apply theme to <html data-theme="..."> so the dark-mode tokens in
+  // index.css activate. 'auto' = no attribute, the prefers-color-scheme
+  // media query takes over. 'light' / 'dark' = explicit override.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const theme = config.display.theme || 'auto';
+    if (theme === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [config.display.theme]);
 
   // Load current user on mount + migrate old global config if present
   useEffect(() => {
@@ -627,13 +645,49 @@ function App() {
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               </button>
-              {/* Hero card. Two states based on whether there's anything
-                  to do right now:
-                    - dueNow > 0 → standard "X klaar om te oefenen" stats
-                      with Quiz Mode prominent below.
-                    - dueNow === 0 → "All caught up" celebration with
-                      countdown to the next due book. */}
-              {stats.dueNow > 0 ? (
+              {/* Hero card. Three states:
+                    - confidentCount === 66 → all-66 celebration screen
+                      (v4 finish line); replaces the dashboard with a
+                      persistent trophy + total time + share + reset.
+                    - dueNow > 0 → standard stats row.
+                    - dueNow === 0 → "Done for now" rest message. */}
+              {confidentCount === 66 ? (
+                <div className="celebration-66">
+                  <span className="celebration-trophy" aria-hidden="true">🏆</span>
+                  <h2 className="celebration-title">{t.celebration66Title}</h2>
+                  <p className="celebration-body">{t.celebration66Body}</p>
+                  {(currentUser?.totalQuizMs || 0) > 0 && (
+                    <div className="celebration-time">
+                      <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
+                      <span className="celebration-time-value">{formatDuration(currentUser.totalQuizMs)}</span>
+                    </div>
+                  )}
+                  <div className="celebration-actions">
+                    <button
+                      className="btn celebration-share-btn"
+                      onClick={share}
+                    >
+                      🔗 {t.share}
+                    </button>
+                    <button
+                      className={`btn celebration-reset-btn${celebrationResetConfirm ? ' confirm' : ''}`}
+                      onClick={() => {
+                        if (celebrationResetConfirm) {
+                          doResetQuizProgress();
+                          setCelebrationResetConfirm(false);
+                        } else {
+                          setCelebrationResetConfirm(true);
+                          // Auto-disarm after 4s so a stray first tap
+                          // doesn't leave the button armed indefinitely.
+                          setTimeout(() => setCelebrationResetConfirm(false), 4000);
+                        }
+                      }}
+                    >
+                      {celebrationResetConfirm ? t.celebration66ResetConfirm : t.celebration66Reset}
+                    </button>
+                  </div>
+                </div>
+              ) : stats.dueNow > 0 ? (
                 <div className="stats">
                   <div className="stat-card">
                     <span className="stat-number">{confidentCount}</span>
@@ -692,13 +746,10 @@ function App() {
                 </div>
               </div>
 
-              {/* Total training time card. Replaces the day-streak card
-                  in v4 — streak was schedule-shaped ("you should come
-                  every day"), total time only goes up. Same visual
-                  pattern (flame + big number + label) so the home
-                  screen's emotional shape is preserved. Hidden when
-                  zero to avoid scolding a fresh account. */}
-              {(currentUser?.totalQuizMs || 0) > 0 && (
+              {/* Total training time card. Hidden when the all-66
+                  celebration is showing — the celebration already
+                  surfaces total time, no need to duplicate. */}
+              {confidentCount !== 66 && (currentUser?.totalQuizMs || 0) > 0 && (
                 <div className="momentum-section">
                   <div className="streak-card">
                     <span className="streak-flame">⏱</span>

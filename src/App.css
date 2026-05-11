@@ -1039,3 +1039,118 @@
     flex: 1;
   }
 }
+
+/* ─── All-66 celebration (v4) ──────────────────────────────────────
+   Persistent finishing screen, shown on the home screen Quiz dashboard
+   when confidentCount === 66. Replaces the 2.5s overlay banner. */
+.celebration-66 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.9rem;
+  padding: 1.4rem 1.2rem 1.6rem;
+  background: linear-gradient(180deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.04) 60%, transparent 100%);
+  border: 1px solid rgba(245,158,11,0.30);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.celebration-trophy {
+  font-size: 3.2rem;
+  line-height: 1;
+  animation: celebration-bounce 1.6s ease-in-out infinite;
+}
+
+@keyframes celebration-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.celebration-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--mastery);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.celebration-body {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+  max-width: 32ch;
+}
+
+.celebration-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 1.4rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 60%;
+}
+
+.celebration-time-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.celebration-time-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--mastery);
+  font-variant-numeric: tabular-nums;
+}
+
+.celebration-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.celebration-share-btn {
+  background: var(--correct);
+  color: #ffffff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.celebration-reset-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.celebration-reset-btn.confirm {
+  background: var(--wrong);
+  color: #ffffff;
+  border-color: var(--wrong);
+  font-weight: 600;
+}
+
+/* ─── Gold-line sweep animation (v4) ──────────────────────────────
+   When a book transitions from not-confident to confident, the cell
+   briefly gets `.just-confident` (one-shot, ~700ms). The gold line
+   sweeps in left-to-right rather than just snapping into existence.
+   Trigger and removal are handled by QuizGrid.jsx. */
+.book-cell.mastered.just-confident::after,
+.book-cell.mastered.just-confident::before {
+  animation: gold-sweep 600ms ease-out;
+}
+
+@keyframes gold-sweep {
+  0%   { transform: scaleX(0); transform-origin: left center; opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: scaleX(1); transform-origin: left center; opacity: 1; }
+}
