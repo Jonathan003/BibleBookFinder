@@ -292,13 +292,19 @@ export const translations = {
     resumeSessionDesc: 'Ga verder waar je gebleven was',
     discardPausedSession: 'Onderbroken sessie weggooien',
     toGold: 'naar goud',
-    // ─── Box Mode dashboard (v4.1) ──────────────────────────────
-    // Stat-card labels for the redesigned Box panel. "Cleared" is the
-    // unit used in personal bests already ("Voltooid"); "scopes" is
-    // implicit. allScopesCleared celebration appears when all 9 scopes
-    // ('all 66' + 8 groups) have at least one recorded completion.
+    // ─── Box Mode dashboard (v4.1, labels improved v4.4) ────────
+    // Stat-card labels for the redesigned Box panel. Renamed in v4.4
+    // because "1 cleared of 9, 8 to go" wasn't clear — "cleared" is
+    // jargon and "to go" doesn't say what's being gone to. The new
+    // "X of 9 played" / "Y left to play" is self-explanatory.
+    // allScopesCleared celebration appears when all 9 scopes have at
+    // least one recorded completion.
     scopesCleared: 'voltooid',
     scopesToGo: 'nog te doen',
+    scopesPlayedOf: 'van {total} gespeeld',
+    scopesLeftToPlay: 'nog te spelen',
+    boxBestTimesHeader: 'Beste tijden',
+    boxNotYetPlayed: 'Nog niet gespeeld',
     boxAllScopesClearedTitle: 'Alle groepen voltooid! 🎉',
     boxAllScopesClearedBody: 'Je hebt elke groep minstens één keer uitgespeeld.',
     // Restore confirmation dialog
@@ -580,9 +586,13 @@ export const translations = {
     resumeSessionDesc: 'Pick up where you left off',
     discardPausedSession: 'Discard paused session',
     toGold: 'to gold',
-    // See NL section for design rationale (v4.1).
+    // See NL section for design rationale (v4.1; labels improved v4.4).
     scopesCleared: 'cleared',
     scopesToGo: 'to go',
+    scopesPlayedOf: 'of {total} played',
+    scopesLeftToPlay: 'left to play',
+    boxBestTimesHeader: 'Best times',
+    boxNotYetPlayed: 'Not yet played',
     boxAllScopesClearedTitle: 'All scopes cleared! 🎉',
     boxAllScopesClearedBody: 'You\'ve completed every grouping at least once.',
     // Restore confirmation dialog

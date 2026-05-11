@@ -1,4 +1,102 @@
-# v4 commit 4.3 — Maintenance mode at all-66-confident
+# v4 commit 4.4 — Desktop sizing + Box panel fills + clearer labels
+
+Three issues from the same testing session, all rooted in the Box
+Mode dashboard feeling cramped/confusing on a wide desktop monitor.
+
+## 1. Desktop content area was phone-sized
+
+`.menu` capped at `max-width: 600px` on desktop, and the four interior
+elements (mode cards, dashboard panel, home-quiz-launchers,
+home-start-btn) all capped at `520px`. On a 1820px monitor that meant
+the entire app ran in a ~520px column with hundreds of pixels of
+whitespace flanking it. Looked like a mobile app embedded in a
+desktop browser.
+
+**Fix:** bump `.menu` to `720px` on `min-width: 768px`, and bump the
+four interiors to `640px` on the same breakpoint. Mobile sizing
+(`480px` menu, `520px` interiors) unchanged — only desktop benefits.
+
+Picked 720 over going wider because the app's content (book grid,
+celebration card, stats) is genuinely focused — edge-to-edge on a
+2K monitor would look like a misuse of space. 720 is the sweet
+spot: clearly larger than mobile, still recognisably "a focused
+app" not "a website."
+
+## 2. Box panel had a huge empty patch
+
+The 4.2 grid-overlay anchors mode tabs at a stable position by
+making both Quiz and Box panels the same height (max of either's
+content). Quiz with the all-66 celebration card is ~600px tall;
+Box with 1 cleared scope was ~280px tall, leaving ~320px of dead
+whitespace at the bottom of the Box panel.
+
+**Fix:** the bests list now renders all 9 scope rows, not just the
+cleared ones. Cleared scopes show name + best time + fewest mistakes
+as before. Uncleared scopes show name + a muted, italicized "Not yet
+played" hint. The full 9-row list naturally fills the panel to a
+height close to Quiz's celebration card, plus the user now sees at a
+glance which groups they still owe.
+
+New CSS classes `.boxmode-best-row-empty` and
+`.boxmode-best-stats-empty` apply the muted/italic styling to
+uncleared rows.
+
+## 3. "1 cleared of 9, 8 to go" was unclear, "Personal Bests" was misleading
+
+User asked literally "what does '1 cleared of 9, 8 to go' mean?"
+which is the strongest signal possible that the labels weren't
+self-explanatory. "Cleared" reads as gaming jargon; "to go" doesn't
+state what's being gone to. And "Personal Bests" was misleading
+after the 4.4 list change because the list now includes "Not yet
+played" rows that aren't bests at all.
+
+**Fixes:**
+- Stat 1: `"X cleared of 9"` → `"X of 9 played"`. Reads as a sentence.
+- Stat 2: `"Y to go"` → `"Y left to play"`. Explicit about what's left.
+- Section header: `"Personal Bests"` → `"Best times"`. Honest about
+  what the cleared rows are (best times); the placeholder rows sit
+  alongside without claiming to be bests.
+- Row placeholder: `"Not yet completed"` → `"Not yet played"`. Aligns
+  with the new "played" verb in the stats.
+
+NL parallels: `voltooid/nog te doen` → `van 9 gespeeld/nog te spelen`;
+`Persoonlijke records` → `Beste tijden`; `Nog niet voltooid` → `Nog
+niet gespeeld`.
+
+New translation keys (NL + EN): `scopesPlayedOf` (with `{total}`
+token), `scopesLeftToPlay`, `boxBestTimesHeader`, `boxNotYetPlayed`.
+The old `scopesCleared` and `scopesToGo` keys are preserved as
+fallbacks — nothing else references them but they'd be cheap to
+keep around for any future label experiments.
+
+## 4. Launcher buttons were too small under the mode cards
+
+Quick/Standard/Full at `min-height: 56px` looked disproportionately
+small under the ~120px tall Box/Quiz mode cards above them. Looked
+like a footer not a primary launch action.
+
+**Fix:** bumped to `min-height: 80px`, `padding: 1rem 1.25rem`,
+slightly bigger label and count text. Still clearly smaller than
+the mode cards (preserving hierarchy: mode-cards = pictorial tabs,
+launchers = text-only sub-actions) but now read as tappable
+primary actions, not a forgotten footer.
+
+## Smoke test
+
+1. Open on desktop. Whole layout feels appropriately sized — no
+   tiny column floating in the middle.
+2. Box Mode dashboard: shows all 9 scope rows, cleared ones with
+   time + mistakes, uncleared ones with muted "Not yet played".
+3. Stat labels read "X of 9 played" / "Y left to play".
+4. List header reads "Best times" (or "Beste tijden" in NL).
+5. Quiz Mode launchers (Quick/Standard/Full) feel proportional to
+   the mode cards above — comparable visual weight, not footer-like.
+6. Mobile sizing unchanged — re-test on a phone viewport.
+7. Toggle Box ↔ Quiz mode: tabs still anchored (4.2 fix preserved).
+
+---
+
+
 
 Quiz Mode launchers disappeared completely when all 66 books were
 confident AND nothing was FSRS-due — the celebration card sat there

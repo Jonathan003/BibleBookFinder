@@ -868,11 +868,11 @@ function App() {
                           <div className="stats">
                             <div className="stat-card">
                               <span className="stat-number">{scopesCleared}</span>
-                              <span className="stat-label">{t.scopesCleared || 'cleared'} {t.of} {TOTAL_SCOPES}</span>
+                              <span className="stat-label">{(t.scopesPlayedOf || 'of {total} played').replace('{total}', TOTAL_SCOPES)}</span>
                             </div>
                             <div className="stat-card">
                               <span className="stat-number">{scopesToGo}</span>
-                              <span className="stat-label">{t.scopesToGo || 'to go'}</span>
+                              <span className="stat-label">{t.scopesLeftToPlay || 'left to play'}</span>
                             </div>
                           </div>
                         )}
@@ -890,37 +890,52 @@ function App() {
                           ))}
                         </div>
 
-                        {/* Recent completions list — kept compact, top 4
-                            by lastCompletedAt. Empty state is implicit
-                            (the list just doesn't render); the hero
-                            stats above already communicate "0 cleared". */}
-                        {boxBests.length > 0 && (
-                          <div className="boxmode-dashboard-bests">
-                            <p className="boxmode-dashboard-subtitle">
-                              {lang === 'nl' ? 'Persoonlijke records' : 'Personal bests'}
-                            </p>
-                            {boxBests.slice(0, 4).map((b) => {
-                              const totalSec = Math.round(b.fastestMs / 1000);
+                        {/* All-9 scope list (v4.4). Previously showed only
+                            cleared scopes (top-4 by lastCompletedAt) which
+                            left a huge empty patch in the panel whenever
+                            the cleared count was low, because the grid
+                            overlay sizes the Box panel to match Quiz's
+                            celebration height. Now every scope gets a row:
+                            cleared scopes show time + mistakes, uncleared
+                            ones show a muted "Not yet completed" hint.
+                            Doubles as useful info — the user sees at a
+                            glance which groups they still owe. */}
+                        <div className="boxmode-dashboard-bests">
+                          <p className="boxmode-dashboard-subtitle">
+                            {t.boxBestTimesHeader || 'Best times'}
+                          </p>
+                          {BOX_SCOPE_KEYS.map((scopeKey) => {
+                            const best = boxBests.find(b => b.scope === scopeKey);
+                            if (best) {
+                              const totalSec = Math.round(best.fastestMs / 1000);
                               const m = Math.floor(totalSec / 60);
                               const s = totalSec % 60;
                               const time = `${m}:${String(s).padStart(2, '0')}`;
                               return (
-                                <div className="boxmode-best-row" key={b.scope}>
-                                  <span className="boxmode-best-scope">{scopeDisplayName(b.scope)}</span>
+                                <div className="boxmode-best-row" key={scopeKey}>
+                                  <span className="boxmode-best-scope">{scopeDisplayName(scopeKey)}</span>
                                   <span className="boxmode-best-stats">
                                     <span className="boxmode-best-time">{time}</span>
                                     <span className="boxmode-best-sep">·</span>
                                     <span className="boxmode-best-mistakes">
-                                      {b.fewestMistakes} {b.fewestMistakes === 1
+                                      {best.fewestMistakes} {best.fewestMistakes === 1
                                         ? (lang === 'nl' ? 'fout' : 'mistake')
                                         : (lang === 'nl' ? 'fouten' : 'mistakes')}
                                     </span>
                                   </span>
                                 </div>
                               );
-                            })}
-                          </div>
-                        )}
+                            }
+                            return (
+                              <div className="boxmode-best-row boxmode-best-row-empty" key={scopeKey}>
+                                <span className="boxmode-best-scope">{scopeDisplayName(scopeKey)}</span>
+                                <span className="boxmode-best-stats boxmode-best-stats-empty">
+                                  {t.boxNotYetPlayed || 'Not yet played'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </>
                     );
                   })()}
