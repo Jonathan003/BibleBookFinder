@@ -922,6 +922,7 @@ function App() {
                 >
                   <span className="mode-card-icon" aria-hidden="true">📦</span>
                   <span className="mode-card-label">{t.boxModeBtnLabel}</span>
+                  <span className="mode-card-subtitle">{t.boxModeSubtitle || 'Speed-sort against the clock'}</span>
                 </button>
                 <button
                   className={`mode-card${selectedMode === 'quiz' ? ' mode-card-selected' : ''}`}
@@ -931,6 +932,7 @@ function App() {
                 >
                   <span className="mode-card-icon" aria-hidden="true">🎯</span>
                   <span className="mode-card-label">{t.quizMode}</span>
+                  <span className="mode-card-subtitle">{t.quizModeSubtitle || 'Long-term spaced review'}</span>
                 </button>
               </div>
 

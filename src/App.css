@@ -148,10 +148,40 @@
   display: none; /* Chrome, Safari, Edge */
 }
 
-/* Menu */
+/* Menu — applies responsive max-width via the --content-max-width CSS
+   custom property defined below. The token cascades from :root so the
+   same width also controls the Settings and Help page wrappers (added
+   below) — single source of truth for "how wide should the focused
+   page chrome be?" Different breakpoints set different values; nothing
+   outside this section needs to know about specific pixel widths.
+
+   v4.8 design system:
+   - Default (mobile compact, <480px): 100% — fills viewport minus
+     menu padding (1.25rem each side, so ~32px total).
+   - ≥480px (mobile landscape / small tablet portrait): 460px — keeps
+     a comfortable focus column at slightly larger phone sizes.
+   - ≥768px (tablet, Material Design "Medium" window size class):
+     640px — wide enough for two-column mode cards to breathe with
+     subtitle text underneath their labels.
+   - ≥1024px (desktop, Material Design "Expanded"): 800px — matches
+     what Settings and Help currently render at on a typical desktop
+     monitor, gives the celebration card real presence without
+     drifting into edge-to-edge territory.
+   - No further bump at ≥1280px: research consensus (Baymard,
+     MediaWiki redesign 2023, MDN, WCAG 1.4.8) is that lines longer
+     than ~80 characters reduce reading comprehension. 800px caps
+     line length at ~65-70ch in our typography, which is the sweet
+     spot. Letting the container grow further on 1440px+ monitors
+     would just make Help text harder to read. */
+:root { --content-max-width: 100%; }
+@media (min-width: 480px)  { :root { --content-max-width: 460px; } }
+@media (min-width: 768px)  { :root { --content-max-width: 640px; } }
+@media (min-width: 1024px) { :root { --content-max-width: 800px; } }
+
 .menu {
   padding: 1.5rem 1.25rem;
-  max-width: 480px;
+  max-width: var(--content-max-width);
+  width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -159,16 +189,19 @@
   animation: slideUp 0.3s ease;
 }
 
-@media (min-width: 768px) {
-  .menu { max-width: 720px; }
+/* Settings and Help pages share the same content width as the home
+   menu so the user experiences ONE consistent "focused page"
+   container across all chrome screens (home, settings, help).
+   Quiz/Box training-grid pages deliberately escape this cap — they
+   need maximum book visibility. Box scope picker also bypasses it.
+   These rules don't try to override existing Settings.css/Help.css
+   internal styles; they constrain the outer wrapper only. */
+.settings-page,
+.help-page {
+  max-width: var(--content-max-width);
+  width: 100%;
+  margin: 0 auto;
 }
-/* NOTE (v4.6): the desktop max-width overrides for .mode-cards,
-   .dashboard-panel, .home-quiz-launchers, .home-start-btn previously
-   lived here but didn't take effect — each of those four selectors
-   has a later base rule further down the file that sets
-   max-width: 520px, and CSS cascade prefers the later rule when
-   specificity is equal. Moved the overrides to the very end of
-   the file (search for "v4.6 desktop overrides") so they win. */
 
 .stats {
   display: grid;
@@ -680,8 +713,8 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   width: 100%;
-  max-width: 520px;
   margin: 0.75rem auto 0;
+  /* v4.8: max-width removed — inherits container width from .menu */
 }
 
 .mode-card {
@@ -720,6 +753,29 @@
 .mode-card-label {
   text-align: center;
   line-height: 1.2;
+}
+
+/* v4.8: Subtitle text below each mode-card label.
+   Describes what each mode does ("Speed-sort against the clock" /
+   "Long-term spaced review") so newcomers don't have to play both
+   modes to figure out the difference. Also gives each card real
+   content to fill the wider container at desktop sizes — at the
+   v4.8 800px content cap, each mode-card is ~395px wide; the
+   subtitle prevents the card from looking hollow.
+   Smaller + muted vs the label so hierarchy stays: emoji is the
+   icon, label is the name, subtitle is the description. */
+.mode-card-subtitle {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-secondary, #666);
+  line-height: 1.3;
+  margin-top: 0.1rem;
+  /* On very narrow phones (e.g. iPhone SE at 320px wide), the subtitle
+     can wrap to 2 lines and stretch the card height. That's fine —
+     it preserves readability and the wider mode-card just gets a bit
+     taller. Don't truncate; ellipsis on critical info is worse. */
+  max-width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -807,11 +863,12 @@
 .dashboard-panel {
   position: relative;
   width: 100%;
-  max-width: 520px;
   margin: 0 auto;
   min-height: 360px;
   display: flex;
   flex-direction: column;
+  /* v4.8: max-width removed — inherits container width from .menu via
+     the .dashboard-area grid cell. */
 }
 
 .share-icon-btn-panel {
@@ -961,11 +1018,11 @@
 .home-start-btn {
   display: block;
   width: 100%;
-  max-width: 520px;
   margin: 1rem auto 0;
   padding: 0.95rem 1.25rem;
   font-size: 1.05rem;
   font-weight: 600;
+  /* v4.8: max-width removed — inherits container width from .menu */
 }
 
 /* Reserve enough vertical space for the tallest possible launcher state
@@ -1004,8 +1061,8 @@
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
-  max-width: 520px;
   margin: 1rem auto 0;
+  /* v4.8: max-width removed — inherits container width from .menu */
 }
 
 .home-launcher-btn {
@@ -1238,22 +1295,10 @@
   font-size: 1.15rem;
 }
 
-/* ─── v4.6 desktop overrides ─────────────────────────────────────────
-   Width caps for the home-screen layout elements on desktop. Placed
-   at the END of the file deliberately so they win CSS cascade — each
-   of the four selectors here has a base rule further up in the file
-   that sets max-width: 520px (or, for .home-quiz-launchers, also 520px).
-   Earlier v4.4 attempted these same overrides inside an early media
-   query at the top of the file; that didn't work because the base
-   rules come later in source order and CSS prefers later rules at
-   equal specificity.
-   The goal of this block is purely visual rhythm: at the 720px menu
-   width on desktop, all four interior elements share 640px so they
-   align edge-to-edge with each other and the user doesn't see the
-   dashboard panel sitting narrower than the mode-cards row below it. */
-@media (min-width: 768px) {
-  .mode-cards,
-  .dashboard-panel,
-  .home-quiz-launchers,
-  .home-start-btn { max-width: 640px; }
-}
+/* ─── v4.8 layout system note ────────────────────────────────────────
+   The previous v4.6/v4.7 desktop overrides for .mode-cards,
+   .dashboard-panel, .home-quiz-launchers, .home-start-btn have been
+   removed. Width control now flows through the --content-max-width
+   CSS custom property set near the top of this file. Interior
+   elements inside .menu fill 100% of their container automatically
+   — there's no per-element width cap to keep in sync. */

@@ -160,6 +160,13 @@ export const translations = {
     errorMaxUsers: 'Maximum 10 gebruikers bereikt',
     errorDuplicate: 'Deze naam bestaat al',
     quizMode: 'Quiz Modus',
+    // v4.8: subtitles shown on the home-screen mode-cards under the
+    // emoji + label. Give each card content that justifies the wider
+    // container at desktop sizes, AND tell newcomers what each mode
+    // actually does so they can pick the right one without playing
+    // both first.
+    boxModeSubtitle: 'Snel sorteren tegen de klok',
+    quizModeSubtitle: 'Lange-termijn herhaling',
     score: 'Score',
     streak: 'Streak',
     of: 'van',
@@ -472,6 +479,9 @@ export const translations = {
     errorMaxUsers: 'Maximum 10 users reached',
     errorDuplicate: 'This name already exists',
     quizMode: 'Quiz Mode',
+    // See NL section for design rationale (v4.8).
+    boxModeSubtitle: 'Speed-sort against the clock',
+    quizModeSubtitle: 'Long-term spaced review',
     score: 'Score',
     streak: 'Streak',
     of: 'of',

@@ -1,3 +1,127 @@
+# v4 commit 4.8 — Responsive content-max-width system
+
+After several commits cycling between "too narrow" and "too wide" and
+"mismatched," the user's final request: "I want it to look good on
+all devices. Think hard about this. Do research."
+
+Did the research (Baymard, MediaWiki 2023 redesign, Material Design 3
+window size classes, MDN responsive design guidance). Settled on a
+proper responsive system with ONE max-width token controlling the
+whole "page chrome" — applied consistently to home, settings, and
+help — letting the in-session training grid escape the cap for
+maximum book visibility.
+
+## The token: --content-max-width
+
+```css
+:root                       { --content-max-width: 100%; }   /* mobile compact */
+@media (min-width: 480px)   { :root { --content-max-width: 460px; } }
+@media (min-width: 768px)   { :root { --content-max-width: 640px; } }
+@media (min-width: 1024px)  { :root { --content-max-width: 800px; } }
+```
+
+No further bump at ≥1280px. Research consensus: lines longer than
+~80 characters reduce reading comprehension (Baymard, WCAG 1.4.8).
+At our typography, 800px caps line length around 65-70ch — the sweet
+spot. Letting the container grow on 1440px+ monitors would just
+make Help text harder to read.
+
+## Where it's applied
+
+- `.menu` (home screen)
+- `.settings-page` (Settings page wrapper)
+- `.help-page` (Help page wrapper)
+
+NOT applied to:
+- The in-session book grid — needs maximum book visibility, that's
+  the functional exception the user explicitly wanted.
+- Box Mode scope picker — bypasses for similar reasons.
+
+## Interior elements fill 100% of the container
+
+`.mode-cards`, `.dashboard-panel`, `.home-quiz-launchers`,
+`.home-start-btn` all had their own `max-width: 520px` rules that
+were independent of the menu width. Removed those. Each now fills
+100% of `.menu` width, scaling naturally with the responsive token.
+No per-element overrides to keep in sync; no cascade source-order
+traps (the v4.4 → v4.6 saga).
+
+The v4.6 desktop-only override block at the end of App.css is gone —
+redundant under the new system.
+
+## Mode-cards get descriptive subtitles
+
+The cause of the "hollow cards" problem in earlier commits was sparse
+content (just an emoji + a word) inside a wide container. At 800px
+content width, each mode-card is ~395px wide. With only an icon and
+a label, that's a lot of empty rectangle. Fixed at the source by
+adding a one-line subtitle under each label:
+
+- **Box Mode** / "Speed-sort against the clock" / "Snel sorteren tegen de klok"
+- **Quiz Mode** / "Long-term spaced review" / "Lange-termijn herhaling"
+
+Two wins: (1) the cards now have content that justifies the wider
+container, and (2) newcomers can tell the two modes apart without
+having to play each. Smaller + muted vs the main label so visual
+hierarchy stays clear (icon → name → description).
+
+New translation keys: `boxModeSubtitle` (NL + EN), `quizModeSubtitle`
+(NL + EN).
+
+New CSS class: `.mode-card-subtitle`.
+
+## Why this works on every device
+
+- **Mobile compact (320-479px):** menu fills viewport minus padding.
+  Mode-cards stack as a 2-column grid; subtitles wrap to 2 lines on
+  the narrowest devices, no truncation (readability > brevity).
+- **Mobile landscape / small phones (480-767px):** 460px content
+  width. Comfortable focus column.
+- **Tablet (768-1023px, Material "Medium" class):** 640px content.
+  Mode cards have room for the subtitle on one line.
+- **Desktop (1024px+, Material "Expanded"+):** 800px content. Single
+  consistent width across home, settings, help. Matches what the
+  user pointed at as their target ("the same as when clicking help
+  or settings").
+- **Ultra-wide (1920px+, 2K+):** stops growing at 800px. Never looks
+  edge-to-edge or "lost in space" on a wide monitor.
+
+## What didn't change
+
+- The grid overlay for tab anchoring (v4.2) stays. Quiz panel with
+  celebration is still taller than Box panel; switching tabs doesn't
+  jump them.
+- The Box dashboard layout from v4.5 (title + records + empty state
+  hint) stays. The empty space below the Box panel when Quiz panel
+  is in celebration state is still present — that's the grid-overlay
+  trade-off, and addressing it is a separate concern (would mean
+  compacting the celebration, which is its own decision).
+- Settings.css and Help.css internals weren't touched. The new
+  `.settings-page` / `.help-page` max-width rules in App.css only
+  constrain the outer wrapper; any inner styles in their respective
+  CSS files keep working.
+
+## Smoke test (run on multiple viewports)
+
+1. **Desktop (1820px wide):** Home dashboard panel, mode-cards,
+   launchers all the same width (~800px), aligned edge-to-edge.
+   Navigate to Settings: same width. Navigate to Help: same width.
+2. **Mode-card content:** each mode-card shows emoji + label +
+   subtitle. Box Mode subtitle visible. Quiz Mode subtitle visible.
+   No empty space inside the cards.
+3. **Tablet (~768-1023px):** content caps at 640px, still consistent
+   across pages, mode-card subtitles fit on one line.
+4. **Mobile portrait (~412px):** content fills viewport minus padding.
+   Mode-cards stack in 2 columns, subtitles wrap to 2 lines if needed.
+5. **In-session grid:** start a Quiz or Box session, the book grid
+   ignores the content cap and uses full viewport width (functional
+   exception preserved).
+6. **No cascade conflicts:** all per-element max-widths are removed,
+   so DevTools "Computed" should show clean values driven by the
+   --content-max-width token at each breakpoint.
+
+---
+
 # v4 commit 4.6 — Fix: desktop max-width overrides weren't being applied
 
 User asked why the dashboard panel was narrower than the Box Mode /
