@@ -312,7 +312,7 @@
 .tier-segment.tier-unseen    { background: var(--tier-unseen); }
 .tier-segment.tier-learned   { background: var(--tier-learned); }
 .tier-segment.tier-familiar  { background: var(--tier-familiar); }
-.tier-segment.tier-mastered  { background: var(--tier-mastered); }
+.tier-segment.tier-rooted  { background: var(--tier-rooted); }
 .tier-segment.tier-anchored  { background: var(--tier-anchored); }
 .tier-segment.tier-permanent { background: var(--tier-permanent); }
 
@@ -347,7 +347,7 @@
 .tier-chip.tier-unseen    .tier-chip-dot { background: var(--tier-unseen); }
 .tier-chip.tier-learned   .tier-chip-dot { background: var(--tier-learned); }
 .tier-chip.tier-familiar  .tier-chip-dot { background: var(--tier-familiar); }
-.tier-chip.tier-mastered  .tier-chip-dot { background: var(--tier-mastered); }
+.tier-chip.tier-rooted  .tier-chip-dot { background: var(--tier-rooted); }
 .tier-chip.tier-anchored  .tier-chip-dot { background: var(--tier-anchored); }
 .tier-chip.tier-permanent .tier-chip-dot { background: var(--tier-permanent); }
 

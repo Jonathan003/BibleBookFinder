@@ -1,4 +1,123 @@
-# v4 — Schedule-free practice (Commit 1: deletions)
+# v4 commit 2 — Confident gold line, total-time card, tier rename
+
+The core mechanic change of the v4 pivot. The gold line under a book
+cell no longer means "FSRS-mastered" (stability >7d, takes 3-4 reps
+spread over multiple days — fundamentally unachievable in a single
+session). It now means "you answered correctly and fast on the last 3
+attempts" — a signal you can earn in 30 minutes if you already know the
+book layout. FSRS still runs as a smart picker, but the gold line is
+decoupled from its calendar.
+
+**New mechanics:**
+- `isConfident(buffer)` in `src/fsrs.js`: takes a per-book ring buffer
+  (length up to `CONFIDENT_BUFFER_SIZE = 3`). Returns `true` iff the
+  buffer is full and every entry is a good hit (correct AND within
+  `masteryMs`). One wrong answer or one slow answer pushes `false` and
+  removes the gold line; three more correct-and-fast answers re-earn
+  it.
+- `recordConfidentAttempt(buffer, isGoodHit)`: FIFO push, capped at 3.
+- `getConfidentCount(confidentBuffers, allBooks)`: how many books are
+  currently confident — drives the home-screen headline and share
+  message.
+- Per-user `confidentBuffers` field on the user object (parallel to
+  `fsrsCards`), seeded by `migrateConfidentBuffers` for upgrading users.
+
+**Migration v3 → v4** (in `App.jsx`, `useEffect` keyed on
+`currentUser?.id`): for any existing user whose `fsrsCards` is non-empty
+but `confidentBuffers` is empty, books that currently satisfy `isMastered`
+get a pre-filled buffer of three `true` entries. Result: existing users
+do NOT see their gold lines disappear on first load after the upgrade.
+Books that were not yet FSRS-mastered start with an empty buffer and
+have to earn gold the new way (3 correct-fast).
+
+**FSRS tier renamed: `mastered` → `rooted`.** The word "mastered" is
+now too overloaded — the gold-line UX uses "confident," and the FSRS
+tier needed its own name. Affected: `TIERS` array, `getTier()` return
+value, `getTierStats()` shape, the `.tier-mastered` CSS class (now
+`.tier-rooted`), the `--tier-mastered` CSS variable (now `--tier-rooted`),
+the `tierMastered` translation key (now `tierRooted`, displayed as
+"Geworteld" in Dutch / "Rooted" in English). The threshold itself is
+unchanged: `stability > 7 && reps >= MASTERY_MIN_REPS` (which is still
+3). `isMastered()` the function is kept in `fsrs.js` and used only by
+the migration helper.
+
+**Home-screen surface:**
+- Dashboard stat-card: "X mastered of 66" → "X confident of 66" (driven
+  by `getConfidentCount`, not by `tierStats.mastered + anchored +
+  permanent`).
+- Streak card replaced with a total-training-time card. The flame
+  becomes a stopwatch (⏱), the number becomes formatted duration
+  ("4u 12m" / "4h 12m"), the label becomes `totalTrainingTime`.
+  Reasoning: a day-streak punishes irregular practice, which contradicts
+  the v4 "open the app when you have time" model. Total time only goes
+  up — same dopamine, no punishment for gaps.
+- "X books close to Mastered" indicator and `countCloseToMastery` helper
+  removed. The new model has no analogous mid-state ("2 of 3 buffer
+  entries are true" isn't worth surfacing — the user sees their book
+  light up immediately on the third correct-fast answer).
+- The bottom always-visible streak footer also removed.
+- `computeStreakInfo` import removed (file remains in src/ but is
+  unused — Commit 3 may revisit).
+
+**In-quiz:**
+- Gold-line driver in `renderBookCell`: `isConfident(confidentBuffers[book.id])`
+  instead of `isMastered(cardData)`.
+- Every answer commit now records an attempt onto the buffer:
+  correct-AND-fast → `true`; slow correct → `false`; wrong → `false`.
+- Milestone trigger (10 / 20 / 33 / 50 / OT-complete / NT-complete / 66)
+  now fires on `was-not-confident → is-now-confident` transitions, not
+  on FSRS mastery transitions. So milestones surface during the
+  race-to-66 marathon rather than weeks later.
+
+**Share message** (`App.jsx#share`):
+- NL: "Ik heb X van 66 bijbelboeken beheerst..." → "Ik ben zeker van X
+  van 66 bijbelboeken..."
+- EN: "I mastered X out of 66 Bible books..." → "I'm confident on X out
+  of 66 Bible books..."
+- `stats.mastered` replaced with `confidentCount`.
+
+**Reset Quiz progress** (Settings → Data): now also clears
+`confidentBuffers` alongside `fsrsCards`. Without this, a reset would
+wipe FSRS state but leave gold lines hanging from the old session.
+
+**Translations** (`src/data.js`, both NL and EN):
+- Added: `confident` ("Zeker" / "Confident"), used by the dashboard
+  stat-card label.
+- Renamed: `tierMastered` → `tierRooted` ("Geworteld" / "Rooted").
+- Removed: `closeToMasterySingle`, `closeToMastery`.
+- Kept (unchanged): `mastered`, `restoreMastered`, all `milestoneN`
+  strings. Re-wording these from "beheerst/mastered" to "zeker/confident"
+  is a copywriting pass that belongs in Commit 3.
+
+**FAQ** (`Help.jsx`, both NL and EN): the gold-line entry rewritten to
+describe the confident signal ("appears when your last 3 answers were
+correct AND fast"). The tier-list entry rewritten to call out that the
+six tiers are now a separate long-term progression alongside the
+gold-line signal, with "Mastered" → "Rooted" / "Beheerst" → "Geworteld"
+throughout.
+
+**Schema note:** No `_schemaVersion` bump because the migration is
+purely additive (writes `confidentBuffers` if missing). Existing
+backups continue to import. The next backup export will include
+`confidentBuffers` automatically since it's part of the user object.
+
+**Smoke test** (run `npm run dev` and verify):
+1. Existing user with FSRS-mastered books: their gold lines are still
+   present on first load (migration ran).
+2. Answer a confident book wrong: gold line disappears. Answer 3
+   correct-and-fast in a row: gold line returns.
+3. New book, never answered: 3 correct-fast in a row lights it gold.
+4. Dashboard headline reads "X confident of 66" (instead of "mastered").
+5. Streak card replaced with "Total training time" showing duration.
+6. Share message uses "I'm confident on" wording.
+7. Settings → Data → Reset Quiz progress: gold lines all disappear
+   along with FSRS data.
+8. Tier-bar legend shows "Rooted" tile (or "Geworteld" in Dutch)
+   instead of "Mastered" / "Beheerst".
+
+---
+
+
 
 The app's identity is shifting from "follow your FSRS schedule" to "open
 practice when you have time." 66 books is a small dataset and many users

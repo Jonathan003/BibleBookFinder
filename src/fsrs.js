@@ -152,14 +152,16 @@ export function isMastered(cardData) {
 // WaniKani's Apprentice→Guru→Master→Enlightened→Burned ladder. The
 // underlying FSRS scheduler is unchanged — these tiers are a *display*
 // layer that gives the learner a tangible "next step" beyond the binary
-// mastered/not-mastered split. Six tiers were chosen because:
+// rooted/not-rooted split. Six tiers:
 //   - 'unseen' covers books with no card yet (fresh user / after reset)
 //   - 'learned' is the moment between first answer and Review state
 //     (FSRS's Learning/Relearning) — visible feedback that something
 //     happened without overpromising stability
 //   - 'familiar' = entered Review state but not yet stable (<7d)
-//   - 'mastered' = the existing isMastered() condition; preserves the
-//     gold-line UX and the legacy milestone definitions
+//   - 'rooted' = the existing isMastered() condition (renamed in v4 from
+//     'mastered' to free the word 'mastered' from collision with the
+//     new 'confident' gold-line signal). Same threshold: stability >7d
+//     plus reps >= MASTERY_MIN_REPS.
 //   - 'anchored' = stability >30d, takes ~1-2 months at default pace
 //   - 'permanent' = stability >180d, takes 4-6+ months — the WaniKani
 //     'Burned' equivalent and a real long-term goal
@@ -167,9 +169,8 @@ export function isMastered(cardData) {
 // Thresholds were chosen to roughly match natural FSRS progression at
 // request_retention=0.9 (Balanced pace). With Intensive pace (0.95)
 // users move through the tiers slightly slower; with Relaxed (0.85)
-// slightly faster. That's intentional — the pace setting already
-// expresses how much grind the user wants.
-export const TIERS = ['unseen', 'learned', 'familiar', 'mastered', 'anchored', 'permanent'];
+// slightly faster.
+export const TIERS = ['unseen', 'learned', 'familiar', 'rooted', 'anchored', 'permanent'];
 
 // Numeric ordering, useful for "is X higher than Y" comparisons
 export const TIER_ORDER = Object.fromEntries(TIERS.map((t, i) => [t, i]));
@@ -191,7 +192,7 @@ export function getTier(cardData) {
   // In Review state — promote based on stability
   if (stability > 180) return 'permanent';
   if (stability > 30)  return 'anchored';
-  if (stability > 7 && reps >= MASTERY_MIN_REPS) return 'mastered';
+  if (stability > 7 && reps >= MASTERY_MIN_REPS) return 'rooted';
   return 'familiar';
 }
 
@@ -199,33 +200,75 @@ export function getTier(cardData) {
 // counts for empty tiers) so the UI can render a stable layout without
 // null-checks.
 export function getTierStats(fsrsCards, allBooks) {
-  const counts = { unseen: 0, learned: 0, familiar: 0, mastered: 0, anchored: 0, permanent: 0 };
+  const counts = { unseen: 0, learned: 0, familiar: 0, rooted: 0, anchored: 0, permanent: 0 };
   allBooks.forEach(book => {
     counts[getTier(fsrsCards[book.id])]++;
   });
   return { ...counts, total: allBooks.length };
 }
 
-// Count books that are one rep away from being Mastered: state=Review,
-// stability already past the >7d threshold, but reps still below
-// MASTERY_MIN_REPS. These books visually live in the Familiar tier on
-// the home menu, so without an explicit indicator the user has no
-// signal that "1 more correct answer promotes this to Mastered".
-// Surfacing this count answers the otherwise-mysterious question
-// "I've answered this book correctly twice — why am I still on
-// Familiar?" by making the rep-gate transparent.
-export function countCloseToMastery(fsrsCards, allBooks) {
+// ─── Confident: the in-session gold-line signal (v4) ──────────────────
+// "Confident" is the new criterion for the gold line under a book cell.
+// Unlike the FSRS-based isMastered() (which requires stability >7d,
+// taking ~3-4 well-spaced reps over multiple days), confident is
+// achievable within a single 30-minute session — making a "race to all
+// 66 gold" goal feasible for users who already partly know the answers.
+//
+// Definition: confident = the last CONFIDENT_BUFFER_SIZE attempts on
+// this book were ALL correct AND within masteryMs. A wrong answer or a
+// correct-but-slow answer pushes `false` to the buffer, knocking out
+// the gold line. Three more correct-and-fast answers re-earn it.
+//
+// Data shape: per book, a buffer (array of booleans, length up to
+// CONFIDENT_BUFFER_SIZE). `true` = correct AND fast on that attempt.
+// `false` = wrong, or correct but slow. The buffer is FIFO: the
+// newest entry is pushed onto the end, and the oldest falls off the
+// front once the buffer reaches size.
+//
+// FSRS still runs underneath (deciding which book to ask next based on
+// stability), but the gold-line signal is decoupled from FSRS's calendar.
+export const CONFIDENT_BUFFER_SIZE = 3;
+
+// Returns true if the buffer is full AND every entry is a good hit.
+// Anything else (empty buffer, partial buffer, any false entry) → false.
+export function isConfident(buffer) {
+  if (!Array.isArray(buffer)) return false;
+  if (buffer.length < CONFIDENT_BUFFER_SIZE) return false;
+  return buffer.every(entry => entry === true);
+}
+
+// Push a new attempt onto the buffer. Returns the new buffer (FIFO,
+// capped at CONFIDENT_BUFFER_SIZE). `isGoodHit` should be true only if
+// the answer was correct AND within masteryMs.
+export function recordConfidentAttempt(buffer, isGoodHit) {
+  const current = Array.isArray(buffer) ? buffer : [];
+  return [...current, !!isGoodHit].slice(-CONFIDENT_BUFFER_SIZE);
+}
+
+// How many books in the corpus are currently confident.
+export function getConfidentCount(confidentBuffers, allBooks) {
   let count = 0;
   allBooks.forEach(book => {
-    const card = fsrsCards[book.id];
-    if (!card) return;
-    if (card.state === State.Review
-        && (card.stability || 0) > 7
-        && (card.reps || 0) === MASTERY_MIN_REPS - 1) {
-      count++;
-    }
+    if (isConfident(confidentBuffers?.[book.id])) count++;
   });
   return count;
+}
+
+// Migration helper (v3 → v4): for each book where the FSRS card meets
+// the old isMastered() criterion, pre-fill the confident buffer with
+// CONFIDENT_BUFFER_SIZE good-hit entries. Returns a fresh buffers map
+// (does NOT mutate the input). Use case: existing users who had gold
+// lines under their FSRS-mastered books should keep them visible after
+// the upgrade, not watch them all disappear.
+export function migrateConfidentBuffers(fsrsCards, allBooks, existingBuffers = {}) {
+  const out = { ...existingBuffers };
+  allBooks.forEach(book => {
+    if (out[book.id]) return; // user already has a buffer for this book
+    if (isMastered(fsrsCards[book.id])) {
+      out[book.id] = new Array(CONFIDENT_BUFFER_SIZE).fill(true);
+    }
+  });
+  return out;
 }
 
 // Get stats summary for display

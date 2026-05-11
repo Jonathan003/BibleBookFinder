@@ -212,6 +212,11 @@ export const translations = {
     importError: 'Ongeldig bestand.',
     importWarning: '⚠️ Herstellen overschrijft jouw voortgang en voorkeuren. Apparaat-specifieke instellingen (kolommen, afkortingen, OT/NT layout) blijven van dit toestel.',
     hintReveal: 'Hint:',
+    // Dashboard stat label. v4 renamed from "Beheerst" (FSRS-mastery) to
+    // "Zeker" (the in-session confident gold-line signal). `mastered` is
+    // kept as a backward-compat alias for any remaining call sites and
+    // for backup imports that still reference the old word.
+    confident: 'Zeker',
     mastered: 'Beheerst',
     abbreviationsPortrait: 'Afkortingen (portret)',
     abbreviationsPortraitDesc: '(rechtop)',
@@ -280,23 +285,18 @@ export const translations = {
     newBest: 'Nieuw record!',
     // Tiers — discrete progression labels derived from FSRS card state
     // (see src/fsrs.js getTier). Names chosen to read as a natural
-    // ladder for Dutch speakers, with "Beheerst" preserved as the
-    // existing milestone term so old share messages and milestones
-    // continue to make sense.
+    // ladder for Dutch speakers. v4 renamed the old 'beheerst' tier to
+    // 'geworteld' so the word 'beheerst' could be retired in favor of
+    // 'zeker' (the new in-session confident signal that drives the gold
+    // line). The FSRS-based long-term tier still exists; it's just no
+    // longer the gold-line trigger.
     tierUnseen: 'Onbekend',
     tierLearned: 'Geleerd',
     tierFamiliar: 'Vertrouwd',
-    tierMastered: 'Beheerst',
+    tierRooted: 'Geworteld',
     tierAnchored: 'Verankerd',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Voortgang per niveau',
-    // "X boeken bijna Beheerst" indicator. Shown only when at least one
-    // book is one rep away from Mastered (state=Review, stability>7,
-    // reps=MASTERY_MIN_REPS-1). Makes the otherwise-invisible rep-gate
-    // transparent so the user knows progress is happening even though
-    // the tier-bar hasn't shifted yet.
-    closeToMasterySingle: '1 boek bijna Beheerst — nog 1 herhaling',
-    closeToMastery: 'boeken bijna Beheerst — elk nog 1 herhaling',
     // Menu — "all caught up" celebration shown when there's nothing
     // due right now. Replaces the Quiz Mode primary button so the
     // user isn't tempted to over-rehearse stable cards (which FSRS
@@ -487,6 +487,8 @@ export const translations = {
     importError: 'Invalid file.',
     importWarning: '⚠️ Restoring will overwrite your progress and preferences. Device-specific settings (columns, abbreviations, OT/NT layout) stay on this device.',
     hintReveal: 'Hint:',
+    // See NL section for design rationale.
+    confident: 'Confident',
     mastered: 'Mastered',
     abbreviationsPortrait: 'Abbreviations (portrait)',
     abbreviationsPortraitDesc: '(upright)',
@@ -549,13 +551,10 @@ export const translations = {
     tierUnseen: 'Unseen',
     tierLearned: 'Learning',
     tierFamiliar: 'Familiar',
-    tierMastered: 'Mastered',
+    tierRooted: 'Rooted',
     tierAnchored: 'Anchored',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Progress by tier',
-    // See NL section for design rationale.
-    closeToMasterySingle: '1 book close to Mastered — 1 more correct answer',
-    closeToMastery: 'books close to Mastered — 1 more correct answer each',
     // Menu — "all caught up" celebration
     allCaughtUpTitle: '✓ Done for now',
     allCaughtUpBody: 'No books ready to practice. Come back when you have time — there is no schedule.',

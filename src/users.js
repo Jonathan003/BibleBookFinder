@@ -64,6 +64,11 @@ export function createUser(name, initialSettings) {
     bestStreak: 0,
     quizHistory: [],
     fsrsCards: {},
+    // v4: per-book ring buffer driving the gold-line "confident" signal.
+    // Each entry is an array of booleans (length up to 3); `true` = last
+    // attempt was correct AND within masteryMs. Gold appears when all 3
+    // most-recent entries are true. See src/fsrs.js for the helpers.
+    confidentBuffers: {},
     bestTimes: {},
     // Cumulative active-quiz time in ms. Grows with each answered question
     // (capped at 30s per question, Anki-style). Reset by Reset Progress.

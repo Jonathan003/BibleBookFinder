@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, createContext, useContext, useMemo } 
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
-import { getBookStats, getTierStats, countCloseToMastery, TIERS } from './fsrs';
-import { computeStreakInfo } from './streak';
+import { getBookStats, getTierStats, TIERS, getConfidentCount, recordConfidentAttempt, migrateConfidentBuffers } from './fsrs';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
 import { getBoxModeBests } from './boxModeStorage';
@@ -264,18 +263,42 @@ function App() {
   // FSRS state, not the current clock.
   const tierStats = useMemo(() => getTierStats(fsrsCards, bibleBooks), [fsrsCards]);
 
-  // Books one rep away from Mastered (see countCloseToMastery in fsrs.js
-  // for the precise condition). Memoized on fsrsCards — no time
-  // dependency: the rep count of a card doesn't drift with the clock.
-  const closeToMasteryCount = useMemo(
-    () => countCloseToMastery(fsrsCards, bibleBooks),
-    [fsrsCards]
-  );
+  // ─── Confident buffers (v4) ──────────────────────────────────────────
+  // Per-book ring buffer of the last few answer outcomes. Drives the
+  // gold line. Migrated from FSRS-mastery on first load so existing
+  // users keep their gold lines visible after the upgrade.
+  const confidentBuffers = currentUser?.confidentBuffers || {};
 
-  // Streak from quizHistory — purely derived, no separate state.
-  const streakInfo = useMemo(
-    () => computeStreakInfo(currentUser?.quizHistory || []),
-    [currentUser?.quizHistory]
+  const updateConfidentBuffer = useCallback((bookId, isGoodHit) => {
+    updateUserData(prev => {
+      const buffers = prev.confidentBuffers || {};
+      const nextBuffer = recordConfidentAttempt(buffers[bookId], isGoodHit);
+      return { confidentBuffers: { ...buffers, [bookId]: nextBuffer } };
+    });
+  }, [updateUserData]);
+
+  // One-time migration: if the user has FSRS data but no confidentBuffers
+  // (i.e. they're upgrading from v3), pre-fill buffers for any books that
+  // were already mastered under the FSRS criterion. Without this, every
+  // existing user would see all their gold lines vanish on upgrade.
+  useEffect(() => {
+    if (!currentUser) return;
+    const hasFsrs = currentUser.fsrsCards && Object.keys(currentUser.fsrsCards).length > 0;
+    const hasBuffers = currentUser.confidentBuffers && Object.keys(currentUser.confidentBuffers).length > 0;
+    if (hasFsrs && !hasBuffers) {
+      const migrated = migrateConfidentBuffers(currentUser.fsrsCards, bibleBooks, {});
+      if (Object.keys(migrated).length > 0) {
+        updateUserData({ confidentBuffers: migrated });
+      }
+    }
+    // Run on user change only; deps intentionally limited to avoid loops
+    // after the migration writes back.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  const confidentCount = useMemo(
+    () => getConfidentCount(confidentBuffers, bibleBooks),
+    [confidentBuffers]
   );
 
   // Box Mode bests for the home-screen Box dashboard panel. Sorted by
@@ -318,6 +341,7 @@ function App() {
       bestStreak: 0,
       quizHistory: [],
       fsrsCards: {},
+      confidentBuffers: {},
       bestTimes: {},
       masteryMsAtStart: config.quiz.masteryMs,
       totalQuizMs: 0,
@@ -397,8 +421,8 @@ function App() {
       const totalMs = currentUser.totalQuizMs || 0;
       const timeStr = totalMs > 0 ? ` in ${formatDuration(totalMs)}` : '';
       text = (lang === 'nl'
-        ? `Ik heb ${stats.mastered} van 66 bijbelboeken beheerst${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
-        : `I mastered ${stats.mastered} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`);
+        ? `Ik ben zeker van ${confidentCount} van 66 bijbelboeken${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
+        : `I'm confident on ${confidentCount} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`);
     }
     const fullText = text + ' ' + window.location.href;
 
@@ -612,8 +636,8 @@ function App() {
               {stats.dueNow > 0 ? (
                 <div className="stats">
                   <div className="stat-card">
-                    <span className="stat-number">{tierStats.mastered + tierStats.anchored + tierStats.permanent}</span>
-                    <span className="stat-label">{t.mastered} {t.of} 66</span>
+                    <span className="stat-number">{confidentCount}</span>
+                    <span className="stat-label">{t.confident} {t.of} 66</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-number">{stats.dueNow}</span>
@@ -666,33 +690,20 @@ function App() {
                     </span>
                   ))}
                 </div>
-                {/* "X books close to Mastered" — surfaces the otherwise-
-                    invisible MASTERY_MIN_REPS=3 rep gate. A book at 2/3
-                    reps is visually still in Familiar tier but a single
-                    correct answer away from promotion; without this
-                    line, that progress is invisible to the user. */}
-                {closeToMasteryCount > 0 && (
-                  <div className="close-to-mastery">
-                    {closeToMasteryCount === 1
-                      ? t.closeToMasterySingle
-                      : `${closeToMasteryCount} ${t.closeToMastery}`}
-                  </div>
-                )}
               </div>
 
-              {/* Streak indicator. Hidden when zero to avoid scolding the
-                  fresh user with "0 day streak". */}
-              {streakInfo.current > 0 && (
+              {/* Total training time card. Replaces the day-streak card
+                  in v4 — streak was schedule-shaped ("you should come
+                  every day"), total time only goes up. Same visual
+                  pattern (flame + big number + label) so the home
+                  screen's emotional shape is preserved. Hidden when
+                  zero to avoid scolding a fresh account. */}
+              {(currentUser?.totalQuizMs || 0) > 0 && (
                 <div className="momentum-section">
                   <div className="streak-card">
-                    <span className="streak-flame">🔥</span>
-                    <span className="streak-number">{streakInfo.current}</span>
-                    <span className="streak-label">
-                      {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
-                      {streakInfo.longest > streakInfo.current && (
-                        <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
-                      )}
-                    </span>
+                    <span className="streak-flame">⏱</span>
+                    <span className="streak-number">{formatDuration(currentUser.totalQuizMs)}</span>
+                    <span className="streak-label">{t.totalTrainingTime}</span>
                   </div>
                 </div>
               )}
@@ -867,22 +878,6 @@ function App() {
                 )}
               </div>
 
-              {/* Always-visible streak. Shown regardless of suggested
-                  mode because daily-engagement signal is universally
-                  motivating, not Quiz-specific. */}
-              {streakInfo.current > 0 && (
-                <div className="menu-streak-footer">
-                  <span className="streak-flame" aria-hidden="true">🔥</span>
-                  <span className="streak-number">{streakInfo.current}</span>
-                  <span className="streak-label">
-                    {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
-                    {streakInfo.longest > streakInfo.current && (
-                      <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
-                    )}
-                  </span>
-                </div>
-              )}
-
               {shareFeedback && <p className="share-feedback">{shareFeedback}</p>}
             </div>
           )}
@@ -900,6 +895,8 @@ function App() {
                 ownerUserId={currentUser.id}
                 fsrsCards={fsrsCards}
                 updateFsrsCard={updateFsrsCard}
+                confidentBuffers={confidentBuffers}
+                updateConfidentBuffer={updateConfidentBuffer}
                 bestTimes={currentUser.bestTimes || {}}
                 updateBestTime={updateBestTime}
                 bestStreak={currentUser.bestStreak || 0}

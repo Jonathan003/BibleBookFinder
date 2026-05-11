@@ -72,13 +72,13 @@ const helpContent = {
       },
       // ─── 7. Six tiers ───────────────────────────────────────────────
       {
-        q: 'Wat zijn de zes niveaus (Onbekend, Geleerd, Vertrouwd, Beheerst, Verankerd, Permanent)?',
-        a: 'Elk boek klimt geleidelijk omhoog naarmate je het correct beantwoordt en het algoritme zekerheid opbouwt. Onbekend = nog nooit gezien. Geleerd = voor het eerst geantwoord, maar nog onstabiel (uren tot een dag). Vertrouwd = enkele keren correct, het algoritme begint je intervallen op te schalen. Beheerst = stabiel voor minstens een week (dit was vroeger het enige eindniveau). Verankerd = stabiel voor een maand of meer. Permanent = stabiel voor een half jaar of meer — dit is wat het algoritme als "verankerd in lange-termijngeheugen" beschouwt. Het halen van alle 66 boeken op Permanent duurt natuurlijk maanden. Dat is geen probleem — het is precies wat lange-termijnleren betekent.',
+        q: 'Wat zijn de zes niveaus (Onbekend, Geleerd, Vertrouwd, Geworteld, Verankerd, Permanent)?',
+        a: 'De zes niveaus zijn de lange-termijn voortgangsmaat van het FSRS-algoritme. Onbekend = nog nooit gezien. Geleerd = voor het eerst geantwoord, maar nog onstabiel (uren tot een dag). Vertrouwd = enkele keren correct, het algoritme begint je intervallen op te schalen. Geworteld = stabiel voor minstens een week. Verankerd = stabiel voor een maand of meer. Permanent = stabiel voor een half jaar of meer — verankerd in lange-termijngeheugen. Het halen van alle 66 boeken op Permanent duurt natuurlijk maanden. Dit niveau-systeem is afgekoppeld van de gouden lijn: gouden lijntjes verschijnen veel sneller (zie de volgende vraag).',
       },
-      // ─── 8. Gold line (expanded) ────────────────────────────────────
+      // ─── 8. Gold line — confident signal (v4) ────────────────────────
       {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
-        a: 'De gouden lijn verschijnt onder een boek zodra het niveau Beheerst (of hoger — Verankerd, Permanent) heeft bereikt. Concreet betekent dat: het algoritme heeft minstens drie correcte antwoorden gezien en de berekende stabiliteit ligt boven 7 dagen. De lijn is een visuele "dit boek zit erin"-markering, vergelijkbaar met WaniKani\'s Burned-status, en helpt je in één oogopslag zien welke boeken je nog moet oppikken. Pas dus enkele weken oefenen voordat de eerste gouden lijntjes verschijnen — dat is normaal. Je kunt de lijn ook helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
+        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ken dit boek zeker" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -238,13 +238,13 @@ const helpContent = {
       },
       // ─── 7. Six tiers ───────────────────────────────────────────────
       {
-        q: 'What are the six tiers (Unseen, Learning, Familiar, Mastered, Anchored, Permanent)?',
-        a: 'Each book climbs as you answer it correctly and the algorithm builds confidence. Unseen = never answered. Learning = answered for the first time but still unstable (hours to a day). Familiar = a few correct answers, intervals are starting to stretch. Mastered = stable for at least a week (this used to be the only end-state). Anchored = stable for a month or more. Permanent = stable for half a year or more — what the algorithm considers "rooted in long-term memory". Getting all 66 books to Permanent naturally takes months. That\'s not a flaw — it\'s exactly what long-term retention means.',
+        q: 'What are the six tiers (Unseen, Learning, Familiar, Rooted, Anchored, Permanent)?',
+        a: 'The six tiers are the long-term progress measure tracked by the FSRS algorithm. Unseen = never answered. Learning = answered for the first time but still unstable (hours to a day). Familiar = a few correct answers, intervals are starting to stretch. Rooted = stable for at least a week. Anchored = stable for a month or more. Permanent = stable for half a year or more — what the algorithm considers rooted in long-term memory. Getting all 66 books to Permanent naturally takes months. This tier system is decoupled from the gold line: gold lines appear much sooner (see the next question).',
       },
-      // ─── 8. Gold line (expanded) ────────────────────────────────────
+      // ─── 8. Gold line — confident signal (v4) ───────────────────────
       {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
-        a: 'The gold line appears under a book once it has reached tier Mastered (or higher — Anchored, Permanent). Concretely: the algorithm has seen at least three correct answers and the calculated stability is above 7 days. The line is a visual "this book is rooted" marker, similar to WaniKani\'s Burned status, and helps you see at a glance which books still need work. Expect a few weeks of practice before the first gold lines appear — that\'s normal. You can also turn the line off entirely via Settings → Grid → "Mastered books" if you prefer practicing without the visual progress aid.',
+        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Grid → "Mastered books" if you prefer practicing without the visual progress aid.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {

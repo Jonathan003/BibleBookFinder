@@ -6,7 +6,7 @@ import { useTimeoutManager } from '../useTimeoutManager';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
-  Rating, getBookStats, isMastered,
+  Rating, getBookStats, isConfident, recordConfidentAttempt, getConfidentCount,
 } from '../fsrs';
 import { computeTodayStats } from '../streak';
 import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
@@ -54,7 +54,9 @@ function autoPickDelayMs(masteryMs) {
 }
 
 export default function QuizGrid({
-  ownerUserId, fsrsCards, updateFsrsCard, bestTimes, updateBestTime,
+  ownerUserId, fsrsCards, updateFsrsCard,
+  confidentBuffers = {}, updateConfidentBuffer,
+  bestTimes, updateBestTime,
   bestStreak, setBestStreak, addQuizSession, addTrainingTime,
   totalQuizMs = 0, quizHistory = [],
   onBack, onPhaseChange,
@@ -425,6 +427,19 @@ export default function QuizGrid({
       updateFsrsCard(targetBook.id, serializeCard(result.card));
       logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), rating);
 
+      // ─── Confident-buffer update (v4) ────────────────────────────────
+      // Record this attempt on the new gold-line signal. `true` only if
+      // the answer was both correct AND within masteryMs (the same
+      // criterion FSRS uses to map speed → Rating.Good vs Hard). Slow
+      // correct answers push `false` — they're not "confident" hits, the
+      // user knew the book but couldn't find it fast.
+      const wasConfident = isConfident(confidentBuffers[targetBook.id]);
+      const nextBuffer = recordConfidentAttempt(confidentBuffers[targetBook.id], isWithinTime);
+      const isNowConfident = isConfident(nextBuffer);
+      if (updateConfidentBuffer) {
+        updateConfidentBuffer(targetBook.id, isWithinTime);
+      }
+
       // Score only counts if within time limit
       setScore(prev => ({
         correct: isWithinTime ? prev.correct + 1 : prev.correct,
@@ -446,33 +461,32 @@ export default function QuizGrid({
           schedule(() => setShowNewBest(false), 1500);
         }
 
-        // Milestone check — did this book newly cross the mastered threshold?
-        const wasAlreadyMastered = isMastered(fsrsCards[targetBook.id]);
-        const isNowMastered = isMastered(serializeCard(result.card));
-        if (!wasAlreadyMastered && isNowMastered) {
-          // Only record as a session-mastered book when it actually crossed
-          // the mastery threshold this turn — not on every correct answer.
-          // This keeps quizHistory.masteredBookIds honest.
+        // Milestone check — did this book newly cross into Confident?
+        // v4: the trigger is the confident gold-line signal, not the
+        // FSRS-based isMastered() condition. Confident is achievable
+        // within a single session, so milestones now fire during the
+        // race-to-66 marathon rather than weeks later.
+        if (!wasConfident && isNowConfident) {
           setSessionMasteredBooks(prev => new Set(prev).add(book.id));
-          const newCount = stats.mastered + 1;
-          const updatedFsrsCards = { ...fsrsCards, [targetBook.id]: serializeCard(result.card) };
+          const updatedBuffers = { ...confidentBuffers, [targetBook.id]: nextBuffer };
+          const newCount = getConfidentCount(updatedBuffers, bibleBooks);
           const otBookIds = bibleBooks.filter(b => b.testament === 'OT').map(b => b.id);
           const ntBookIds = bibleBooks.filter(b => b.testament === 'NT').map(b => b.id);
-          const allOTMastered = otBookIds.every(id => isMastered(updatedFsrsCards[id]));
-          const allNTMastered = ntBookIds.every(id => isMastered(updatedFsrsCards[id]));
-          const all66Mastered = newCount === 66;
+          const allOTConfident = otBookIds.every(id => isConfident(updatedBuffers[id]));
+          const allNTConfident = ntBookIds.every(id => isConfident(updatedBuffers[id]));
+          const all66Confident = newCount === 66;
 
           // Priority: 66 > OT/NT scripture milestones > count milestones.
-          // OT/NT milestones only trigger when the just-mastered book is of
-          // that testament AND was the last one needed — otherwise mastering
+          // OT/NT milestones only trigger when the just-confident book is
+          // of that testament AND was the last one needed — otherwise
           // any OT book after NT was complete would fire the NT milestone
           // again every time (and vice versa).
           let msg = null;
-          if (all66Mastered) {
+          if (all66Confident) {
             msg = t.milestone66;
-          } else if (targetBook.testament === 'OT' && allOTMastered) {
+          } else if (targetBook.testament === 'OT' && allOTConfident) {
             msg = t.milestone39;
-          } else if (targetBook.testament === 'NT' && allNTMastered) {
+          } else if (targetBook.testament === 'NT' && allNTConfident) {
             msg = t.milestoneNT;
           } else {
             const countMilestones = { 10: t.milestone10, 20: t.milestone20, 33: t.milestone33, 50: t.milestone50 };
@@ -481,9 +495,10 @@ export default function QuizGrid({
 
           if (msg) {
             // Show the milestone banner in the existing topbar overlay
-            // slot (same area where hints appear). Auto-dismisses after
-            // 2.5s — long enough to register emotionally, short enough
-            // that it doesn't block the next prompt.
+            // slot. Auto-dismisses after 2.5s — long enough to register
+            // emotionally, short enough that it doesn't block the next
+            // prompt. (A dedicated all-66 celebration screen is on the
+            // Commit 3 polish list.)
             setMilestone(msg);
             schedule(() => setMilestone(null), 2500);
           }
@@ -533,6 +548,13 @@ export default function QuizGrid({
     updateFsrsCard(targetBook.id, serializeCard(result.card));
     logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), Rating.Again);
 
+    // Confident buffer: wrong answer pushes a `false`. If this book was
+    // previously gold-lined (buffer full of trues), the gold line goes
+    // away on the next render — same shape as forgetting any book.
+    if (updateConfidentBuffer) {
+      updateConfidentBuffer(targetBook.id, false);
+    }
+
     // Wait for user to click the correct (blue) book to advance
   };
 
@@ -579,7 +601,10 @@ export default function QuizGrid({
 
   const renderBookCell = (book) => {
     const cardData = fsrsCards[book.id];
-    const bookIsMastered = isMastered(cardData);
+    // v4: gold line driven by the confident buffer (last 3 correct-fast),
+    // not by FSRS-stability. This makes the gold line achievable in a
+    // single session and decouples the visual reward from the calendar.
+    const bookIsConfident = isConfident(confidentBuffers[book.id]);
     const isTarget = book.id === targetBook?.id;
     const showCorrect = (feedback === 'correct' || feedback === 'slow') && isTarget;
     const isCorrectReveal = book.id === correctBookId;
@@ -598,7 +623,7 @@ export default function QuizGrid({
     else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
     else if (showWrong) bgColor = '#f97316';
 
-    const showMasteryLine = config.display.highlightFound && bookIsMastered;
+    const showMasteryLine = config.display.highlightFound && bookIsConfident;
 
     return (
       <button
