@@ -271,6 +271,40 @@ export function migrateConfidentBuffers(fsrsCards, allBooks, existingBuffers = {
   return out;
 }
 
+// Books that aren't currently confident, ordered by closeness to gold.
+// Used by the home-screen launcher when no FSRS-due books exist (so the
+// user can always train toward all-66-gold instead of being told to
+// stop), and by pickNextBook as a fallback (same idea, mid-session).
+//
+// Ordering rationale: a buffer with 2 trues is one good hit away from
+// gold — most rewarding. 1 true is two good hits away. Unseen books
+// have no buffer yet — same "3 good hits needed" distance as 0 trues,
+// but unseen feels like progress (you're seeing it for the first time)
+// while 0 trues is regression (you HAD it, you lost it). So unseen is
+// ranked above lost-confidence. Within each band, FSRS-stability
+// ascending — less stable books benefit more from a rep.
+export function getNonConfidentBooks(confidentBuffers, fsrsCards, allBooks) {
+  return allBooks
+    .filter(b => !isConfident(confidentBuffers?.[b.id]))
+    .map(b => {
+      const buf = confidentBuffers?.[b.id];
+      const trueCount = Array.isArray(buf) ? buf.filter(x => x === true).length : 0;
+      const hasSeen = Array.isArray(buf) && buf.length > 0;
+      let priority;
+      if (trueCount === 2) priority = 3;
+      else if (trueCount === 1) priority = 2;
+      else if (!hasSeen) priority = 1;
+      else priority = 0; // lost confidence
+      const stability = fsrsCards?.[b.id]?.stability || 0;
+      return { book: b, priority, stability };
+    })
+    .sort((a, b) => {
+      if (a.priority !== b.priority) return b.priority - a.priority;
+      return a.stability - b.stability;
+    })
+    .map(x => x.book);
+}
+
 // Get stats summary for display
 export function getBookStats(fsrsCards, allBooks) {
   let mastered = 0;

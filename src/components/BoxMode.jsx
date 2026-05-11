@@ -50,7 +50,7 @@ function parseTimePressure(value) {
   return { mode: m[1], ms: Number(m[2]) * 1000 };
 }
 
-export default function BoxMode({ ownerUserId, onBack }) {
+export default function BoxMode({ ownerUserId, onBack, initialPausedSession = null, onPause }) {
   const { config, t, lang } = useAppConfig();
   const { otColumns, ntColumns, displayMode, testamentsLayout, gridRef } = useGridLayout();
   const schedule = useTimeoutManager();
@@ -233,6 +233,24 @@ export default function BoxMode({ ownerUserId, onBack }) {
   // The session data passed to recordCompletion — kept for the end-screen render
   const [finishedSessionData, setFinishedSessionData] = useState(null);
 
+  // ─── v4 resume on mount ────────────────────────────────────────────
+  // If the user tapped "Resume" on the home screen, initialPausedSession
+  // holds the snapshot we wrote on the previous Back. Skip the scope
+  // picker and jump straight back into playing with the saved game
+  // state. Per-question timer (timerStart) is NOT restored — it
+  // re-anchors on the next currentBookId pick effect.
+  useEffect(() => {
+    if (!initialPausedSession) return;
+    const s = initialPausedSession;
+    if (s.scope) setScope(s.scope);
+    if (s.state) {
+      setState(s.state);
+      stateRef.current = s.state;
+    }
+    setPhase('playing');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Selection screen actions ──────────────────────────────────────
 
   const startSession = useCallback(() => {
@@ -356,7 +374,10 @@ export default function BoxMode({ ownerUserId, onBack }) {
     const result = recordCompletion(ownerUserId, endedState.scope, sessionData);
     setCompletionResult(result);
     setPhase('complete');
-  }, [ownerUserId]);
+    // Box session completed naturally — clear any paused checkpoint so
+    // the user doesn't see a stale Resume CTA after the finish screen.
+    if (onPause) onPause(null);
+  }, [ownerUserId, onPause]);
 
   const handleHint = useCallback(() => {
     const s = stateRef.current;
@@ -370,17 +391,29 @@ export default function BoxMode({ ownerUserId, onBack }) {
 
   const handleBack = useCallback(() => {
     if (phase === 'playing') {
-      // Mid-session back: bail — no autosave for partial sessions (Box
-      // Mode is cram, no FSRS impact). Personal bests only count
-      // completed clears. Setting state to null causes pending scheduled
-      // callbacks to no-op via their stateRef guards.
+      // v4: Back during a session is a pause, not a bail. Snapshot the
+      // full game state to onPause; App.jsx persists it onto the user
+      // as `pausedBoxSession`, and the home screen offers a Resume CTA
+      // that re-mounts BoxMode with the snapshot, jumping straight
+      // back into the same in-progress session. Pre-v4 behaviour
+      // (silently reset to the scope picker, losing all session
+      // progress) was a long-standing complaint — same surface fix as
+      // for Quiz Mode.
+      if (onPause && stateRef.current) {
+        onPause({
+          scope,
+          state: stateRef.current,
+          pausedAt: Date.now(),
+        });
+      }
       setPhase('selecting');
       setState(null);
       stateRef.current = null;
+      onBack();
     } else {
       onBack();
     }
-  }, [phase, onBack]);
+  }, [phase, onBack, onPause, scope]);
 
   // Cleanup is handled implicitly by useTimeoutManager on unmount.
 

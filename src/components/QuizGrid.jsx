@@ -6,7 +6,7 @@ import { useTimeoutManager } from '../useTimeoutManager';
 import {
   createScheduler, createBookCard, ratingFromSpeed,
   reviewBook, getDueBooks, serializeCard, deserializeCard,
-  Rating, getBookStats, isConfident, recordConfidentAttempt, getConfidentCount,
+  Rating, getBookStats, isConfident, recordConfidentAttempt, getConfidentCount, getNonConfidentBooks,
 } from '../fsrs';
 import { computeTodayStats } from '../streak';
 import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
@@ -60,12 +60,15 @@ export default function QuizGrid({
   bestStreak, setBestStreak, addQuizSession, addTrainingTime,
   totalQuizMs = 0, quizHistory = [],
   onBack, onPhaseChange,
-  // Optional session-size limit set on the home screen by the user
-  // ("Quick" = 5, "Standard" = 10, "Full" = unlimited / null).
-  // Implemented as a pick-count cap rather than a queue: pickNextBook
-  // runs as normal (most-overdue + unseen mix), but session-complete
-  // fires when the count reaches the limit. See sessionPickCountRef
-  // and the limit check at the top of pickNextBook for details.
+  // v4 pause/resume. When the user taps "← Back" mid-session, we no
+  // longer end the session — we snapshot the full session state into
+  // `onPause(snapshot)` and call onBack. The snapshot is persisted on
+  // the user object (in App.jsx) and surfaces as a "Resume" CTA on the
+  // home screen. When the user taps Resume, App.jsx mounts QuizGrid
+  // with the snapshot as `initialPausedSession` and we restore every
+  // piece of session state from it on first render.
+  initialPausedSession = null,
+  onPause,
   sessionLimit = null,
 }) {
   const { config, t, lang } = useAppConfig();
@@ -131,10 +134,16 @@ export default function QuizGrid({
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
   const fsrsCardsRef = useRef(fsrsCards);
+  // Live mirror of confidentBuffers prop — pickNextBook reads this when
+  // FSRS has nothing due, to fall back to non-confident books. Without
+  // the ref, the closure would capture the mount-time value and never
+  // see books transition to/from confident mid-session.
+  const confidentBuffersRef = useRef(confidentBuffers);
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
+  useEffect(() => { confidentBuffersRef.current = confidentBuffers; }, [confidentBuffers]);
 
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
@@ -302,11 +311,24 @@ export default function QuizGrid({
       selected = unseenBooks[Math.floor(Math.random() * unseenBooks.length)];
       branch = 'unseen';
     } else {
-      // Branch 4 (random-from-66) eliminated. Show the session-complete
-      // screen — the user has run out of due books and any further
-      // training would just drill stable cards (FSRS calibration loss).
-      setSessionComplete(true);
-      return;
+      // v4 fallback: no FSRS-due and no unseen books, but the user may
+      // still have non-confident books to train toward all-66-gold.
+      // Pick from the most-progressable non-confident pool (top 8 by
+      // closeness to gold) so the user keeps making visible progress
+      // instead of being told to stop. Confident books are excluded —
+      // if confidentCount === 66 we'll fall through to session-complete.
+      const nonConfident = getNonConfidentBooks(confidentBuffersRef.current || {}, cards, bibleBooks);
+      if (nonConfident.length > 0) {
+        const pool = nonConfident.slice(0, Math.min(8, nonConfident.length));
+        selected = pool[Math.floor(Math.random() * pool.length)];
+        branch = 'non-confident-fallback';
+      } else {
+        // All 66 confident AND no FSRS work — truly done. The all-66
+        // celebration screen on the home dashboard handles the
+        // long-term "you're done" state; this just ends the session.
+        setSessionComplete(true);
+        return;
+      }
     }
 
     logBookPick(selected, cards[selected.id], branch, dueBooks, unseenBooks, bibleBooks, cards);
@@ -357,8 +379,31 @@ export default function QuizGrid({
     sessionLimitRef.current = sessionLimit;
     sessionPickCountRef.current = 0;
 
-    logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
-    pickNextBook();
+    // v4 resume: if the user tapped "Resume" on the home screen,
+    // initialPausedSession holds the snapshot we wrote on the previous
+    // Back. Restore every piece of state from it instead of picking a
+    // fresh book. Sets are stored as arrays in the snapshot; revive
+    // them as Sets here. Per-question timer (startTime) is re-anchored
+    // to "now" — the user shouldn't be penalised for paused-time.
+    if (initialPausedSession) {
+      const s = initialPausedSession;
+      if (s.targetBook) setTargetBook(s.targetBook);
+      if (typeof s.streak === 'number') setStreak(s.streak);
+      if (s.score) setScore(s.score);
+      if (Array.isArray(s.responseTimes)) setResponseTimes(s.responseTimes);
+      if (Array.isArray(s.sessionMasteredBooks)) setSessionMasteredBooks(new Set(s.sessionMasteredBooks));
+      if (Array.isArray(s.sessionHintedBooks)) setSessionHintedBooks(new Set(s.sessionHintedBooks));
+      if (Array.isArray(s.sessionWrongBooks)) setSessionWrongBooks(new Set(s.sessionWrongBooks));
+      if (Array.isArray(s.sessionSeenBooks)) setSessionSeenBooks(new Set(s.sessionSeenBooks));
+      if (typeof s.sessionNewBests === 'number') setSessionNewBests(s.sessionNewBests);
+      if (typeof s.sessionMs === 'number') setSessionMs(s.sessionMs);
+      if (typeof s.sessionPickCount === 'number') sessionPickCountRef.current = s.sessionPickCount;
+      setStartTime(Date.now());
+      logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
+    } else {
+      logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
+      pickNextBook();
+    }
     window.scrollTo(0, 0);
     // First pick only — pickNextBook is called manually after each
     // answer, so we don't want a re-run when its identity changes.
@@ -368,24 +413,52 @@ export default function QuizGrid({
   const finishSession = useCallback(() => {
     logSessionEnd(fsrsCardsRef.current || {}, bibleBooks);
     saveCurrentSegment();
+    // Session completed naturally — clear any paused checkpoint so the
+    // user doesn't see a stale Resume CTA referring to the just-ended
+    // run. App.jsx writes null → pausedQuizSession on user.
+    if (onPause) onPause(null);
     onBack();
-  }, [saveCurrentSegment, onBack]);
+  }, [saveCurrentSegment, onBack, onPause]);
 
-  // Back during an active session goes straight to the home screen.
-  // The autosave-on-unmount effect (see useEffect at the top of the
-  // component) writes the partial session to quizHistory automatically
-  // when QuizGrid is removed from the tree, so streak and today-stats
-  // stay correct without an interstitial "Stats so far / Done" prompt.
+  // v4: Back is a pause, not a session-end. Snapshot the full session
+  // state to onPause(snapshot); App.jsx persists it onto the user as
+  // `pausedQuizSession`. The home screen then offers a Resume CTA that
+  // mounts QuizGrid again with the snapshot as `initialPausedSession`,
+  // restoring every piece of state including the exact target book.
+  // Sets are serialised as arrays for JSON safety. Per-question timer
+  // (startTime) is NOT included — it gets re-anchored to "now" on
+  // resume so the user isn't penalised for paused-time.
   //
-  // Earlier versions showed a summary screen on Back with Keep going /
-  // Done buttons. Removed because (a) Done's saveCurrentSegment call
-  // duplicated what autosave-on-unmount already does, (b) Keep going
-  // just dismissed the prompt, and (c) the screen forced the user to
-  // make a decision they hadn't asked for. A session is what the user
-  // accomplished in one sitting; Back ends it cleanly.
+  // If sessionComplete is already true, we're past the natural end —
+  // don't pause, just call onBack (the End session button takes this
+  // path too).
   const handleBack = useCallback(() => {
+    if (sessionComplete) {
+      onBack();
+      return;
+    }
+    if (onPause && targetBook) {
+      const snapshot = {
+        targetBook,
+        streak,
+        score,
+        responseTimes,
+        sessionMasteredBooks: Array.from(sessionMasteredBooks),
+        sessionHintedBooks: Array.from(sessionHintedBooks),
+        sessionWrongBooks: Array.from(sessionWrongBooks),
+        sessionSeenBooks: Array.from(sessionSeenBooks),
+        sessionNewBests,
+        sessionMs,
+        sessionPickCount: sessionPickCountRef.current,
+        sessionLimit,
+        pausedAt: Date.now(),
+      };
+      onPause(snapshot);
+    }
     onBack();
-  }, [onBack]);
+  }, [onBack, onPause, sessionComplete, targetBook, streak, score, responseTimes,
+      sessionMasteredBooks, sessionHintedBooks, sessionWrongBooks, sessionSeenBooks,
+      sessionNewBests, sessionMs, sessionLimit]);
 
   // End-session button on the session-complete screen — saves and
   // returns to menu, same as finishSession.

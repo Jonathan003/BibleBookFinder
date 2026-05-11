@@ -283,6 +283,15 @@ export const translations = {
     celebrationTimeLabel: 'Totale tijd:',
     celebration66Reset: 'Start een nieuwe ronde',
     celebration66ResetConfirm: 'Tik nogmaals om voortgang te wissen',
+    // ─── Pause / resume + dashboard remaining-to-gold (v4 commit 4) ───
+    // Resume CTA on the home screen when a paused session exists. The
+    // user tapped "← Back" mid-session; we kept the snapshot. Discard
+    // wipes it without starting a new run. "Naar goud" = the dashboard
+    // counter showing how many books still need a gold line.
+    resumeSession: 'Sessie hervatten',
+    resumeSessionDesc: 'Ga verder waar je gebleven was',
+    discardPausedSession: 'Onderbroken sessie weggooien',
+    toGold: 'naar goud',
     // Restore confirmation dialog
     restoreTitle: 'Back-up herstellen',
     restoreWarning: 'Dit vervangt je huidige voortgang. Deze actie kan niet ongedaan gemaakt worden.',
@@ -311,14 +320,13 @@ export const translations = {
     tierAnchored: 'Verankerd',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Voortgang per niveau',
-    // Menu — "all caught up" celebration shown when there's nothing
-    // due right now. Replaces the Quiz Mode primary button so the
-    // user isn't tempted to over-rehearse stable cards (which FSRS
-    // research shows hurts retention vs. waiting).
-    allCaughtUpTitle: '✓ Klaar voor nu',
-    allCaughtUpBody: 'Geen boeken klaar om te oefenen. Kom terug wanneer je tijd hebt — er is geen schema.',
-    nothingScheduled: 'Niks ingepland',
-    extraPracticeHint: 'Toch oefenen? Studie Modus telt niet mee voor je schema.',
+    // v4 commit 4: the "all caught up — no schedule" rest message was
+    // removed from the home screen because it (a) contradicted the
+    // user's expressed goal of training continuously toward all-66
+    // gold, and (b) ironically *was* a schedule shape (telling them
+    // to stop). Replaced by an always-visible "X confident · Y to
+    // gold" dashboard. Keys allCaughtUpTitle / allCaughtUpBody /
+    // nothingScheduled / extraPracticeHint are intentionally absent.
     // Streak — consecutive days with at least one quiz session.
     // "Streak" is also used for in-quiz consecutive-correct count;
     // dayStreak / dayStreakSingle distinguish them in display.
@@ -558,6 +566,11 @@ export const translations = {
     celebrationTimeLabel: 'Total time:',
     celebration66Reset: 'Start a new run',
     celebration66ResetConfirm: 'Tap again to wipe progress',
+    // See NL section for design rationale (v4 commit 4).
+    resumeSession: 'Resume session',
+    resumeSessionDesc: 'Pick up where you left off',
+    discardPausedSession: 'Discard paused session',
+    toGold: 'to gold',
     // Restore confirmation dialog
     restoreTitle: 'Restore backup',
     restoreWarning: 'This will replace your current progress. This action cannot be undone.',
@@ -580,11 +593,8 @@ export const translations = {
     tierAnchored: 'Anchored',
     tierPermanent: 'Permanent',
     tierLegendTitle: 'Progress by tier',
-    // Menu — "all caught up" celebration
-    allCaughtUpTitle: '✓ Done for now',
-    allCaughtUpBody: 'No books ready to practice. Come back when you have time — there is no schedule.',
-    nothingScheduled: 'Nothing scheduled',
-    extraPracticeHint: 'Want extra practice? Study Mode does not affect your schedule.',
+    // See NL section for v4 commit 4 rationale on the removed
+    // allCaughtUp* / nothingScheduled / extraPracticeHint keys.
     dayStreak: 'day streak',
     dayStreakSingle: 'day',
     streakBest: 'Best',

@@ -237,6 +237,29 @@ function App() {
     }));
   }, [updateUserData]);
 
+  // ─── Paused-session helpers (v4) ─────────────────────────────────
+  // Quiz Mode and Box Mode now treat "← Back" mid-session as a pause,
+  // not a session-end. The full session state gets snapshotted into
+  // currentUser.pausedQuizSession / .pausedBoxSession. The home screen
+  // surfaces a Resume CTA when one exists. On Resume, App mounts the
+  // mode component with `initialPausedSession={snapshot}` so it can
+  // rehydrate every piece of state.
+  //
+  // A snapshot of `null` is the explicit "clear" signal — used by both
+  // modes when a session ends naturally (session-complete in Quiz, all
+  // boxes cleared in Box) and by App when the user starts a fresh
+  // session via a launcher (discarding the paused one).
+  const handleQuizPause = useCallback((snapshot) => {
+    updateUserData({ pausedQuizSession: snapshot });
+  }, [updateUserData]);
+
+  const handleBoxPause = useCallback((snapshot) => {
+    updateUserData({ pausedBoxSession: snapshot });
+  }, [updateUserData]);
+
+  const pausedQuizSession = currentUser?.pausedQuizSession || null;
+  const pausedBoxSession = currentUser?.pausedBoxSession || null;
+
   const updateBestStreak = useCallback((streak) => {
     updateUserData(prev => {
       const currentBest = prev.bestStreak || 0;
@@ -360,6 +383,7 @@ function App() {
       quizHistory: [],
       fsrsCards: {},
       confidentBuffers: {},
+      pausedQuizSession: null,
       bestTimes: {},
       masteryMsAtStart: config.quiz.masteryMs,
       totalQuizMs: 0,
@@ -372,7 +396,7 @@ function App() {
   // touched. Confirmation lives in Settings.jsx.
   const doResetBoxProgress = () => {
     if (!currentUser) return;
-    updateUserData({ boxModeBests: {} });
+    updateUserData({ boxModeBests: {}, pausedBoxSession: null });
   };
 
   // Add to the user's cumulative training-time counter. Called per
@@ -699,12 +723,24 @@ function App() {
                   </div>
                 </div>
               ) : (
-                // Flat "done for now" message — no countdown, no schedule
-                // pressure. Practice happens when the user has time, not on
-                // a calendar the algorithm projects for them.
-                <div className="all-caught-up">
-                  <div className="all-caught-up-title">{t.allCaughtUpTitle}</div>
-                  <p className="all-caught-up-body">{t.allCaughtUpBody}</p>
+                // v4: when FSRS has nothing due but the gold-line goal
+                // isn't met, show the headline number ("X confident")
+                // alongside a remaining-to-gold counter. The previous
+                // "Done for now" rest message was schedule-shaped (it
+                // told the user to stop), which contradicts the v4
+                // "train when you have time" model and was generating
+                // confusion when launchers showed "Full · 0 books"
+                // underneath. Now the dashboard makes the user's goal
+                // visible at all times.
+                <div className="stats">
+                  <div className="stat-card">
+                    <span className="stat-number">{confidentCount}</span>
+                    <span className="stat-label">{t.confident} {t.of} 66</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-number">{66 - confidentCount}</span>
+                    <span className="stat-label">{t.toGold || 'to gold'}</span>
+                  </div>
                 </div>
               )}
 
@@ -881,32 +917,81 @@ function App() {
                   height on mobile and collapses on wider screens. */}
               <div className="home-launcher-area">
                 {selectedMode === 'boxMode' ? (
-                  <button
-                    className="btn home-start-btn"
-                    onClick={() => goToMode('boxMode')}
-                  >
-                    {`${t.homeStartBoxMode} →`}
-                  </button>
+                  pausedBoxSession ? (
+                    <>
+                      <button
+                        className="btn home-launcher-btn home-launcher-primary"
+                        onClick={() => goToMode('boxMode')}
+                      >
+                        <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
+                        <span className="launcher-count">
+                          {t.resumeSessionDesc || 'Pick up where you left off'}
+                        </span>
+                      </button>
+                      <button
+                        className="btn home-launcher-btn home-launcher-discard"
+                        onClick={() => handleBoxPause(null)}
+                      >
+                        <span className="launcher-label">{t.discardPausedSession || 'Discard paused session'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn home-start-btn"
+                      onClick={() => goToMode('boxMode')}
+                    >
+                      {`${t.homeStartBoxMode} →`}
+                    </button>
+                  )
                 ) : (
                   <div className="home-quiz-launchers">
-                    {(() => {
-                      const total = stats.dueNow;
+                    {pausedQuizSession ? (
+                      // ─── Resume CTA (v4) ──────────────────────────
+                      // When a paused session exists, the launchers are
+                      // replaced by a Resume button + a discard link.
+                      // The user's last in-session state (target book,
+                      // streak, score) restores on tap. Discard wipes
+                      // the snapshot without starting a new session.
+                      <>
+                        <button
+                          className="btn home-launcher-btn home-launcher-primary"
+                          onClick={() => {
+                            setQuizSessionLimit(pausedQuizSession.sessionLimit ?? null);
+                            setQuizPhase('playing');
+                            goToMode('quiz');
+                          }}
+                        >
+                          <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
+                          <span className="launcher-count">
+                            {t.resumeSessionDesc || 'Pick up where you left off'}
+                          </span>
+                        </button>
+                        <button
+                          className="btn home-launcher-btn home-launcher-discard"
+                          onClick={() => handleQuizPause(null)}
+                        >
+                          <span className="launcher-label">{t.discardPausedSession || 'Discard paused session'}</span>
+                        </button>
+                      </>
+                    ) : (() => {
+                      // v4 training-pool: when FSRS has nothing due,
+                      // fall back to the non-confident count so the user
+                      // can always push toward all-66-gold. "Full · 0"
+                      // can no longer appear when confident < 66.
+                      const nonConfidentCount = 66 - confidentCount;
+                      const trainingPool = stats.dueNow > 0 ? stats.dueNow : nonConfidentCount;
                       const launchers = [];
-                      if (total > 5) {
+                      if (trainingPool > 5) {
                         launchers.push({ key: 'quick', label: t.sessionSizeQuick, limit: 5, count: 5 });
                       }
-                      if (total > 10) {
+                      if (trainingPool > 10) {
                         launchers.push({ key: 'standard', label: t.sessionSizeStandard, limit: 10, count: 10 });
                       }
-                      launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: total });
+                      launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: trainingPool });
                       return launchers.map(opt => {
                         const booksLabel = opt.count === 1
                           ? t.sessionSizeBookSingle
                           : t.sessionSizeBooks;
-                        // Standard-size button gets the primary highlight when
-                        // present (it's the recommended middle ground). Otherwise
-                        // Full takes primary. Quick (when shown alongside others)
-                        // is always secondary.
                         const isPrimary = (opt.key === 'standard')
                           || (opt.key === 'full' && launchers.length < 2);
                         return (
@@ -936,6 +1021,8 @@ function App() {
           {view === 'boxMode' && (
             <BoxMode
               ownerUserId={currentUser.id}
+              initialPausedSession={pausedBoxSession}
+              onPause={handleBoxPause}
               onBack={() => setView('menu')}
             />
           )}
@@ -957,6 +1044,8 @@ function App() {
                 totalQuizMs={currentUser.totalQuizMs || 0}
                 quizHistory={currentUser.quizHistory || []}
                 sessionLimit={quizSessionLimit}
+                initialPausedSession={pausedQuizSession}
+                onPause={handleQuizPause}
                 onBack={() => {
                   setQuizPhase(null);
                   setQuizSessionLimit(null);

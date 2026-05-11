@@ -69,6 +69,13 @@ export function createUser(name, initialSettings) {
     // attempt was correct AND within masteryMs. Gold appears when all 3
     // most-recent entries are true. See src/fsrs.js for the helpers.
     confidentBuffers: {},
+    // v4 commit 4: paused-session snapshots. When the user taps Back
+    // mid-session, the full in-session state is written here (target
+    // book, streak, score, etc.) so the home screen can offer a Resume
+    // CTA that restores everything exactly. `null` means no paused
+    // session for that mode.
+    pausedQuizSession: null,
+    pausedBoxSession: null,
     bestTimes: {},
     // Cumulative active-quiz time in ms. Grows with each answered question
     // (capped at 30s per question, Anki-style). Reset by Reset Progress.

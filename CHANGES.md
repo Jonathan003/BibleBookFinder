@@ -1,4 +1,168 @@
-# v4 commit 3 — Dark mode, all-66 celebration, gold-line sweep, README
+# v4 commit 4 — Pause/resume, training-pool fallback, removed "no schedule"
+
+Three user-visible fixes that addressed concrete complaints surfaced
+during smoke-testing:
+
+1. **"Full · 0 books" on the home screen** when FSRS thinks nothing is
+   due but the user still has books without gold lines. The launchers
+   were FSRS-gated even though the v4 gold-line signal had been
+   decoupled from FSRS — internal inconsistency.
+
+2. **Back button silently ended the session**, losing in-quiz streak
+   and progress. Doubly painful in Box Mode where it reset the whole
+   in-progress cram session back to the scope picker.
+
+3. **"There is no schedule" rest message** appeared on the home screen
+   when due-count was 0 — telling the user to stop, which IS a schedule
+   shape. Contradicted the user's expressed goal of continuous training
+   toward all-66 gold.
+
+## Training-pool fallback
+
+`getNonConfidentBooks(confidentBuffers, fsrsCards, allBooks)` added to
+`src/fsrs.js`. Returns non-confident books ordered by closeness to gold:
+
+- buffer with 2 trues (one good hit from gold) — priority 3
+- buffer with 1 true                          — priority 2
+- unseen (never answered)                     — priority 1
+- buffer with 0 trues (lost confidence)       — priority 0
+
+Within each band, FSRS-stability ascending — less stable books benefit
+more from a rep. The "unseen above 0-trues" ordering is deliberate:
+unseen feels like new ground, 0-trues feels like regression, so we
+spare the user the latter when possible.
+
+### Where it's used
+
+**Home-screen launcher counts** (`App.jsx`): when `stats.dueNow === 0`,
+the launcher pool size becomes `66 - confidentCount`. Quick stays
+capped at 5, Standard at 10, Full uses the full pool. The
+**"Full · 0 books"** state can no longer appear when `confident < 66`.
+When `confident === 66`, the celebration screen takes over the
+dashboard panel and the launchers don't render at all.
+
+**`pickNextBook` mid-session fallback** (`QuizGrid.jsx`): after the
+existing due-pool and unseen branches, when both are empty the
+previous code triggered session-complete. Now it picks from the top-8
+non-confident books (random within the pool, same shape as the existing
+due-pool branch — preserves variety, prefers progressability).
+`confidentBuffersRef` was added so the closure sees the live buffers
+across many answers in a row, not the mount-time value.
+
+## Pause / resume
+
+### Snapshot shape
+
+**Quiz** (`pausedQuizSession` on user):
+- `targetBook` — the book that was waiting
+- `streak`, `score`, `responseTimes`
+- `sessionMasteredBooks`, `sessionHintedBooks`, `sessionWrongBooks`,
+  `sessionSeenBooks` — all serialised as arrays (revived as `Set` on
+  resume)
+- `sessionNewBests`, `sessionMs`, `sessionPickCount`
+- `sessionLimit` — so the same Quick/Standard/Full cap continues
+- `pausedAt` — timestamp, for diagnostics
+
+**Box** (`pausedBoxSession` on user):
+- `scope` — the group selection
+- `state` — the full Box Mode game state (bookBoxes, currentBookId,
+  mistakes, longestStreak, hintUsedOnCurrent, internal timers). Already
+  plain-object-shaped from `createInitialState` + `applyAnswer`, so
+  JSON-safe without extra work.
+- `pausedAt`
+
+### Lifecycle
+
+- **Back mid-session** → `onPause(snapshot)` → `App.jsx`
+  `handleQuizPause` / `handleBoxPause` writes to user object → home
+  screen sees `pausedQuizSession` / `pausedBoxSession` non-null.
+- **Resume CTA on home** → mode launcher region replaced by
+  "▶ Resume session" primary button + "Discard paused session"
+  secondary. Tap Resume → App mounts the mode component with
+  `initialPausedSession={snapshot}` → mode component's mount effect
+  restores every piece of state. Per-question timer (`startTime`)
+  re-anchors to "now" so paused-time isn't counted against the speed
+  threshold.
+- **Discard paused** → `onPause(null)` clears the snapshot without
+  starting a session.
+- **Natural session end** (Quiz session-complete → End session, or Box
+  all-boxes-cleared → recordCompletion) calls `onPause(null)` from
+  within the mode component, so the user doesn't see a stale Resume
+  CTA pointing at the run that just ended.
+- **Reset Quiz progress** / **Reset Box progress** in Settings → Data
+  also clear the corresponding `pausedXSession` field.
+
+### Resume vs fresh launch
+
+When `pausedQuizSession` exists, the Quick/Standard/Full launchers are
+**replaced** (not augmented) by Resume + Discard. This is intentional:
+tapping a launcher in the pre-v4-commit-4 model would have created
+ambiguity ("does it discard the paused one or run alongside?"). With
+the launchers hidden behind a Discard tap, the user's intent is
+unambiguous — Resume means resume, Discard means start over.
+
+## "No schedule" removed
+
+The `all-caught-up` rest message branch on the home screen Quiz
+dashboard is gone, along with the translation keys `allCaughtUpTitle`,
+`allCaughtUpBody`, `nothingScheduled`, `extraPracticeHint` in both NL
+and EN. Their old text — "Come back when you have time — there is no
+schedule" — was schedule-shaped despite the disclaimer ("there is no
+schedule" is itself a statement about a schedule).
+
+The branch is replaced by a stat-card pair: "X confident of 66" +
+"Y to gold" (Y = 66 - confidentCount). The headline number now
+matches the user's actual long-term goal and is visible whether due
+is 0 or non-zero.
+
+New translation keys added in both NL and EN:
+- `resumeSession` ("Sessie hervatten" / "Resume session")
+- `resumeSessionDesc` ("Ga verder waar je gebleven was" / "Pick up
+  where you left off")
+- `discardPausedSession` ("Onderbroken sessie weggooien" / "Discard
+  paused session")
+- `toGold` ("naar goud" / "to gold")
+
+## What didn't change
+
+- FSRS scheduler itself untouched. Books still progress through
+  Familiar → Rooted → Anchored → Permanent based on stability. The
+  scheduler just isn't the gate on whether the user is allowed to
+  train. Every answer (paused-then-resumed or fresh) still commits to
+  FSRS the same way.
+- Box Mode UX deferred to Commit 5: short-press / long-press multi-
+  group selection, removal of the grey-out on non-selected books.
+  Those are independent of session lifecycle and easier to roll back
+  separately if needed.
+- README and FAQ entries not updated yet. They still refer to the
+  pre-commit-4 launcher model. Will sweep these in Commit 5 alongside
+  the Box Mode UI changes.
+
+## Smoke test (run in this order)
+
+1. **Pause / resume Quiz**: start a Quick session, answer 2-3 books
+   correctly to build a streak, tap "← Back". Home screen shows
+   "▶ Resume session" button. Tap it. You're back on the same target
+   book with the same streak and score.
+2. **Discard paused**: same as above, but tap "Discard paused session"
+   on home. Launchers return. Start fresh.
+3. **Pause / resume Box**: start a Box Mode session in some scope.
+   Answer a few books to populate Box 2/3. Tap Back. Home shows
+   Resume. Tap it. Box state is exactly where you left off.
+4. **Training-pool fallback**: with confidentCount < 66 and all books
+   currently FSRS-future-due, the home screen shows launchers based on
+   `66 - confidentCount` (not zero). Tap any launcher, the mode starts
+   normally and picks non-confident books.
+5. **No "no schedule" message**: with `dueNow === 0` on the home
+   screen, the rest message is gone. You see "X confident · Y to gold"
+   instead.
+
+If anything misbehaves, the rollback path is `git revert <commit-4-hash>`
+— independent of Commits 1-3 and doesn't depend on Commit 5 existing.
+
+---
+
+
 
 Visual + structural polish for the v4 pivot. Three user-visible
 improvements plus README cleanup.
