@@ -1,3 +1,160 @@
+# v4 commit 4.11 — Single "Start Quiz Mode" button (drop Quick/Standard/Full)
+
+Jonathan flagged that the three-tier Quick / Standard / Full
+launcher chips were:
+- Visual clutter (three stacked options where one would do)
+- Specifically broken on mobile (412px portrait): the 66-books
+  Full chip got pushed below the fold and required scrolling
+- Inconsistent with the Box Mode pattern, which is one button
+
+His reasoning, which is correct: the user can stop a Quiz session
+at any time via the back arrow — the pre-committed session size of
+5 / 10 / unbounded was never actually enforced. It was purely
+informational, and on reflection, not informational enough to earn
+its vertical real estate.
+
+**Change:** replaced the entire `.home-quiz-launchers` block (paused
++ non-paused branches) with a structure that mirrors the Box Mode
+pattern exactly:
+
+```
+selectedMode === 'boxMode' ? (
+  pausedBoxSession ? <Resume+Discard> : <Start Box Mode button>
+) : (
+  pausedQuizSession ? <Resume+Discard> : <Start Quiz Mode button>
+)
+```
+
+The new Start Quiz Mode button uses `setQuizSessionLimit(null)` —
+identical to the old "Full" option's behavior. Session is
+unbounded; user stops by tapping the back arrow when done.
+
+The paused-Quiz Resume/Discard buttons keep their previous shape
+and onClick handlers; only the wrapping `.home-quiz-launchers` div
+is removed, so they now sit as direct children of
+`.home-launcher-area` (which already has `width: 100%` from
+Commit 4.9, so they fill the area naturally).
+
+**Files touched:** `src/App.jsx` only (one block replacement).
+
+**Removed in this commit (dead code):**
+- The `trainingPool` / `nonConfidentCount` calculation in the
+  launchers block — only used to gate which chips to render.
+- The launchers `.map` rendering 3 buttons.
+
+**Kept as dormant (no longer referenced anywhere):**
+- Translation keys: `sessionSizeQuick`, `sessionSizeStandard`,
+  `sessionSizeFull`, `sessionSizeBooks`, `sessionSizeBookSingle`.
+  Left in `data.js` because removing them is touchy if any other
+  surface (Settings? Help page?) ends up referencing them
+  elsewhere. They're harmless if unused.
+- CSS class `.home-quiz-launchers` and its associated rules in
+  `App.css`. No element now has this class. Cleanup deferred to a
+  later commit if no regression appears.
+
+**Maintenance-mode fallback (from Commit 4.3) still applies.** When
+the user has all 66 confident AND nothing FSRS-due, the start
+button still works — `pickNextBook`'s maintenance branch picks
+from the lowest-stability books to keep the user busy. The
+trainingPool=0 → 66 fallback isn't needed here because there are
+no longer any chips to gate.
+
+## Smoke test
+
+1. **Desktop, Quiz Mode + no paused session:** single "Start Quiz
+   Mode →" button (mirrors Start Box Mode shape, same `.home-start-btn`
+   styling). Tap → enters session.
+2. **Desktop, Quiz Mode + paused session:** Resume + Discard
+   buttons, identical to before (just no longer wrapped in
+   `.home-quiz-launchers`).
+3. **Mobile 412px portrait:** no scrolling needed below the mode-
+   cards row to see the action. The single Start button sits
+   directly under the Box/Quiz tab row.
+4. **Reset progress, Quiz Mode + 0 confident + 66 unseen:** the
+   Start button works. No "Full · 0" edge case can appear.
+5. **All-66 confident + nothing FSRS-due:** Start button still
+   works, session enters maintenance mode (pickNextBook lowest-
+   stability branch).
+
+---
+
+# v4 commit 4.10 — Compact celebration card
+
+v4.9 fixed the alignment so the dashboard panel, mode-cards row, and
+launchers all line up edge-to-edge. But the screenshot revealed a
+secondary issue: the Quiz Mode all-66 celebration card was tall
+(~500px) and the grid overlay was matching the Box panel height to
+it. So when Jonathan switched to Box Mode he saw a panel that was
+~80px of content sitting in ~500px of card — visually broken-looking
+even though structurally correct.
+
+Two options were on the table:
+- A. Drop the grid overlay — Box panel takes its natural ~120px
+     height, tabs jump by ~380px when switching to Quiz with the
+     celebration.
+- B. Compact the celebration card so the grid match target shrinks.
+
+Picked B. The celebration's "achievement" feel is carried mostly by
+the orange title text, gradient background, and bouncing trophy
+animation — not the absolute size of any single element. Reducing
+the dimensions while preserving the elements keeps the celebration
+recognizable but stops it from inflating the panel height.
+
+**Changes (all CSS-only, App.css):**
+
+- `.celebration-66` padding `1.4 1.2 1.6` → `1.1 1.2 1.2`, gap
+  `0.9rem` → `0.7rem`.
+- `.celebration-trophy` font-size `3.2rem` → `2.6rem`. Bounce
+  animation preserved.
+- `.celebration-time` padding `0.6 1.4` → `0.5 1.4`, gap `0.2rem`
+  → `0.15rem`, min-width `60%` → `50%`.
+- `.celebration-time-label` font-size `0.75rem` → `0.7rem`.
+- `.celebration-time-value` font-size `1.4rem` → `1.25rem`.
+- `.celebration-actions` — new desktop media query at min-width
+  480px: `flex-direction: row`, `max-width: 480px`. Each child gets
+  `flex: 1; min-width: 0`. Mobile (<480px) keeps the existing
+  stacked column layout because side-by-side at narrow viewports
+  would cramp each button.
+
+**Expected height reduction:**
+- Trophy: ~10px
+- Padding (top+bottom): ~11px
+- Gap × 5: ~16px
+- Stacked buttons → side-by-side: ~60px
+- Time card tightening: ~10px
+
+Total: ~100-110px. Celebration goes from ~500px to ~390-400px.
+After grid-overlay matching, Box panel sits at the new ~390px
+instead of the previous ~500px. Empty space inside Box dashboard
+drops by ~110px.
+
+No JSX or i18n changes — the celebration's content and elements
+are unchanged, only their dimensions.
+
+## Smoke test
+
+1. Desktop, Quiz Mode home with all-66 confident: celebration
+   card visibly more compact. Share + Start a new run buttons
+   side-by-side. Trophy still bouncing, title still orange.
+2. Switch to Box Mode (with or without paused session): empty
+   space below Pentateuch row noticeably smaller.
+3. Mobile ~412px viewport: celebration buttons still STACKED
+   (column) — the side-by-side rule only kicks in ≥480px.
+4. Achievement feel: still feels celebratory, not deflated.
+
+## Decisions deliberately deferred
+
+- Box dashboard's structural empty space (when user has 1-8 of 9
+  scope records done) — not addressed. The complaint earlier was
+  "don't show information just to show information"; placeholder
+  rows for unplayed scopes would violate that. After 4.10 the
+  empty area is acceptable.
+- Box Mode scope picker UX (long-press multi-select, no grey-out
+  of unselected books, selection summary above grid) — queued
+  for Commit 5.
+
+---
+
 # v4 commit 4.9 — Fix: width: 100% missing on flex children
 
 v4.8 introduced the responsive `--content-max-width` token and removed

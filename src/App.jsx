@@ -994,89 +994,57 @@ function App() {
                     </button>
                   )
                 ) : (
-                  <div className="home-quiz-launchers">
-                    {pausedQuizSession ? (
-                      // ─── Resume CTA (v4) ──────────────────────────
-                      // When a paused session exists, the launchers are
-                      // replaced by a Resume button + a discard link.
-                      // The user's last in-session state (target book,
-                      // streak, score) restores on tap. Discard wipes
-                      // the snapshot without starting a new session.
-                      <>
-                        <button
-                          className="btn home-launcher-btn home-launcher-primary"
-                          onClick={() => {
-                            setQuizSessionLimit(pausedQuizSession.sessionLimit ?? null);
-                            setQuizPhase('playing');
-                            goToMode('quiz');
-                          }}
-                        >
-                          <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
-                          <span className="launcher-count">
-                            {t.resumeSessionDesc || 'Pick up where you left off'}
-                          </span>
-                        </button>
-                        <button
-                          className="btn home-launcher-btn home-launcher-discard"
-                          onClick={() => handleQuizPause(null)}
-                        >
-                          <span className="launcher-label">{t.discardPausedSession || 'Discard paused session'}</span>
-                        </button>
-                      </>
-                    ) : (() => {
-                      // v4 training-pool: when FSRS has nothing due,
-                      // fall back to the non-confident count so the user
-                      // can always push toward all-66-gold. "Full · 0"
-                      // can no longer appear when confident < 66.
-                      const nonConfidentCount = 66 - confidentCount;
-                      // v4.3: trainingPool uses Math.max so the larger of
-                      // FSRS-due vs non-confident wins (previously a
-                      // dueNow>0 ternary, which hid non-confident books
-                      // whenever anything was due — even if there were
-                      // many more non-confident than due). The
-                      // maintenance fallback kicks in only when BOTH are
-                      // zero — that's the all-66-confident + nothing
-                      // FSRS-due state. Without this fallback the
-                      // launchers all hide and the user can only "Start
-                      // a new run" (reset). With it, the user can keep
-                      // training the weakest gold-lined books to
-                      // maintain coverage (pickNextBook has a matching
-                      // maintenance branch for the actual book picking).
-                      let trainingPool = Math.max(stats.dueNow, nonConfidentCount);
-                      if (trainingPool === 0) trainingPool = 66;
-                      const launchers = [];
-                      if (trainingPool > 5) {
-                        launchers.push({ key: 'quick', label: t.sessionSizeQuick, limit: 5, count: 5 });
-                      }
-                      if (trainingPool > 10) {
-                        launchers.push({ key: 'standard', label: t.sessionSizeStandard, limit: 10, count: 10 });
-                      }
-                      if (trainingPool > 0) {
-                        launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: trainingPool });
-                      }
-                      return launchers.map(opt => {
-                        const booksLabel = opt.count === 1
-                          ? t.sessionSizeBookSingle
-                          : t.sessionSizeBooks;
-                        const isPrimary = (opt.key === 'standard')
-                          || (opt.key === 'full' && launchers.length < 2);
-                        return (
-                          <button
-                            key={opt.key}
-                            className={`btn home-launcher-btn${isPrimary ? ' home-launcher-primary' : ''}`}
-                            onClick={() => {
-                              setQuizSessionLimit(opt.limit);
-                              setQuizPhase('playing');
-                              goToMode('quiz');
-                            }}
-                          >
-                            <span className="launcher-label">{opt.label}</span>
-                            <span className="launcher-count">{opt.count} {booksLabel}</span>
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
+                  pausedQuizSession ? (
+                    // ─── Resume CTA (v4) ──────────────────────────────
+                    // When a paused Quiz session exists, show Resume +
+                    // Discard exactly like the Box Mode paused pattern.
+                    // Restored from in-session snapshot on tap.
+                    <>
+                      <button
+                        className="btn home-launcher-btn home-launcher-primary"
+                        onClick={() => {
+                          setQuizSessionLimit(pausedQuizSession.sessionLimit ?? null);
+                          setQuizPhase('playing');
+                          goToMode('quiz');
+                        }}
+                      >
+                        <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
+                        <span className="launcher-count">
+                          {t.resumeSessionDesc || 'Pick up where you left off'}
+                        </span>
+                      </button>
+                      <button
+                        className="btn home-launcher-btn home-launcher-discard"
+                        onClick={() => handleQuizPause(null)}
+                      >
+                        <span className="launcher-label">{t.discardPausedSession || 'Discard paused session'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    // ─── v4.11: single Start Quiz Mode button ─────────
+                    // Replaced the previous Quick / Standard / Full
+                    // launcher trio with one button (mirrors the Box
+                    // Mode Start button). Rationale: the three session-
+                    // size options pre-committed the user to a target
+                    // (5 / 10 / unbounded), but the user can stop at
+                    // any time via the back arrow — so the pre-commit
+                    // never enforced anything. Removing it eliminates
+                    // visual clutter (especially on mobile, where the
+                    // 3 stacked chips required scrolling) and matches
+                    // the Box Mode pattern. Session size always
+                    // unbounded (null), which is the same behavior the
+                    // previous "Full" option had.
+                    <button
+                      className="btn home-start-btn"
+                      onClick={() => {
+                        setQuizSessionLimit(null);
+                        setQuizPhase('playing');
+                        goToMode('quiz');
+                      }}
+                    >
+                      {`${t.homeStartQuiz} →`}
+                    </button>
+                  )
                 )}
               </div>
 

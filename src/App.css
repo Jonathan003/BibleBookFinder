@@ -1145,18 +1145,27 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.9rem;
-  padding: 1.4rem 1.2rem 1.6rem;
+  gap: 0.7rem;
+  padding: 1.1rem 1.2rem 1.2rem;
   background: linear-gradient(180deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.04) 60%, transparent 100%);
   border: 1px solid rgba(245,158,11,0.30);
   border-radius: 14px;
   margin-bottom: 1.25rem;
+  /* v4.10: tightened gap (0.9 → 0.7) and padding (1.4/1.6 → 1.1/1.2)
+     so the celebration card height drops from ~500px to ~380px on
+     desktop, bringing it close to the .dashboard-panel min-height of
+     360px. This makes the grid-overlay-matched Box dashboard appear
+     less empty when switched to from the celebrating Quiz panel. */
 }
 
 .celebration-trophy {
-  font-size: 3.2rem;
+  font-size: 2.6rem;
   line-height: 1;
   animation: celebration-bounce 1.6s ease-in-out infinite;
+  /* v4.10: 3.2rem → 2.6rem. Still emphasized and bouncing, but takes
+     less vertical real estate. The achievement feel is carried by the
+     orange title, gradient background, and bouncing animation — not
+     primarily by trophy size. */
 }
 
 @keyframes celebration-bounce {
@@ -1184,26 +1193,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.6rem 1.4rem;
+  gap: 0.15rem;
+  padding: 0.5rem 1.4rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 12px;
-  min-width: 60%;
+  min-width: 50%;
+  /* v4.10: padding/gap tightened slightly, min-width 60% → 50% so
+     the total time card scales down with the celebration card. */
 }
 
 .celebration-time-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .celebration-time-value {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--mastery);
   font-variant-numeric: tabular-nums;
+  /* v4.10: 1.4rem → 1.25rem to match the more compact card. */
 }
 
 .celebration-actions {
@@ -1212,6 +1224,21 @@
   gap: 0.5rem;
   width: 100%;
   max-width: 280px;
+}
+
+/* v4.10: Share + Start-new-run side-by-side on desktop. Mobile keeps
+   the stacked column layout (narrow viewport + side-by-side would make
+   each button cramped). The 480px breakpoint matches our --content-max-
+   width tier boundary so the switch happens as soon as there's room. */
+@media (min-width: 480px) {
+  .celebration-actions {
+    flex-direction: row;
+    max-width: 480px;
+  }
+  .celebration-actions > .btn {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .celebration-share-btn {
