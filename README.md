@@ -7,7 +7,7 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 ## Features
 
 **Modes**
-- **Quiz Mode** — FSRS spaced repetition, timed responses, streaks, personal records, milestones, session summaries
+- **Quiz Mode** — FSRS spaced repetition, timed responses, streaks, personal records, milestones. Launch with a session-size of your choice: **Quick** (5 books, ~1-2 min), **Standard** (10 books, ~3-4 min), or **Full** (all due books). Launchers adapt to how many books are actually due, so you never see redundant options.
 - **Box Mode** — Single-session Leitner-style cram independent of the regular schedule. Each book starts in box 1; correct answers promote, wrong answers demote, session ends when every book reaches box 5. Per-scope personal bests (all 66, individual groups) for time, mistakes, and longest streak. Tap-to-continue on wrong answers (consistent with Quiz Mode). No FSRS impact, no streak impact — a clean cram tool for short focused sessions.
 
 **Progress tracking**
@@ -15,14 +15,14 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 - **7-day forecast** — Bar chart on the home screen showing how many books are due each upcoming day, so you can plan around busy or quiet days
 - **Day streak** — Consecutive-days counter (with grace day for "yesterday" so night owls aren't punished by midnight rollover); your best streak ever is shown alongside
 - **Three-level rest celebration** — When nothing's due now, the message matches reality: "Session complete" if the next book is back within an hour, "Done for today" if later today, "Done — enjoy the rest" if tomorrow or later
-- **Session-complete screen** — When all due books are answered, the quiz pauses on a clear stopping point (rather than refilling with random books). Three explicit choices: end the session, switch to Study Mode, or use Train Ahead — making "stop" the obvious default rather than an act of will
+- **Session-complete screen** — When all books in the chosen session are answered, the quiz pauses on a clear stopping point (rather than refilling with random books). Two explicit choices: end the session, or use Train Ahead for bonus practice — making "stop" the obvious default rather than an act of will
 - **Train Ahead** — Optional bonus practice on books that aren't yet due. Pick a horizon (5 books / 10 books / next 7 days / all remaining); books are presented closest-to-scheduled first. FSRS keeps running normally — early reviews just give slightly smaller per-rep stability gains, which is the algorithm working as intended. Useful before a vacation, on quiet days, or when you simply have extra time
-- **Learning pace** — Relaxed (longer intervals, ~5-10 min/day), Balanced, or Intensive (default; ~20-30 min/day, fastest mastery)
+- **Learning pace** — Flexible (~20% forgetting risk, lightest schedule for irregular practice), Relaxed (~15%), Balanced (default, ~10%), or Intensive (~5%, fastest mastery but daily practice required). Switching is safe: existing FSRS data stays intact, only future repetitions use the new setting
 
 **Your data**
 - **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
 - **Backup & restore** — JSON export/import with free choice of save location (any cloud drive or local folder). Device-specific layout settings (column counts, abbreviation modes, OT/NT layout) stay local on each device, so importing a backup on a different device doesn't disturb that device's screen-tuned settings
-- **Reset progress** — Available in Settings → Data alongside backup/restore (moved from the home menu to keep practice actions front-and-center)
+- **Reset progress** — Per-mode in Settings → Data: Reset Quiz progress wipes FSRS data, mastery, streak, and history; Reset Box progress wipes per-scope personal bests. Independent so you can reset one without losing the other
 - **Bilingual** — Dutch and English, auto-detected from browser language
 
 **Display**
@@ -66,15 +66,16 @@ Hosted on **GitHub Pages** (primary) with auto-deploy via GitHub Actions on ever
 
 ## Training-time tracking
 
-Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("X books mastered in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Progress wipes the counter; backups carry it across devices via `_schemaVersion: 2`.
+Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("X books mastered in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Quiz progress wipes the counter; backups carry it across devices via `_schemaVersion: 3`.
 
 ## Design philosophy: stop when due reaches zero
 
-Spaced repetition works because of the *gap* between reviews, not the volume of reviews. When the algorithm says "no books are due", that gap is exactly the period during which your memory consolidates — re-drilling stable books resets that timer without adding strength. So the app treats reaching `due = 0` as a genuine stopping point, not a transition into a "keep going" filler mode. Three choices are then surfaced explicitly:
+Spaced repetition works because of the *gap* between reviews, not the volume of reviews. When the algorithm says "no books are due", that gap is exactly the period during which your memory consolidates — re-drilling stable books resets that timer without adding strength. So the app treats reaching `due = 0` as a genuine stopping point, not a transition into a "keep going" filler mode. Two choices are then surfaced explicitly:
 
 1. **End the session** — the recommended default. The rest message ("Stoppen versterkt geheugen") makes the case in one line so it doesn't feel like the app is hiding work from you.
-2. **Study Mode** — practice without affecting the FSRS schedule. Useful for meeting prep or just exploring the grid.
-3. **Train Ahead** — optional bonus practice on not-yet-due books, FSRS-ordered closest-due-first. The algorithm continues to work correctly under early reviews; users with extra time (or pre-vacation needs) get a legitimate path forward without the app pretending it's free.
+2. **Train Ahead** — optional bonus practice on not-yet-due books, FSRS-ordered closest-due-first. The algorithm continues to work correctly under early reviews; users with extra time (or pre-vacation needs) get a legitimate path forward without the app pretending it's free.
+
+For users who want shorter committed sessions, the Quick (5) and Standard (10) launchers on the home screen offer a fixed-budget alternative to the open-ended Full session. Same algorithm, same FSRS commits per answer — just a clearer "I'm done" stopping point.
 
 The same principle applies elsewhere: the home-screen "Ready to practice" counter reaches 0 honestly instead of always showing busywork; the celebration tier matches actual rest length; and the schedule is allowed to be empty without that being a failure state.
 

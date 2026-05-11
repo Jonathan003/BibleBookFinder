@@ -98,7 +98,7 @@ const helpContent = {
       // ─── 10. Pause ──────────────────────────────────────────────────
       {
         q: 'Kan ik een quiz pauzeren?',
-        a: 'Ja. Tik op "← Terug" om je sessie-samenvatting te zien. Van daaruit kun je doorgaan, instellingen wijzigen, of de sessie beëindigen. Je score en streak blijven bewaard.',
+        a: 'Eigenlijk niet — maar dat is geen probleem. Tik op "← Terug" en je gaat direct naar het startscherm. Je gedane antwoorden zijn al opgeslagen (FSRS commit per antwoord), dus geen voortgang verloren. Wel wordt je sessie officieel afgesloten zodra je weggaat. Wil je later doorgaan, dan kies je opnieuw Snel/Normaal/Volledig op het startscherm. De boeken die je nog niet had gedaan, staan dan vanzelf weer "Klaar om te oefenen".',
       },
 
       // ─── Voortgang begrijpen — vervolg ──────────────────────────────
@@ -112,7 +112,7 @@ const helpContent = {
       },
       {
         q: 'Hoe wordt mijn trainingstijd bijgehouden?',
-        a: 'Per beantwoorde vraag tellen we hoe lang je erover deed, met een maximum van 30 seconden per vraag. Als je weggaat of in slaap valt, telt enkel die 30 seconden mee — zo wordt je totaal niet kunstmatig opgeblazen. Je totale trainingstijd zie je op het Tussenstand-scherm en in Instellingen → Data. "Voortgang resetten" zet ook de trainingstijd terug op nul.',
+        a: 'Per beantwoorde vraag tellen we hoe lang je erover deed, met een maximum van 30 seconden per vraag. Als je weggaat of in slaap valt, telt enkel die 30 seconden mee — zo wordt je totaal niet kunstmatig opgeblazen. Je totale trainingstijd zie je in Instellingen → Data. "Quiz-voortgang wissen" zet ook de trainingstijd terug op nul.',
       },
 
       // ─── Tijdens een sessie ─────────────────────────────────────────
@@ -279,7 +279,7 @@ const helpContent = {
       // ─── 10. Pause ──────────────────────────────────────────────────
       {
         q: 'Can I pause a quiz session?',
-        a: 'Yes. Tap "← Back" to see your session summary. From there you can resume, change settings, or end the session. Your score and streak are preserved.',
+        a: 'Not really — but that\'s fine. Tap "← Back" and you\'ll go straight to the home screen. Your answered questions are already saved (FSRS commits per answer), so no progress is lost. The session is officially closed when you leave, though. To continue later, pick Quick/Standard/Full again on the home screen — books you hadn\'t done yet show up as "Ready to practice" automatically.',
       },
 
       // ─── Understanding progress — continued ─────────────────────────
@@ -293,7 +293,7 @@ const helpContent = {
       },
       {
         q: 'How is my training time tracked?',
-        a: 'For each answered question we count how long you took, capped at 30 seconds per question. If you walk away or fall asleep, only 30 seconds count for that question — so your total isn\'t artificially inflated. Your total training time appears on the Stats so far screen and in Settings → Data. "Reset progress" also wipes the training-time counter.',
+        a: 'For each answered question we count how long you took, capped at 30 seconds per question. If you walk away or fall asleep, only 30 seconds count for that question — so your total isn\'t artificially inflated. Your total training time appears in Settings → Data. "Reset Quiz progress" also wipes the training-time counter.',
       },
 
       // ─── During a session ───────────────────────────────────────────

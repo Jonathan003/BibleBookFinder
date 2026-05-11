@@ -1,3 +1,22 @@
+# Kleine mobile-layout fixes na v3.3
+
+Twee gerelateerde scroll-issues opgelost op telefoons met gesture-
+navigation (Samsung S22+ en vergelijkbaar):
+
+- **`.app-main`**: `padding-bottom: env(safe-area-inset-bottom)`
+  toegevoegd zodat de laatste rij van het boekenraster (3 Johannes /
+  Judas / Openbaring) niet meer achter de gesture-pill verdwijnt.
+- **`.settings-page`**: `min-height: calc(100vh - 80px)` veranderd
+  naar `100dvh` zodat de versie-info onderaan Instellingen → Data
+  weer bereikbaar is. `100vh` is op mobile statisch en houdt geen
+  rekening met browser-UI beweging; `100dvh` past zich aan.
+
+Beide gebruiken `env()` / `dvh` CSS-functies die op desktop of
+oudere mobiele apparaten gewoon 0 of 100vh teruggeven. Geen impact
+voor wie deze problemen niet had.
+
+---
+
 # v3.3 update — Reset Progress gesplitst per modus
 
 Eén "Voortgang wissen" knop in Instellingen → Data is vervangen door

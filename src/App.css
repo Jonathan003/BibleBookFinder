@@ -770,17 +770,16 @@
   cursor: pointer;
 }
 
-/* ─── Stable mode-cards grid (v2 home screen) ───────────────────── */
-/* Three identical mode buttons. NO color-swap, NO fill swap, NO size
-   variation based on suggestedMode. The "next action" guidance comes
-   from the UpNextPanel's CTA button above. These cards exist for the
-   user to explicitly pick a different mode if they want.
+/* ─── Mode-cards grid (home screen mode picker) ─────────────────── */
+/* Two identical mode buttons (Quiz / Box). No color-swap, no fill swap,
+   no size variation. Each card exists for the user to explicitly pick
+   a mode; the launcher area below the cards drives the actual session
+   start.
 
-   aria-current="true" is the sole marker that one of these is the
-   current suggestion — for screen readers. Sighted users see the
-   suggestion via the panel above (which is visually unambiguous).
-   This satisfies WCAG 1.4.1: information conveyed by color must also
-   be available via another means. */
+   aria-pressed="true" marks the currently selected card for screen
+   readers. Sighted users see the selection via the visual border
+   highlight. This satisfies WCAG 1.4.1: information conveyed by color
+   must also be available via another means. */
 
 .mode-cards {
   display: grid;
