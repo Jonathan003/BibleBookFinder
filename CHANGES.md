@@ -1,4 +1,102 @@
-# v4 commit 4.4 — Desktop sizing + Box panel fills + clearer labels
+# v4 commit 4.5 — Box dashboard stripped to essentials
+
+Tester feedback after 4.4: "it is like to show information just to
+show information... not interesting... useless information." Three
+specific complaints, all valid.
+
+## What was wrong
+
+The 4.1–4.4 evolution tried to mirror Quiz Mode's "stats + bar +
+list" pattern onto Box Mode out of design symmetry. That was the
+wrong instinct: the two modes have fundamentally different
+information shapes.
+
+Quiz Mode is a long-running progression — there's a gold-line goal,
+daily training metrics, tier transitions. Stats and bars genuinely
+help you read where you are in that arc.
+
+Box Mode is episodic — each scope is a one-off completion challenge
+with a best time to beat. There's no "progression" to summarise.
+The stats and bar were filling slots in a template, not
+communicating anything.
+
+## What was cut
+
+- **Stats row** ("X of 9 played" / "Y left to play"). Clear after
+  v4.4's label fix, but as the tester said: "now I understand what
+  1 of 9 played means. But it is not interesting." The user can
+  count the rows below for themselves. Removed.
+- **9-segment scope bar.** Visually pretty but said nothing the
+  records list below didn't say. Tester's actual reaction:
+  "And what does this mean? Is it because only the second of 9 is
+  done? Complete useless information." Removed.
+- **All-9 list with placeholder rows.** Eight rows of "Not yet
+  played" alongside one row of a real record was filler. The user
+  knows there are multiple scopes; the picker inside Box Mode is
+  where they'll discover them. Removed.
+- **"Best Times" subtitle.** Overkill when there's only 1 record.
+  Removed.
+
+## What stays
+
+- Title (`📦 Box Mode`).
+- Share icon (top-right).
+- Records the user has actually earned — only cleared scopes, sorted
+  in canonical scope order (All 66 → Pentateuch → ... → Revelation)
+  so the list is stable across visits. Without sorting, completing
+  a new scope reshuffles the order, which is disorienting.
+- All-cleared celebration card (trophy + title + body) when all 9
+  scopes have been completed at least once.
+- An empty-state hint when there are no records yet: a single
+  centered line of text saying to tap Start Box Mode.
+
+## Layout consequence
+
+The Box panel is now naturally shorter than Quiz panel — especially
+shorter than Quiz at the all-66-celebration state. The 4.2 grid
+overlay still sizes both panels to the max of either, so when Box
+is selected with few records, there's some empty space below the
+content. That empty space is honest — it's not filler pretending
+to be data — and is the right tradeoff vs the alternatives:
+
+- Filler content: what the user complained about.
+- Tabs jumping when switching modes: what the user complained about
+  earlier (4.2 commit fixed it via the grid overlay).
+- Compacting the Quiz celebration to match Box's height: that would
+  diminish the celebration moment for users who hit 66. Deferred.
+
+## CSS cleanup
+
+Removed `.boxmode-scope-bar`, `.boxmode-scope-segment`,
+`.boxmode-scope-segment.cleared`, `.boxmode-best-row-empty`,
+`.boxmode-best-stats-empty`. Added `.boxmode-empty-hint` for the
+empty-state line.
+
+Translation keys `scopesPlayedOf`, `scopesLeftToPlay`,
+`boxBestTimesHeader`, `boxNotYetPlayed`, `scopesCleared`, `scopesToGo`
+are kept in data.js — they're no longer referenced, but cheap to
+preserve in case a future iteration wants them. Future cleanup can
+remove them.
+
+## Smoke test
+
+1. Open Box Mode dashboard with 1 cleared scope. You should see:
+   title, the 1 record row, nothing else above it (no stats, no
+   bar), empty space below.
+2. Complete a second scope, return home. The list shows 2 rows in
+   canonical order (the new completion appears in its scope-order
+   position, not at the top).
+3. Open Box Mode dashboard with 0 cleared scopes (fresh account):
+   you should see title + a single line "Tap Start Box Mode below
+   to begin your first session." No bar, no stats, no empty rows.
+4. Complete all 9 scopes (or simulate via localStorage edit): the
+   celebration card appears above the records list.
+5. Box ↔ Quiz tab switching: tabs stay anchored (the 4.2 grid
+   overlay is preserved).
+
+---
+
+
 
 Three issues from the same testing session, all rooted in the Box
 Mode dashboard feeling cramped/confusing on a wide desktop monitor.

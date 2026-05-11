@@ -934,21 +934,18 @@
   opacity: 0.5;
 }
 
-/* Empty-row variant (v4.4): rendered for scopes not yet cleared, so
-   the Box panel always shows the full 9 scopes — fills the panel
-   evenly and tells the user at a glance what they still owe. Muted
-   color + smaller stats text to keep cleared rows the visual anchor;
-   the scope name itself stays full-weight so the list reads as a
-   single coherent set. */
-.boxmode-best-row-empty .boxmode-best-scope {
+/* v4.5: empty-state hint — shown in the Box Mode dashboard when no
+   scopes have been completed yet. Replaces the placeholder-rows
+   approach (8 rows of "Not yet played") which was filler-as-content.
+   A single line of text is honest about the empty state without
+   pretending the panel has meaningful information yet. */
+.boxmode-empty-hint {
   color: var(--text-secondary, #888);
-  opacity: 0.7;
-}
-
-.boxmode-best-stats-empty {
-  font-size: 0.85rem;
-  font-style: italic;
-  opacity: 0.6;
+  font-size: 0.95rem;
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 0 0.5rem;
+  line-height: 1.5;
 }
 
 /* ─── Selectable mode-cards (v3 in-page tabs) ───────────────────── */
@@ -1221,30 +1218,15 @@
   pointer-events: none;
 }
 
-/* ─── Box Mode scope-completion bar (v4.1) ──────────────────────────
-   Parallels Quiz Mode's tier-bar visually but with binary semantics:
-   each segment represents one of the 9 Box Mode scopes, filled when
-   that scope has been cleared at least once. Same height + spacing
-   as the tier bar so the two panels feel matched. */
-.boxmode-scope-bar {
-  display: flex;
-  gap: 4px;
-  height: 12px;
-  margin: 0.75rem 0 0.5rem;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.boxmode-scope-segment {
-  flex: 1;
-  background: var(--tier-unseen);
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-
-.boxmode-scope-segment.cleared {
-  background: var(--tier-rooted);
-}
+/* ─── Box Mode scope-completion bar (v4.1, removed v4.5) ────────────
+   v4.5: the 9-segment scope bar was cut from the Box dashboard — it
+   visually duplicated information the records list below already
+   showed, and the user found it more confusing than useful ("Is it
+   because only the second of 9 is done?"). The CSS classes
+   `.boxmode-scope-bar`, `.boxmode-scope-segment`, and
+   `.boxmode-scope-segment.cleared` were removed alongside their JSX.
+   The inline celebration styles below are kept because they're still
+   used by the all-cleared celebration card. */
 
 /* Inline celebration variant — used inside session-complete screen
    and inside the Box Mode dashboard. Smaller padding than the

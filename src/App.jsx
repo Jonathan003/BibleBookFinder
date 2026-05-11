@@ -818,12 +818,22 @@ function App() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 </button>
                 <div className="boxmode-dashboard">
-                  {/* v4.1: Box Mode dashboard redesigned to mirror the
-                      Quiz Mode pattern — share icon top-right (already
-                      above this div), title, hero stats row (or
-                      all-scopes-cleared celebration), scope-completion
-                      bar (parallel to Quiz's tier bar), recent
-                      completions list (parallel to total-time card).
+                  {/* v4.5: Box Mode dashboard stripped to essentials. The
+                      v4.1-v4.4 evolution tried to mirror Quiz Mode's
+                      "stats + bar + list" pattern, but that information
+                      shape doesn't carry meaning for Box Mode — each
+                      scope is an episodic challenge, not a long-running
+                      progression. The stats row ("X of 9 played") was
+                      clear but uninteresting; the 9-segment bar was
+                      visually pretty but said nothing the records below
+                      couldn't say; the all-9 list with "Not yet played"
+                      placeholders was filler that crowded the actual
+                      records. All cut. What's left: the title, the
+                      records the user has actually earned (in canonical
+                      scope order so the list is stable across visits),
+                      a celebration when all 9 are done, and a simple
+                      "tap Start" hint when there are none yet.
+
                       The 9 scopes are "all 66" + 8 book-group scopes
                       (Pentateuch, History, Poetry, Prophets, Gospels,
                       Acts, Letters, Revelation). */}
@@ -831,111 +841,67 @@ function App() {
                     const BOX_SCOPE_KEYS = ['all', 'group:law', 'group:history', 'group:poetry', 'group:prophets', 'group:gospels', 'group:acts', 'group:epistles', 'group:revelation'];
                     const TOTAL_SCOPES = BOX_SCOPE_KEYS.length;
                     const clearedSet = new Set(boxBests.map(b => b.scope));
-                    const scopesCleared = clearedSet.size;
-                    const scopesToGo = TOTAL_SCOPES - scopesCleared;
-                    const allCleared = scopesCleared === TOTAL_SCOPES;
+                    const allCleared = clearedSet.size === TOTAL_SCOPES;
                     const scopeDisplayName = (scopeKey) => {
                       if (scopeKey === 'all') return lang === 'nl' ? 'Alle 66 boeken' : 'All 66 books';
                       const groupId = scopeKey.split(':')[1];
                       // groupNames is a top-level export from data.js,
-                      // NOT a field inside translations. Pre-v4.2 code
-                      // referenced translations[lang]?.groupNames which
-                      // is always undefined, so scopes fell through to
-                      // showing the raw group id ("law", "history", …)
-                      // instead of the friendly label.
+                      // NOT a field inside translations.
                       const fullDesc = groupNames[lang]?.[groupId] || groupId;
+                      // Take everything before the em-dash and trim —
                       // groupNames entries are long descriptions like
-                      // "Pentateuch (5 books) — From creation to ...";
-                      // for the compact list, take everything before
-                      // the em-dash and trim. Falls back to the raw
-                      // string if no em-dash is present.
+                      // "Pentateuch (5 books) — From creation to ...".
                       return fullDesc.split('—')[0].trim();
                     };
+                    // Sort cleared records into canonical scope order so
+                    // the list is stable across visits. Without this,
+                    // completing a new scope reshuffles the list (the
+                    // boxBests array is stored in completion order).
+                    const sortedBests = BOX_SCOPE_KEYS
+                      .map(key => boxBests.find(b => b.scope === key))
+                      .filter(Boolean);
                     return (
                       <>
                         <h2 className="boxmode-dashboard-title">📦 {t.boxModeBtnLabel}</h2>
 
-                        {/* Hero row — celebration when all scopes cleared,
-                            otherwise the two stat-cards parallel to Quiz
-                            Mode's "X confident · Y to gold". */}
-                        {allCleared ? (
+                        {allCleared && (
                           <div className="celebration-66 celebration-66-inline">
                             <span className="celebration-trophy" aria-hidden="true">🏆</span>
                             <h3 className="celebration-title">{t.boxAllScopesClearedTitle || 'All scopes cleared!'}</h3>
                             <p className="celebration-body">{t.boxAllScopesClearedBody || 'You\'ve mastered every grouping.'}</p>
                           </div>
-                        ) : (
-                          <div className="stats">
-                            <div className="stat-card">
-                              <span className="stat-number">{scopesCleared}</span>
-                              <span className="stat-label">{(t.scopesPlayedOf || 'of {total} played').replace('{total}', TOTAL_SCOPES)}</span>
-                            </div>
-                            <div className="stat-card">
-                              <span className="stat-number">{scopesToGo}</span>
-                              <span className="stat-label">{t.scopesLeftToPlay || 'left to play'}</span>
-                            </div>
-                          </div>
                         )}
 
-                        {/* Scope-completion bar — one segment per scope,
-                            filled blue for cleared, neutral for not.
-                            Parallels Quiz Mode's tier bar. */}
-                        <div className="boxmode-scope-bar">
-                          {BOX_SCOPE_KEYS.map(scopeKey => (
-                            <div
-                              key={scopeKey}
-                              className={`boxmode-scope-segment${clearedSet.has(scopeKey) ? ' cleared' : ''}`}
-                              title={scopeDisplayName(scopeKey)}
-                            />
-                          ))}
-                        </div>
-
-                        {/* All-9 scope list (v4.4). Previously showed only
-                            cleared scopes (top-4 by lastCompletedAt) which
-                            left a huge empty patch in the panel whenever
-                            the cleared count was low, because the grid
-                            overlay sizes the Box panel to match Quiz's
-                            celebration height. Now every scope gets a row:
-                            cleared scopes show time + mistakes, uncleared
-                            ones show a muted "Not yet completed" hint.
-                            Doubles as useful info — the user sees at a
-                            glance which groups they still owe. */}
-                        <div className="boxmode-dashboard-bests">
-                          <p className="boxmode-dashboard-subtitle">
-                            {t.boxBestTimesHeader || 'Best times'}
+                        {sortedBests.length === 0 ? (
+                          <p className="boxmode-empty-hint">
+                            {lang === 'nl'
+                              ? 'Tik hieronder op "Start Box Mode" om je eerste sessie te beginnen.'
+                              : 'Tap Start Box Mode below to begin your first session.'}
                           </p>
-                          {BOX_SCOPE_KEYS.map((scopeKey) => {
-                            const best = boxBests.find(b => b.scope === scopeKey);
-                            if (best) {
-                              const totalSec = Math.round(best.fastestMs / 1000);
+                        ) : (
+                          <div className="boxmode-dashboard-bests">
+                            {sortedBests.map((b) => {
+                              const totalSec = Math.round(b.fastestMs / 1000);
                               const m = Math.floor(totalSec / 60);
                               const s = totalSec % 60;
                               const time = `${m}:${String(s).padStart(2, '0')}`;
                               return (
-                                <div className="boxmode-best-row" key={scopeKey}>
-                                  <span className="boxmode-best-scope">{scopeDisplayName(scopeKey)}</span>
+                                <div className="boxmode-best-row" key={b.scope}>
+                                  <span className="boxmode-best-scope">{scopeDisplayName(b.scope)}</span>
                                   <span className="boxmode-best-stats">
                                     <span className="boxmode-best-time">{time}</span>
                                     <span className="boxmode-best-sep">·</span>
                                     <span className="boxmode-best-mistakes">
-                                      {best.fewestMistakes} {best.fewestMistakes === 1
+                                      {b.fewestMistakes} {b.fewestMistakes === 1
                                         ? (lang === 'nl' ? 'fout' : 'mistake')
                                         : (lang === 'nl' ? 'fouten' : 'mistakes')}
                                     </span>
                                   </span>
                                 </div>
                               );
-                            }
-                            return (
-                              <div className="boxmode-best-row boxmode-best-row-empty" key={scopeKey}>
-                                <span className="boxmode-best-scope">{scopeDisplayName(scopeKey)}</span>
-                                <span className="boxmode-best-stats boxmode-best-stats-empty">
-                                  {t.boxNotYetPlayed || 'Not yet played'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                            })}
+                          </div>
+                        )}
                       </>
                     );
                   })()}
