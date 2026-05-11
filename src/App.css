@@ -1037,6 +1037,11 @@
    needed there since the streak footer position barely changes. */
 .home-launcher-area {
   min-height: 200px;
+  width: 100%;
+  /* v4.9: see .dashboard-area for rationale. Without width: 100% here,
+     the Resume / Discard buttons (and any single Start button for Box
+     Mode) shrink to their content width inside the centered flex
+     column, looking visibly narrower than the mode-cards above. */
 }
 @media (min-width: 640px) {
   .home-launcher-area {
@@ -1075,6 +1080,13 @@
   font-size: 1.05rem;
   font-weight: 500;
   min-height: 80px;
+  width: 100%;
+  /* v4.9: width: 100% lets the standalone Resume/Discard buttons
+     (Box Mode + paused state, rendered directly inside .home-launcher-area)
+     fill the launcher area width. Doesn't interfere with the desktop
+     row layout in .home-quiz-launchers below — the `flex: 1` rule there
+     uses flex-basis: 0, which takes priority over `width: 100%` in flex
+     contexts (the items still share the row evenly). */
   /* v4.4: bumped from min-height 56 + padding 0.7/1 to 80 + 1/1.25
      because at 56px the launchers looked disproportionately small
      under the 120px-tall mode cards above — felt like a footer
@@ -1256,6 +1268,15 @@
 .dashboard-area {
   display: grid;
   grid-template-columns: 1fr;
+  width: 100%;
+  /* v4.9: width: 100% required because .dashboard-area is a flex child
+     of .menu (display: flex; flex-direction: column; align-items: center).
+     Under align-items: center, flex children without an explicit width
+     shrink to their content's natural width — which made the dashboard
+     panel render visibly narrower than the mode-cards row below it
+     (which had width: 100% directly). The v4.8 work removed the panel's
+     own max-width but missed adding width: 100% to the grid wrapper.
+     This is the same shape of fix needed for .home-launcher-area below. */
 }
 
 .dashboard-area > .dashboard-panel {

@@ -1,3 +1,66 @@
+# v4 commit 4.9 — Fix: width: 100% missing on flex children
+
+v4.8 introduced the responsive `--content-max-width` token and removed
+the individual max-widths on `.mode-cards`, `.dashboard-panel`,
+`.home-quiz-launchers`, and `.home-start-btn`. The intent was that
+each would fill 100% of `.menu`'s width. But the testing screenshot
+showed the dashboard panel and the Resume/Discard button cluster
+sitting visibly narrower than the mode-cards row above them.
+
+**Root cause:** `.menu` is `display: flex; flex-direction: column;
+align-items: center`. Under `align-items: center`, flex children
+WITHOUT an explicit `width` shrink to their content's natural width
+instead of stretching. `.mode-cards` and `.home-quiz-launchers` and
+`.home-start-btn` had `width: 100%` directly in their base rules so
+they worked. But `.dashboard-area` (added in v4.2 as the grid
+wrapper for tab anchoring) and `.home-launcher-area` (the wrapper
+around the Box Mode Start button / Quiz mode launchers / paused-
+session Resume button) both lacked `width: 100%` — they were just
+positioned containers with grid/flex/min-height set, no explicit
+width. So both shrank to content size, and their children inherited
+the constraint.
+
+Same issue affected `.home-launcher-btn` when rendered as a
+standalone button (the Resume + Discard pair in Box Mode + paused
+state). Inside `.home-quiz-launchers` (flex row at desktop) the
+`flex: 1` rule sized them; standalone in `.home-launcher-area` they
+had no flex parent forcing a width and shrank to content.
+
+**Fix:** added `width: 100%` to three rules:
+- `.dashboard-area`
+- `.home-launcher-area`
+- `.home-launcher-btn`
+
+The `.home-launcher-btn` addition is safe inside the desktop row
+layout — `flex: 1` shorthand means `flex-basis: 0`, which takes
+priority over `width` in flex sizing calculations. Items still
+share the row evenly.
+
+## Why I missed this in v4.8
+
+Removed the wrong half of the equation. I removed the per-element
+`max-width: 520px` rules thinking the token-driven `.menu` width
+would cascade through naturally. It does cascade for elements that
+already had `width: 100%` set (mode-cards, launchers, start-btn).
+But for `.dashboard-area` and `.home-launcher-area` — which were
+internal layout wrappers, not directly user-visible — neither had
+`width: 100%`, and the issue went unnoticed because the previous
+per-element max-widths were the same as the menu width, so the
+shrunk-to-content behavior happened to land at the same visible
+width.
+
+## Smoke test
+
+1. Desktop: open Box Mode dashboard with paused session. The
+   dashboard panel, mode-cards row, AND Resume/Discard buttons
+   should all be the same width (~800px), edge-to-edge aligned.
+2. Open Quiz Mode launchers state: Quick/Standard/Full chips
+   should span the same width as the row above.
+3. Mobile portrait (~412px): no regression. All elements at 100%
+   of viewport minus padding.
+
+---
+
 # v4 commit 4.8 — Responsive content-max-width system
 
 After several commits cycling between "too narrow" and "too wide" and
