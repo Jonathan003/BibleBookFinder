@@ -133,6 +133,15 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
+  /* Safe-area-inset-bottom reserves scroll space beneath the gesture-
+     navigation pill on Android (Samsung S22+, Pixel, etc) and the
+     home-indicator on iPhone X+. Without this, the bottom rows of the
+     book grid render behind the system UI and can't be scrolled into
+     view. Rotating the device temporarily forces a layout recalculation
+     which masks the bug — until the next browser-UI movement re-clips.
+     env() returns 0 on devices without insets, so this is a no-op on
+     desktop and older mobile devices. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .app-main::-webkit-scrollbar {
