@@ -1,4 +1,140 @@
-# v4 commit 4 — Pause/resume, training-pool fallback, removed "no schedule"
+# v4 commit 4.1 — Bug fixes + Box Mode dashboard uniformity
+
+Eight focused fixes surfaced during smoke-testing Commit 4. All small
+or contained; no new mechanics, just consistency cleanup.
+
+## Bug fixes
+
+**1. "Full · 0 books" on the all-66 home screen.**
+When `confidentCount === 66` AND `stats.dueNow === 0`, the launcher
+logic computed `trainingPool = 0` and still pushed a Full button with
+that count. Now the Full button is only pushed when `trainingPool > 0`.
+With `confidentCount === 66` and nothing FSRS-due, the celebration
+card on the hero is the only thing on the home screen — as intended.
+
+**2. Pause + resume counted as 2 sessions in today's stats.**
+The autosave-on-unmount effect in QuizGrid writes a `quizHistory`
+entry whenever the component unmounts unless `sessionDataRef.current.saved`
+is true. `handleBack`'s pause path wasn't setting that flag, so each
+pause wrote one entry, and the subsequent natural finish wrote a
+second entry — same run reported as 2 sessions. Fixed by setting
+`sessionDataRef.current.saved = true` immediately after `onPause(snapshot)`.
+The pause-side data isn't lost — it lives in `pausedQuizSession` and
+gets folded into the consolidated entry written by `saveCurrentSegment`
+on natural finish.
+
+**7. Box Mode "Personal Bests" stale after a completion.**
+The home Box dashboard kept showing "Complete a session to record your
+first time" even after a session naturally completed. Root cause was
+a stale-React-state issue: `recordCompletion` in `boxModeStorage.js`
+writes the new best to localStorage via `updateUser`, but unlike
+`addQuizSession` it doesn't mirror the write to App.jsx's
+`currentUserState`. The `boxBests` `useMemo` is keyed on
+`currentUser?.boxModeBests`, which stayed empty in React state.
+Fixed in `App.jsx` by re-reading the user from localStorage in
+BoxMode's `onBack` handler before switching back to the menu view.
+One-line surface change; no edits to `boxModeStorage.js`.
+
+## Session-complete screen redesign
+
+**3. All-66 celebration on the session-complete screen.**
+When `sessionComplete` fires and `getConfidentCount() === 66`, the
+session-complete screen now renders the same trophy/title/body/total-time
+celebration as the home-screen all-66 card (reuses
+`celebration66Title`, `celebration66Body`, `celebrationTimeLabel`
+keys). End session button stays. The celebration moment surfaces at
+the right time — at session end, not just after navigating home.
+
+**4. Neutral framing when `confident < 66`.**
+Dropped the "Stopping strengthens your memory more than pushing
+through. The wait is not a pause — it's when your memory does the
+work." rest message. That framing was schedule-shaped — same reason
+we removed the "no schedule" home-screen rest message in Commit 4.
+The session-complete screen now shows just: "Session complete" title +
+today's stats line + End session button. Honest, no opinion on
+whether to stop.
+
+## Settings hygiene
+
+**5. Mastery Speed moved from SHARED to QUIZ MODE.**
+The "Shared" label was aspirational comment-cruft. Only Quiz Mode
+reads `config.quiz.masteryMs`; Box Mode has its own Time Pressure
+mechanism. Moved the slider into the Quiz Mode subsection where it
+actually belongs.
+
+## Visual stability
+
+**6. `.dashboard-panel` min-height stabilises mode-tab position.**
+Quiz Mode and Box Mode panels have different natural heights (stats +
+tier bar vs scope bar + bests list, plus the all-66 celebration vs
+regular hero card). Tapping between mode tabs caused the tabs
+themselves to jump vertically because the panel above them resized.
+Added `min-height: 360px` so whichever panel is shorter top-aligns
+within the reserved space. Tabs stay anchored.
+
+## Box Mode dashboard uniformity (item 8)
+
+The Box Mode dashboard now mirrors the Quiz Mode pattern element-for-element:
+
+- **Title** at top (was already there).
+- **Hero row** — either celebration or a two-card stats row:
+  - When all 9 scopes have at least one completion → celebration card
+    (trophy + "All scopes cleared!" + body), inline variant of the
+    home-screen all-66 celebration.
+  - Otherwise → "X cleared of 9" + "Y to go" stat cards, parallel to
+    Quiz Mode's "X confident of 66" + "Y to gold".
+- **Scope-completion bar** — 9 segments, one per scope, filled blue
+  when that scope has been cleared. Parallels Quiz Mode's tier bar.
+  Same colors (`--tier-unseen`, `--tier-rooted`).
+- **Personal bests list** — compact, top 4 by most-recent completion.
+  Empty state is implicit: when no scopes are cleared, the bests
+  section just doesn't render (the hero stats already communicate
+  "0 cleared / 9 to go").
+
+The 9 scopes are: All 66 books, Pentateuch, Historical, Poetic,
+Prophetic, Gospels, Acts, Letters, Revelation. Hard-coded in App.jsx
+as `BOX_SCOPE_KEYS`. If a future revision adds custom scopes, this
+constant becomes the single point of update.
+
+New translation keys in NL and EN: `scopesCleared`, `scopesToGo`,
+`boxAllScopesClearedTitle`, `boxAllScopesClearedBody`.
+
+New CSS:
+- `.dashboard-panel { min-height: 360px }`
+- `.boxmode-scope-bar` + `.boxmode-scope-segment` (+ `.cleared` modifier)
+- `.celebration-66-inline` — smaller-padded variant of the home-screen
+  celebration, used in both the Box dashboard and the all-66
+  session-complete screen.
+
+## Smoke test (run in this order)
+
+1. **Full launcher hidden at all-66**: confirm the home screen shows
+   no "Full · 0 books" when `confidentCount === 66`.
+2. **Sessions count**: start a Quick session, answer 2 books, tap
+   Back. Resume. Finish. Today's stats should read "1 sessions" not
+   "2 sessions".
+3. **All-66 celebration at session-complete**: with all 66 confident,
+   start a session, finish it. The session-complete screen shows
+   trophy + celebration content instead of the generic "stopping"
+   rest message.
+4. **Neutral framing at confident < 66**: with `confidentCount < 66`,
+   finish a session. The session-complete screen shows "Session
+   complete" + today's stats + End session, no "stopping" message.
+5. **Mastery Speed location**: open Settings → scroll → the Mastery
+   Speed slider should be under QUIZ MODE, not SHARED.
+6. **Tab anchoring**: toggle between Quiz Mode and Box Mode tabs.
+   The tabs themselves stay at the same vertical position.
+7. **Box Mode best stickiness**: complete a Box Mode session (any
+   scope), return to home. The new completion appears in the
+   "Personal bests" list immediately and the scope-completion bar
+   gains a blue segment.
+8. **Box Mode uniformity**: visually compare the Box and Quiz Mode
+   dashboard panels. Same outer frame, same hero-card-then-bar
+   pattern, same compact list below.
+
+---
+
+
 
 Three user-visible fixes that addressed concrete complaints surfaced
 during smoke-testing:

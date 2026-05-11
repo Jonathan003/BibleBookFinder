@@ -366,12 +366,39 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       return (
         <>
           {/* ─── Shared ───────────────────────────────────────────── */}
-          {/* Settings that apply across multiple modes (Quiz, Study,
-              Box Mode where relevant). Mastery speed governs both Quiz
-              Mode's mastery threshold AND Box Mode's default soft-timer
-              budget when "Match Quiz" is the timePressure choice (future
-              enhancement); auto-scroll is universal. */}
+          {/* Settings that genuinely apply across both modes (Quiz and
+              Box). auto-scroll is universal; mastered-books toggle
+              affects the gold-line cell decoration which both modes
+              show; theme is app-wide. Mastery Speed previously lived
+              here as "Shared" but in practice only Quiz Mode reads
+              config.quiz.masteryMs — Box Mode has its own Time
+              Pressure setting. Moved to the Quiz Mode subsection below
+              so the label stops lying. */}
           <h4 className="settings-subsection">{t.settingsSubsectionShared || 'Shared'}</h4>
+          <SettingRow label={t.autoScroll || 'Auto-scroll'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
+            <Toggle value={display.autoScroll !== false} onChange={v => updateField('display', 'autoScroll', v)} />
+          </SettingRow>
+          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
+            <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
+          </SettingRow>
+          {/* Theme: light/dark/auto. v4 dark-mode addition. 'auto' follows
+              the OS prefers-color-scheme; 'light' and 'dark' override it. */}
+          <SettingRow label={t.theme || 'Theme'} desc={t.themeDesc || ''}>
+            <select value={display.theme || 'auto'} onChange={e => updateField('display', 'theme', e.target.value)} className="setting-select">
+              <option value="auto">{t.themeAuto || 'Auto'}</option>
+              <option value="light">{t.themeLight || 'Light'}</option>
+              <option value="dark">{t.themeDark || 'Dark'}</option>
+            </select>
+          </SettingRow>
+
+          {/* ─── Quiz ────────────────────────────────────────────── */}
+          <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>
+          {/* Mastery Speed (moved here from Shared in commit 4.1). Controls
+              the "fast enough" threshold that decides whether a correct
+              answer counts toward the confident gold-line buffer (drives
+              the gold line on book cells) AND the FSRS Rating.Good vs
+              Rating.Hard distinction. Quiz-Mode-only — Box Mode has its
+              own separate Time Pressure mechanism. */}
           <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'} fullWidth>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -392,24 +419,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               </div>
             </div>
           </SettingRow>
-          <SettingRow label={t.autoScroll || 'Auto-scroll'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
-            <Toggle value={display.autoScroll !== false} onChange={v => updateField('display', 'autoScroll', v)} />
-          </SettingRow>
-          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
-            <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
-          </SettingRow>
-          {/* Theme: light/dark/auto. v4 dark-mode addition. 'auto' follows
-              the OS prefers-color-scheme; 'light' and 'dark' override it. */}
-          <SettingRow label={t.theme || 'Theme'} desc={t.themeDesc || ''}>
-            <select value={display.theme || 'auto'} onChange={e => updateField('display', 'theme', e.target.value)} className="setting-select">
-              <option value="auto">{t.themeAuto || 'Auto'}</option>
-              <option value="light">{t.themeLight || 'Light'}</option>
-              <option value="dark">{t.themeDark || 'Dark'}</option>
-            </select>
-          </SettingRow>
-
-          {/* ─── Quiz ────────────────────────────────────────────── */}
-          <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>
           {/* Learning pace controls FSRS request_retention. In the new
               schedule-free model the user no longer sees a calendar, so
               this lever is rarely needed — Intensive is the sensible

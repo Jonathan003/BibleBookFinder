@@ -292,6 +292,15 @@ export const translations = {
     resumeSessionDesc: 'Ga verder waar je gebleven was',
     discardPausedSession: 'Onderbroken sessie weggooien',
     toGold: 'naar goud',
+    // ─── Box Mode dashboard (v4.1) ──────────────────────────────
+    // Stat-card labels for the redesigned Box panel. "Cleared" is the
+    // unit used in personal bests already ("Voltooid"); "scopes" is
+    // implicit. allScopesCleared celebration appears when all 9 scopes
+    // ('all 66' + 8 groups) have at least one recorded completion.
+    scopesCleared: 'voltooid',
+    scopesToGo: 'nog te doen',
+    boxAllScopesClearedTitle: 'Alle groepen voltooid! 🎉',
+    boxAllScopesClearedBody: 'Je hebt elke groep minstens één keer uitgespeeld.',
     // Restore confirmation dialog
     restoreTitle: 'Back-up herstellen',
     restoreWarning: 'Dit vervangt je huidige voortgang. Deze actie kan niet ongedaan gemaakt worden.',
@@ -571,6 +580,11 @@ export const translations = {
     resumeSessionDesc: 'Pick up where you left off',
     discardPausedSession: 'Discard paused session',
     toGold: 'to gold',
+    // See NL section for design rationale (v4.1).
+    scopesCleared: 'cleared',
+    scopesToGo: 'to go',
+    boxAllScopesClearedTitle: 'All scopes cleared! 🎉',
+    boxAllScopesClearedBody: 'You\'ve completed every grouping at least once.',
     // Restore confirmation dialog
     restoreTitle: 'Restore backup',
     restoreWarning: 'This will replace your current progress. This action cannot be undone.',

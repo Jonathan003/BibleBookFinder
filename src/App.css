@@ -1154,3 +1154,55 @@
   20%  { opacity: 1; }
   100% { transform: scaleX(1); transform-origin: left center; opacity: 1; }
 }
+
+/* ─── Dashboard panel height stability (v4.1) ───────────────────────
+   Mode tabs (Box/Quiz) sit below the dashboard panel, so when the
+   panel's height changes — different content in Quiz vs Box, or
+   stats vs celebration — the tabs jumped vertically when the user
+   switched modes. Reserve enough min-height to fit the tallest
+   typical panel (Quiz with all-66 celebration), letting shorter
+   panels top-align within the reserved space. */
+.dashboard-panel {
+  min-height: 360px;
+}
+
+/* ─── Box Mode scope-completion bar (v4.1) ──────────────────────────
+   Parallels Quiz Mode's tier-bar visually but with binary semantics:
+   each segment represents one of the 9 Box Mode scopes, filled when
+   that scope has been cleared at least once. Same height + spacing
+   as the tier bar so the two panels feel matched. */
+.boxmode-scope-bar {
+  display: flex;
+  gap: 4px;
+  height: 12px;
+  margin: 0.75rem 0 0.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.boxmode-scope-segment {
+  flex: 1;
+  background: var(--tier-unseen);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.boxmode-scope-segment.cleared {
+  background: var(--tier-rooted);
+}
+
+/* Inline celebration variant — used inside session-complete screen
+   and inside the Box Mode dashboard. Smaller padding than the
+   home-screen celebration since it's nested inside another card. */
+.celebration-66-inline {
+  margin-bottom: 0.75rem;
+  padding: 1rem 0.75rem;
+}
+
+.celebration-66-inline .celebration-trophy {
+  font-size: 2.4rem;
+}
+
+.celebration-66-inline .celebration-title {
+  font-size: 1.15rem;
+}

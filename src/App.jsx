@@ -814,49 +814,105 @@ function App() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 </button>
                 <div className="boxmode-dashboard">
-                  <h2 className="boxmode-dashboard-title">📦 {t.boxModeBtnLabel}</h2>
-                  {/* Always render the "Personal bests" structure for
-                      visual parallelism with the Quiz Mode panel —
-                      Quiz shows zeros at empty state without a "no
-                      sessions yet" wrapper, so Box does the same:
-                      subtitle is always present, with a muted hint
-                      below when the bests list is empty. */}
-                  <div className="boxmode-dashboard-bests">
-                    <p className="boxmode-dashboard-subtitle">
-                      {lang === 'nl' ? 'Persoonlijke records' : 'Personal bests'}
-                    </p>
-                    {boxBests.length === 0 ? (
-                      <p className="boxmode-bests-empty-hint">
-                        {lang === 'nl'
-                          ? 'Voltooi een sessie om je eerste tijd vast te leggen.'
-                          : 'Complete a session to record your first time.'}
-                      </p>
-                    ) : (
-                      boxBests.slice(0, 4).map((b) => {
-                        const scopeName = b.scope === 'all'
-                          ? (lang === 'nl' ? 'Alle 66 boeken' : 'All 66 books')
-                          : (translations[lang]?.groupNames?.[b.scope.split(':')[1]] || b.scope.split(':')[1]);
-                        const totalSec = Math.round(b.fastestMs / 1000);
-                        const m = Math.floor(totalSec / 60);
-                        const s = totalSec % 60;
-                        const time = `${m}:${String(s).padStart(2, '0')}`;
-                        return (
-                          <div className="boxmode-best-row" key={b.scope}>
-                            <span className="boxmode-best-scope">{scopeName}</span>
-                            <span className="boxmode-best-stats">
-                              <span className="boxmode-best-time">{time}</span>
-                              <span className="boxmode-best-sep">·</span>
-                              <span className="boxmode-best-mistakes">
-                                {b.fewestMistakes} {b.fewestMistakes === 1
-                                  ? (lang === 'nl' ? 'fout' : 'mistake')
-                                  : (lang === 'nl' ? 'fouten' : 'mistakes')}
-                              </span>
-                            </span>
+                  {/* v4.1: Box Mode dashboard redesigned to mirror the
+                      Quiz Mode pattern — share icon top-right (already
+                      above this div), title, hero stats row (or
+                      all-scopes-cleared celebration), scope-completion
+                      bar (parallel to Quiz's tier bar), recent
+                      completions list (parallel to total-time card).
+                      The 9 scopes are "all 66" + 8 book-group scopes
+                      (Pentateuch, History, Poetry, Prophets, Gospels,
+                      Acts, Letters, Revelation). */}
+                  {(() => {
+                    const BOX_SCOPE_KEYS = ['all', 'group:law', 'group:history', 'group:poetry', 'group:prophets', 'group:gospels', 'group:acts', 'group:epistles', 'group:revelation'];
+                    const TOTAL_SCOPES = BOX_SCOPE_KEYS.length;
+                    const clearedSet = new Set(boxBests.map(b => b.scope));
+                    const scopesCleared = clearedSet.size;
+                    const scopesToGo = TOTAL_SCOPES - scopesCleared;
+                    const allCleared = scopesCleared === TOTAL_SCOPES;
+                    const scopeDisplayName = (scopeKey) => {
+                      if (scopeKey === 'all') return lang === 'nl' ? 'Alle 66 boeken' : 'All 66 books';
+                      const groupId = scopeKey.split(':')[1];
+                      const fullDesc = translations[lang]?.groupNames?.[groupId] || groupId;
+                      // groupNames are long descriptions like "Pentateuch (5
+                      // boeken) — ..."; for the compact list, take everything
+                      // before the em-dash and trim. Falls back to the raw
+                      // string if no em-dash is present.
+                      return fullDesc.split('—')[0].trim();
+                    };
+                    return (
+                      <>
+                        <h2 className="boxmode-dashboard-title">📦 {t.boxModeBtnLabel}</h2>
+
+                        {/* Hero row — celebration when all scopes cleared,
+                            otherwise the two stat-cards parallel to Quiz
+                            Mode's "X confident · Y to gold". */}
+                        {allCleared ? (
+                          <div className="celebration-66 celebration-66-inline">
+                            <span className="celebration-trophy" aria-hidden="true">🏆</span>
+                            <h3 className="celebration-title">{t.boxAllScopesClearedTitle || 'All scopes cleared!'}</h3>
+                            <p className="celebration-body">{t.boxAllScopesClearedBody || 'You\'ve mastered every grouping.'}</p>
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
+                        ) : (
+                          <div className="stats">
+                            <div className="stat-card">
+                              <span className="stat-number">{scopesCleared}</span>
+                              <span className="stat-label">{t.scopesCleared || 'cleared'} {t.of} {TOTAL_SCOPES}</span>
+                            </div>
+                            <div className="stat-card">
+                              <span className="stat-number">{scopesToGo}</span>
+                              <span className="stat-label">{t.scopesToGo || 'to go'}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Scope-completion bar — one segment per scope,
+                            filled blue for cleared, neutral for not.
+                            Parallels Quiz Mode's tier bar. */}
+                        <div className="boxmode-scope-bar">
+                          {BOX_SCOPE_KEYS.map(scopeKey => (
+                            <div
+                              key={scopeKey}
+                              className={`boxmode-scope-segment${clearedSet.has(scopeKey) ? ' cleared' : ''}`}
+                              title={scopeDisplayName(scopeKey)}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Recent completions list — kept compact, top 4
+                            by lastCompletedAt. Empty state is implicit
+                            (the list just doesn't render); the hero
+                            stats above already communicate "0 cleared". */}
+                        {boxBests.length > 0 && (
+                          <div className="boxmode-dashboard-bests">
+                            <p className="boxmode-dashboard-subtitle">
+                              {lang === 'nl' ? 'Persoonlijke records' : 'Personal bests'}
+                            </p>
+                            {boxBests.slice(0, 4).map((b) => {
+                              const totalSec = Math.round(b.fastestMs / 1000);
+                              const m = Math.floor(totalSec / 60);
+                              const s = totalSec % 60;
+                              const time = `${m}:${String(s).padStart(2, '0')}`;
+                              return (
+                                <div className="boxmode-best-row" key={b.scope}>
+                                  <span className="boxmode-best-scope">{scopeDisplayName(b.scope)}</span>
+                                  <span className="boxmode-best-stats">
+                                    <span className="boxmode-best-time">{time}</span>
+                                    <span className="boxmode-best-sep">·</span>
+                                    <span className="boxmode-best-mistakes">
+                                      {b.fewestMistakes} {b.fewestMistakes === 1
+                                        ? (lang === 'nl' ? 'fout' : 'mistake')
+                                        : (lang === 'nl' ? 'fouten' : 'mistakes')}
+                                    </span>
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               )}
@@ -987,7 +1043,14 @@ function App() {
                       if (trainingPool > 10) {
                         launchers.push({ key: 'standard', label: t.sessionSizeStandard, limit: 10, count: 10 });
                       }
-                      launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: trainingPool });
+                      // Only show Full when there's actually something to
+                      // train. When confidentCount === 66 AND dueNow === 0
+                      // the celebration screen above takes over the whole
+                      // panel; the launchers would otherwise show "Full ·
+                      // 0 books" which is meaningless.
+                      if (trainingPool > 0) {
+                        launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: trainingPool });
+                      }
                       return launchers.map(opt => {
                         const booksLabel = opt.count === 1
                           ? t.sessionSizeBookSingle
@@ -1023,7 +1086,21 @@ function App() {
               ownerUserId={currentUser.id}
               initialPausedSession={pausedBoxSession}
               onPause={handleBoxPause}
-              onBack={() => setView('menu')}
+              onBack={() => {
+                // v4.1: re-read the user from localStorage before returning
+                // to the menu. Box Mode's recordCompletion (in
+                // boxModeStorage.js) writes the new personal best to
+                // localStorage via updateUser, but does NOT mirror to
+                // React state — unlike addQuizSession which mirrors both.
+                // Without this sync the home-screen Box dashboard would
+                // show "Complete a session to record your first time"
+                // even after a session naturally completed and saved.
+                if (currentUser?.id) {
+                  const fresh = getUser(currentUser.id);
+                  if (fresh) setCurrentUserState(fresh);
+                }
+                setView('menu');
+              }}
             />
           )}
 

@@ -9,6 +9,7 @@ import {
   Rating, getBookStats, isConfident, recordConfidentAttempt, getConfidentCount, getNonConfidentBooks,
 } from '../fsrs';
 import { computeTodayStats } from '../streak';
+import { formatDuration } from '../timeFormat';
 import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
 import './QuizGrid.css';
 
@@ -454,6 +455,13 @@ export default function QuizGrid({
         pausedAt: Date.now(),
       };
       onPause(snapshot);
+      // Mark this segment as "already handled" so the autosave-on-unmount
+      // effect doesn't write a separate quizHistory entry. The data lives
+      // in pausedQuizSession now; when the user resumes and finishes
+      // naturally, saveCurrentSegment writes one consolidated entry
+      // covering both halves of the run. Without this flag, pause +
+      // resume would show as "2 sessions" in today's stats instead of 1.
+      sessionDataRef.current.saved = true;
     }
     onBack();
   }, [onBack, onPause, sessionComplete, targetBook, streak, score, responseTimes,
@@ -727,16 +735,15 @@ export default function QuizGrid({
   };
 
   // ─── Session-complete screen ─────────────────────────────────────────
-  // Shown when DUE+unseen=0, or when the user hit their Quick/Standard
-  // pick-count limit. End-session is the only path forward — the user
-  // either keeps training (and comes back to this screen again) or
-  // leaves. Daily totals are factual — no judgment, no graduated nudges;
-  // the rest message conveys the learning-science point.
+  // Two states:
+  // - confidentCount === 66: full celebration (trophy + title + body +
+  //   total time + share). Same content the home-screen all-66 card has.
+  // - confidentCount < 66: neutral framing. Just "Session complete" +
+  //   today's stats + End session. No "stopping strengthens" rest message
+  //   (that framing was schedule-shaped despite the disclaimer and
+  //   contradicted the v4 "train when you have time" model — same
+  //   reasoning as the home-screen rest message we removed in commit 4).
   if (sessionComplete) {
-    // Today's totals: combine saved quizHistory (everything before this
-    // segment) with the live in-flight snapshot (the segment that just
-    // wrapped, not yet saved). The snapshot may be empty (e.g. user
-    // tapped Quiz from menu when DUE was already 0) — handle that.
     const today = computeTodayStats(quizHistory);
     const liveBooks = sessionSeenBooks.size;
     const liveSessions = score.total > 0 ? 1 : 0;
@@ -746,18 +753,28 @@ export default function QuizGrid({
     const todayMs = today.durationMs + liveMs;
     const todayMinutes = Math.max(0, Math.round(todayMs / 60000));
     const sessionsLabel = todaySessions === 1 ? t.sessionCompleteSessionSingle : t.sessionCompleteSessions;
+    const isAll66 = getConfidentCount(confidentBuffersRef.current || {}, bibleBooks) === 66;
     return (
       <div className="quiz-grid session-complete-screen">
-        <h2 className="session-complete-title">{t.sessionCompleteTitle}</h2>
+        {isAll66 ? (
+          <div className="celebration-66 celebration-66-inline">
+            <span className="celebration-trophy" aria-hidden="true">🏆</span>
+            <h2 className="celebration-title">{t.celebration66Title}</h2>
+            <p className="celebration-body">{t.celebration66Body}</p>
+            {totalQuizMs > 0 && (
+              <div className="celebration-time">
+                <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
+                <span className="celebration-time-value">{formatDuration(totalQuizMs + sessionMs)}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <h2 className="session-complete-title">{t.sessionCompleteTitle}</h2>
+        )}
 
-        <div className="session-complete-rest">
-          <p className="session-complete-rest-title">{t.sessionCompleteRestTitle}</p>
-          <p className="session-complete-rest-body">{t.sessionCompleteRestBody}</p>
-        </div>
-
-        {/* Daily totals — only shown if there's anything to report. A
-            line of zeros on a fresh-account first-run would feel like
-            scolding. */}
+        {/* Daily totals — shown in both branches. A line of zeros on a
+            fresh-account first-run would feel like scolding, so only
+            render when there's something to report. */}
         {(todayBooks > 0 || todaySessions > 0) && (
           <p className="session-complete-today">
             <strong>{t.sessionCompleteTodayLabel}:</strong>{' '}
