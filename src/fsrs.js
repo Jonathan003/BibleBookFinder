@@ -1,6 +1,21 @@
 import { createEmptyCard, fsrs, Rating, State } from 'ts-fsrs';
 
+// Pace presets map to FSRS desired retention (request_retention).
+// Lower retention → longer intervals → lighter daily review pressure,
+// at the cost of more occasional forgetting. The "right" value depends
+// on the user's life: 0.95 is for diligent daily learners who want
+// minimal forgetting; 0.80 is for users with irregular practice time
+// who'd rather have fewer reviews than feel guilty about missing days.
+//
+// 0.80 ('flexible') was added based on FSRS workload research: dropping
+// from 0.90 to 0.80 roughly doubles intervals, halving daily review
+// count, with all 66 books still reaching Permanent over months — just
+// on a gentler curve. The mainstream Anki community recommends 0.85-0.95
+// for serious users; for irregular-time learners 0.80 sits exactly in
+// the "workload-minimizing" zone that Anki users typically discover
+// only after hand-tuning. We surface it as a first-class preset.
 const PACE_CONFIG = {
+  flexible:  { request_retention: 0.80 },
   relaxed:   { request_retention: 0.85 },
   balanced:  { request_retention: 0.90 },
   intensive: { request_retention: 0.95 },

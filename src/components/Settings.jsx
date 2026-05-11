@@ -400,6 +400,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>
           <SettingRow label={t.learningPace || 'Learning pace'} desc={t.learningPaceDesc || ''}>
             <select value={quiz.learningPace || 'balanced'} onChange={e => updateField('quiz', 'learningPace', e.target.value)} className="setting-select">
+              <option value="flexible">{t.paceFlexible || 'Flexible'}</option>
               <option value="relaxed">{t.paceRelaxed || 'Relaxed'}</option>
               <option value="balanced">{t.paceBalanced || 'Balanced'}</option>
               <option value="intensive">{t.paceIntensive || 'Intensive'}</option>
@@ -407,6 +408,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           </SettingRow>
           {quiz.learningPace && (
             <div className="pace-hint">
+              {quiz.learningPace === 'flexible' && (t.paceFlexibleHint || 'Lightest schedule — come when you have time, no daily pressure')}
               {quiz.learningPace === 'relaxed' && (t.paceRelaxedHint || '~5-10 min/day, master all books in ~6-8 weeks')}
               {(quiz.learningPace === 'balanced' || !quiz.learningPace) && (t.paceBalancedHint || '~10-20 min/day, master all books in ~3-4 weeks')}
               {quiz.learningPace === 'intensive' && (t.paceIntensiveHint || '~20-30 min/day, master all books in ~1-2 weeks')}

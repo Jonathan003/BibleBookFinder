@@ -61,6 +61,13 @@ export default function QuizGrid({
   bestStreak, setBestStreak, addQuizSession, addTrainingTime,
   totalQuizMs = 0, quizHistory = [],
   onBack, onPhaseChange,
+  // Optional session-size limit set on the home screen by the user
+  // ("Quick" = 5, "Standard" = 10, "Full" = unlimited / null).
+  // Implemented as a pick-count cap rather than a queue: pickNextBook
+  // runs as normal (most-overdue + unseen mix), but session-complete
+  // fires when the count reaches the limit. See sessionPickCountRef
+  // and the limit check at the top of pickNextBook for details.
+  sessionLimit = null,
 }) {
   const { config, t, lang } = useAppConfig();
   const [targetBook, setTargetBook] = useState(null);
@@ -129,6 +136,24 @@ export default function QuizGrid({
   // render the "X / N" countdown. (queue.length alone gives only the
   // remaining count.)
   const [trainAheadInitialCount, setTrainAheadInitialCount] = useState(0);
+
+  // ─── Session-size limit (from home-screen Quick/Standard/Full) ────
+  // Holds a snapshot of the sessionLimit prop captured at session start,
+  // and a counter that increments each time pickNextBook successfully
+  // picks a new book to present. When pickCount >= limit, the next call
+  // to pickNextBook short-circuits to session-complete.
+  //
+  // Refs (not state) because pickNextBook is invoked from scheduled
+  // callbacks where a state read would be stale. Same pattern as
+  // trainAheadQueueRef and fsrsCardsRef above.
+  //
+  // sessionLimit on Train Ahead is intentionally cleared (set to null
+  // via the ref reset in handleStartTrainAhead) because Train Ahead is
+  // its own bounded queue and shouldn't be doubly-capped by the regular
+  // session-size limit. The user who chose "Quick (5)" finished their 5,
+  // then chose Train Ahead → that's a fresh segment with its own length.
+  const sessionLimitRef = useRef(null);
+  const sessionPickCountRef = useRef(0);
 
   const feedbackRef = useRef(false);
   const scrollRef = useRef(null);
@@ -317,6 +342,26 @@ export default function QuizGrid({
       return;
     }
 
+    // ─── Session-size limit check ─────────────────────────────────
+    // If the user picked Quick (5) or Standard (10) from the home
+    // screen, sessionLimitRef holds that number. When pickCount has
+    // reached the limit, fire session-complete instead of picking.
+    //
+    // Placed AFTER the Train Ahead branch above so Train Ahead runs
+    // are not capped by the limit (Train Ahead is its own bounded
+    // queue with its own length, and the user already explicitly
+    // chose to "keep going").
+    //
+    // Placed BEFORE the due/unseen lookup below because we don't want
+    // to discover "0 due, 0 unseen → Branch 4 complete" through the
+    // wrong code path: the limit-complete is a finite-budget exit,
+    // not an out-of-material exit. Logged separately for debugging.
+    if (sessionLimitRef.current !== null
+        && sessionPickCountRef.current >= sessionLimitRef.current) {
+      setSessionComplete(true);
+      return;
+    }
+
     // Regular due/unseen flow
     const { dueBooks, unseenBooks } = getDueBooks(cards, bibleBooks);
 
@@ -343,6 +388,11 @@ export default function QuizGrid({
     }
 
     logBookPick(selected, cards[selected.id], branch, dueBooks, unseenBooks, bibleBooks, cards);
+
+    // Successful pick — bump the session counter. Done AFTER all the
+    // early-exit checks so an aborted pick (no due, no unseen) doesn't
+    // wrongly increment toward the limit.
+    sessionPickCountRef.current += 1;
 
     setTargetBook(selected);
     setSessionSeenBooks(prev => {
@@ -379,6 +429,12 @@ export default function QuizGrid({
   }, [config.display.autoScroll, testamentsLayout, schedule, setTrainAheadQueue]);
 
   useEffect(() => {
+    // Initialise session-limit refs from the prop captured at mount.
+    // Both refs are reset to defaults on session start; only the cap
+    // value differs based on user's Quick/Standard/Full choice.
+    sessionLimitRef.current = sessionLimit;
+    sessionPickCountRef.current = 0;
+
     logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
     pickNextBook();
     window.scrollTo(0, 0);
@@ -416,6 +472,13 @@ export default function QuizGrid({
     if (queue.length === 0) return;
     saveCurrentSegment();
     resetSegment('trainAhead');
+    // Clear the session-size limit when entering Train Ahead. Train
+    // Ahead is its own bounded segment with the queue length acting as
+    // the natural cap; double-capping would be confusing (e.g. user
+    // chose Quick=5, finished, chose Train Ahead with horizon=10 → they
+    // expect 10 books, not 5).
+    sessionLimitRef.current = null;
+    sessionPickCountRef.current = 0;
     setTrainAheadInitialCount(queue.length);
     setTrainAheadQueue(queue);
     setTrainAheadMenuOpen(false);

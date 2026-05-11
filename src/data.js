@@ -220,12 +220,28 @@ export const translations = {
     abbrShort: 'Korte afkortingen',
     learningPace: 'Leertempo',
     learningPaceDesc: '',
+    paceFlexible: 'Flexibel',
     paceRelaxed: 'Ontspannen',
     paceBalanced: 'Gebalanceerd',
     paceIntensive: 'Intensief',
+    paceFlexibleHint: 'Lichtste schema — kom wanneer je tijd hebt, geen dagelijkse druk',
     paceRelaxedHint: 'Boeken komen minder vaak terug — ideaal als je af en toe oefent',
     paceBalancedHint: 'Aanbevolen — goede balans tussen inspanning en voortgang',
     paceIntensiveHint: 'Boeken komen vaak terug — ideaal als je regelmatig oefent',
+    // Session-size keys for the Quiz Mode home-screen launcher.
+    // The user picks how many books they want to practice now:
+    //   sessionSizeQuick    — 5 most-overdue (capped at remaining)
+    //   sessionSizeStandard — 10 most-overdue (capped at remaining)
+    //   sessionSizeFull     — all currently due, no cap
+    // The number after the dot is filled in at render time from the
+    // actual due-list size, so the user sees the real commitment up
+    // front rather than an abstract "Quick" label.
+    sessionSizeQuick: 'Snel',
+    sessionSizeStandard: 'Normaal',
+    sessionSizeFull: 'Volledig',
+    sessionSizeBooks: 'boeken',
+    sessionSizeBookSingle: 'boek',
+    sessionSizeMinutes: 'min',
     // Two keys exist for the same FSRS due-count by design — this is
     // intentional and should NOT be unified:
     //   - readyToPractice ("Klaar om te oefenen") is the home-menu label.
@@ -523,12 +539,22 @@ export const translations = {
     abbrShort: 'Short abbreviations',
     learningPace: 'Learning pace',
     learningPaceDesc: '',
+    paceFlexible: 'Flexible',
     paceRelaxed: 'Relaxed',
     paceBalanced: 'Balanced',
     paceIntensive: 'Intensive',
+    paceFlexibleHint: 'Lightest schedule — come when you have time, no daily pressure',
     paceRelaxedHint: 'Books come back less often — best if you practice occasionally',
     paceBalancedHint: 'Recommended — good balance between effort and progress',
     paceIntensiveHint: 'Books come back frequently — best if you practice often',
+    // Session-size keys for the Quiz Mode home-screen launcher.
+    // See NL section for design rationale.
+    sessionSizeQuick: 'Quick',
+    sessionSizeStandard: 'Standard',
+    sessionSizeFull: 'Full',
+    sessionSizeBooks: 'books',
+    sessionSizeBookSingle: 'book',
+    sessionSizeMinutes: 'min',
     // Two keys exist for the same FSRS due-count by design — this is
     // intentional and should NOT be unified. See the corresponding NL
     // block for the full rationale; in short:

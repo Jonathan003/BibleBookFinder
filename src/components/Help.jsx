@@ -67,8 +67,13 @@ const helpContent = {
       },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
-        q: 'Wat betekenen Ontspannen, Gebalanceerd en Intensief?',
-        a: 'Dit bepaalt hoe snel boeken terugkomen voor herhaling. Ontspannen = langere intervallen, kortere sessies. Intensief = kortere intervallen, vaker oefenen maar sneller leren. Je kunt dit altijd wijzigen via Instellingen.',
+        q: 'Wat betekenen Flexibel, Ontspannen, Gebalanceerd en Intensief?',
+        a: 'Dit bepaalt hoe snel boeken terugkomen voor herhaling — technisch gezegd: bij welk vergetingsrisico FSRS de volgende herhaling plant. Flexibel = lichtste schema (~20% vergetingsrisico bij elke herhaling), bedoeld voor mensen met wisselende vrije tijd; intervallen worden ongeveer dubbel zo lang als bij Gebalanceerd. Ontspannen = wat strakker (~15%). Gebalanceerd = standaard (~10%), de aanbevolen instelling voor de meeste mensen. Intensief = strakste schema (~5%), korte intervallen, snel leren maar dagelijks oefenen vereist. Je kunt het altijd wisselen in Instellingen; bestaande boekvoortgang blijft intact — alleen toekomstige herhalingen gebruiken de nieuwe instelling.',
+      },
+      // ─── 5b. Session size launcher ─────────────────────────────────
+      {
+        q: 'Wat zijn Snel, Normaal en Volledig op het startscherm?',
+        a: 'Drie sessielengtes voor Quiz Modus. Snel = 5 boeken (1-2 min, voor korte momenten). Normaal = 10 boeken (3-4 min, een lekkere middenweg). Volledig = alle boeken die nu klaarstaan (alle vandaag te oefenen boeken in één keer). Welke knoppen verschijnen hangt af van hoeveel boeken klaarstaan: bij weinig boeken zie je alleen Volledig (de andere zouden hetzelfde resultaat geven), bij veel boeken alle drie. De algoritme-werking is identiek — Snel pakt gewoon de 5 meest dringende boeken, FSRS update normaal. De rest blijft "klaar" voor de volgende sessie. Bedoeld voor mensen met wisselende vrije tijd: een sessie van 5 boeken is een echte sessie, geen "halve sessie".',
       },
       // ─── 6. Streak ──────────────────────────────────────────────────
       {
@@ -243,8 +248,13 @@ const helpContent = {
       },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
-        q: 'What do Relaxed, Balanced, and Intensive mean?',
-        a: 'This controls how often books come back for review. Relaxed means longer intervals and shorter sessions. Intensive means shorter intervals — you practice more often but learn faster. You can change this anytime in Settings.',
+        q: 'What do Flexible, Relaxed, Balanced, and Intensive mean?',
+        a: 'This controls how often books come back for review — technically: at what forgetting risk FSRS schedules the next repetition. Flexible = lightest schedule (~20% forgetting risk at each repetition), designed for people with irregular practice time; intervals roughly double compared to Balanced. Relaxed = a bit tighter (~15%). Balanced = the standard (~10%), recommended for most people. Intensive = tightest schedule (~5%), short intervals, fast learning but requires daily practice. You can switch any time in Settings; existing book progress stays intact — only future repetitions use the new setting.',
+      },
+      // ─── 5b. Session size launcher ─────────────────────────────────
+      {
+        q: 'What are Quick, Standard, and Full on the home screen?',
+        a: 'Three session lengths for Quiz Mode. Quick = 5 books (1-2 min, for short moments). Standard = 10 books (3-4 min, a comfortable middle ground). Full = all books currently ready (everything due today in one go). Which buttons appear depends on how many books are ready: when few are due you only see Full (the others would produce the same session), when many are due you see all three. The algorithm behaviour is identical — Quick simply picks the 5 most-urgent books, FSRS updates normally. The rest stays "ready" for next time. Designed for people with irregular practice time: a 5-book session is a real session, not a "half session".',
       },
       // ─── 6. Streak ──────────────────────────────────────────────────
       {

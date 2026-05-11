@@ -77,6 +77,13 @@ function App() {
   // (score, response times, best-streak progress) survives the round trip.
   const [quizPhase, setQuizPhase] = useState(null);
 
+  // Session-size limit chosen on the home screen via the Quick/Standard/Full
+  // launchers. `null` means no limit (Full / unlimited; legacy behaviour).
+  // Captured into QuizGrid on mount; the user's choice for *this* launch
+  // doesn't survive into the next session (returning to the menu and
+  // launching again re-asks the question).
+  const [quizSessionLimit, setQuizSessionLimit] = useState(null);
+
   const lang = config.display.lang;
 
   // "Focus mode" = the user is actively doing a task; the header should
@@ -842,24 +849,84 @@ function App() {
                 </button>
               </div>
 
-              {/* Start button. Single CTA, label adapts to the selected
-                  mode. This is the launch action — the cards above are
-                  selectors, this is the commit. */}
-              <button
-                className="btn home-start-btn"
-                onClick={() => {
-                  if (selectedMode === 'quiz') {
-                    setQuizPhase('playing');
-                    goToMode('quiz');
-                  } else {
-                    goToMode('boxMode');
-                  }
-                }}
-              >
-                {selectedMode === 'boxMode'
-                  ? `${t.homeStartBoxMode} →`
-                  : `${t.homeStartQuiz} →`}
-              </button>
+              {/* Launcher row. Quiz Mode shows up to 3 session-size
+                  buttons (Quick / Standard / Full) that snap to the
+                  user's actual due+unseen count to avoid showing
+                  redundant options. Box Mode keeps its single Start
+                  CTA — Box Mode's pre-launch choice is *scope* (which
+                  group?), made on the dedicated scope-picker screen,
+                  not session size. The asymmetry is deliberate: each
+                  mode surfaces its own meaningful choice.
+
+                  For Quiz Mode the visible buttons are computed from
+                  stats.dueNow (which includes both unseen books and
+                  truly-due cards — see fsrs.js getBookStats). Logic:
+                    - 0 due:   show Full anyway. Clicking will jump
+                               straight to the session-complete screen
+                               (existing behaviour for empty queue).
+                               No need to special-case here.
+                    - 1-5:     show only Full (Quick would == Full).
+                    - 6-10:    show Quick (5) + Full.
+                    - 11+:     show Quick (5) + Standard (10) + Full.
+                  This way the user never sees three buttons that all
+                  produce the same session — Quick=3 / Standard=3 /
+                  Full=3 would be just confusing. */}
+              {/* Height-stable wrapper around the launcher region.
+                  Box Mode produces a single button (~56px), Quiz Mode
+                  can produce 1-3 stacked launchers (up to ~184px).
+                  Without min-height reservation the streak footer
+                  below would jump up/down when the user switches
+                  between mode cards. The CSS class reserves enough
+                  height on mobile and collapses on wider screens. */}
+              <div className="home-launcher-area">
+                {selectedMode === 'boxMode' ? (
+                  <button
+                    className="btn home-start-btn"
+                    onClick={() => goToMode('boxMode')}
+                  >
+                    {`${t.homeStartBoxMode} →`}
+                  </button>
+                ) : (
+                  <div className="home-quiz-launchers">
+                    {(() => {
+                      const total = stats.dueNow;
+                      const launchers = [];
+                      if (total > 5) {
+                        launchers.push({ key: 'quick', label: t.sessionSizeQuick, limit: 5, count: 5 });
+                      }
+                      if (total > 10) {
+                        launchers.push({ key: 'standard', label: t.sessionSizeStandard, limit: 10, count: 10 });
+                      }
+                      launchers.push({ key: 'full', label: t.sessionSizeFull, limit: null, count: total });
+                      return launchers.map(opt => {
+                        const booksLabel = opt.count === 1
+                          ? t.sessionSizeBookSingle
+                          : t.sessionSizeBooks;
+                        // Standard-size button gets the primary highlight when
+                        // present (it's the recommended middle ground). Otherwise
+                        // Full takes primary. Quick (when shown alongside others)
+                        // is always secondary.
+                        const isPrimary = (opt.key === 'standard')
+                          || (opt.key === 'full' && launchers.length < 2);
+                        return (
+                          <button
+                            key={opt.key}
+                            className={`btn home-launcher-btn${isPrimary ? ' home-launcher-primary' : ''}`}
+                            onClick={() => {
+                              setQuizSessionLimit(opt.limit);
+                              setQuizPhase('playing');
+                              goToMode('quiz');
+                            }}
+                          >
+                            <span className="launcher-label">{opt.label}</span>
+                            <span className="launcher-count">{opt.count} {booksLabel}</span>
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+              </div>
 
               {/* Always-visible streak. Shown regardless of suggested
                   mode because daily-engagement signal is universally
@@ -902,8 +969,10 @@ function App() {
                 addTrainingTime={addTrainingTime}
                 totalQuizMs={currentUser.totalQuizMs || 0}
                 quizHistory={currentUser.quizHistory || []}
+                sessionLimit={quizSessionLimit}
                 onBack={() => {
                   setQuizPhase(null);
+                  setQuizSessionLimit(null);
                   setView('menu');
                 }}
                 onPhaseChange={setQuizPhase}

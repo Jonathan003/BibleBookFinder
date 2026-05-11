@@ -1,3 +1,115 @@
+# v3.1 update — Flexibel leertempo + sessielengte-keuze
+
+Deze update voegt twee samenhangende verbeteringen toe die Quiz Modus
+geschikter maken voor mensen met wisselende vrije tijd. Beide raken het
+FSRS-algoritme niet aan — alleen hoe de gebruiker ermee in contact komt.
+
+## Wat zit er in deze zip
+
+### A. Nieuwe "Flexibel" leertempo-instelling
+
+**Probleem:** de drie bestaande tempo's (Ontspannen 0.85, Gebalanceerd
+0.90, Intensief 0.95) zijn allemaal geijkt op gebruikers die regelmatig
+oefenen. Voor wie wisselende vrije tijd heeft levert zelfs Ontspannen
+nog steeds een schema op dat als "achterstand" voelt: 30-50 boeken
+klaarstaan na een paar dagen niet kunnen oefenen is normaal voor het
+algoritme, maar visueel ontmoedigend.
+
+**Oplossing:** een vierde tempo "Flexibel" met `request_retention=0.80`.
+Bij dit niveau worden intervallen ongeveer dubbel zo lang als bij
+Gebalanceerd. Concreet: een gebruiker die nu 30 boeken/dag te oefenen
+heeft op Gebalanceerd, ziet bij Flexibel ongeveer 12-15 boeken/dag. Alle
+66 boeken halen nog steeds Permanent over de tijd; ze hangen alleen
+langer in tussenstadia en het schema voelt minder veeleisend.
+
+**Veiligheid bij wisselen:** bestaande FSRS-data blijft onaangetast. De
+ts-fsrs scheduler wordt herbouwd zodra `learningPace` verandert (via
+`useMemo([learningPace])`), maar alleen toekomstige herhalingen gebruiken
+de nieuwe retention. Bestaande due-dates blijven staan. Dit volgt Anki's
+default "Reschedule cards on change: NO" — de aanbevolen aanpak.
+
+**Bestanden:** `src/fsrs.js` (`PACE_CONFIG.flexible: { request_retention:
+0.80 }` toegevoegd boven `relaxed`), `src/components/Settings.jsx`
+(dropdown uitgebreid + hint switch case), `src/data.js` (`paceFlexible`
++ `paceFlexibleHint` translation keys in NL en EN).
+
+**Hintteksten:**
+- NL: "Lichtste schema — kom wanneer je tijd hebt, geen dagelijkse druk"
+- EN: "Lightest schedule — come when you have time, no daily pressure"
+
+### B. Sessielengte-keuze op het startscherm (Snel / Normaal / Volledig)
+
+**Probleem:** Quiz Modus had één enkele Start-knop, die alle klaarstaande
+boeken in één sessie zette. Voor een gebruiker met 12 due en 5 minuten
+voelt dat als "ik moet alles doen of niets". Box Modus had dit probleem
+al opgelost via zijn scope-keuze; Quiz Modus niet.
+
+**Oplossing:** waar nu één Start-knop staat, verschijnen 1-3 launcher-
+knoppen afhankelijk van hoeveel boeken klaarstaan:
+- ≤ 5 due: alleen "Volledig (N boeken)" (de andere zouden hetzelfde
+  resultaat geven, dus geen redundante keuzes)
+- 6-10 due: "Snel (5)" + "Volledig (N)"
+- > 10 due: "Snel (5)" + "Normaal (10)" + "Volledig (N)"
+
+Klikt op Snel → quiz start met limiet van 5 boeken. De pickNextBook-
+logica blijft identiek (most-overdue eerst, 20% kans op nieuw boek voor
+variatie), maar telt af richting de gekozen limiet. Bij 5 antwoorden
+verschijnt het bestaande sessie-compleet-scherm, met Train-vooruit
+beschikbaar als de gebruiker toch wil doorgaan.
+
+**Algoritme-impact:** geen. FSRS update als gebruikelijk per antwoord.
+De 5 die je doet zijn de 5 die je hoe dan ook eerst zou hebben gedaan —
+de rest blijft "due" voor de volgende sessie. Een Snelle sessie van 5
+boeken is dus geen "halve sessie" maar een echte korte sessie.
+
+**Edge cases:**
+- Train Vooruit overrulet de session-limit (eigen queue, eigen lengte).
+- Sessionlimit-keuze is per launch, niet persistent over launches.
+- Pace-wissel mid-sessie blijft veilig: bestaande sessie blijft draaien
+  met de nieuwe scheduler voor toekomstige reviews.
+- Box Modus behoudt de enkele Start-knop met scope-picker. De asymmetrie
+  is bewust: elke modus surfacet zijn eigen kernkeuze (Box = scope,
+  Quiz = lengte).
+
+**Bestanden:** `src/components/QuizGrid.jsx` (`sessionLimit` prop,
+`sessionLimitRef` + `sessionPickCountRef`, limit-check in `pickNextBook`
+boven de regular flow, increment na succesvolle pick, clear in
+`handleStartTrainAhead`), `src/App.jsx` (`quizSessionLimit` state, drie
+launcher-knoppen vervangen de Quiz-mode Start-knop, `onBack` reset de
+limit, wrapper `.home-launcher-area` voor hoogte-stabiliteit),
+`src/App.css` (`.home-quiz-launchers`, `.home-launcher-btn`,
+`.home-launcher-primary`, `.home-launcher-area` met responsive collapse
+op ≥640px), `src/data.js` (`sessionSizeQuick`/`Standard`/`Full`/`Books`/
+`BookSingle`/`Minutes` translation keys in NL en EN).
+
+### C. Help-pagina uitgebreid
+
+**Twee FAQ-aanpassingen** in `src/components/Help.jsx`:
+- De bestaande "Wat betekenen Ontspannen, Gebalanceerd en Intensief?"-
+  vraag is verbreed naar "Wat betekenen Flexibel, Ontspannen,
+  Gebalanceerd en Intensief?" met uitleg per niveau (vergetingsrisico-
+  percentages, doelgroep per niveau, en de garantie dat wisselen veilig
+  is voor bestaande data).
+- Nieuwe vraag "Wat zijn Snel, Normaal en Volledig op het startscherm?"
+  legt de drie launcher-knoppen uit en wanneer welke verschijnen.
+
+Beide vragen in NL en EN.
+
+### D. Documentatie
+
+- `BibleBooks-Reference.md` ongewijzigd (eerder deze week gepubliceerd).
+- README niet aangepast (de hoofdfunctionaliteit blijft hetzelfde, alleen
+  detail-instellingen veranderen).
+
+## Build-verificatie
+
+Clean build slaagt op vite 6 + React 19 (bundle 414.81 KiB, ~2 KiB groei
+t.o.v. v3 door extra translation keys en launcher-rendering). Geen
+warnings. Logic test voor de launcher-zichtbaarheidsregels (7 scenario's
+van dueNow=0 tot 66) past 7/7.
+
+---
+
 # v3 polish update — wijzigingen overzicht
 
 Deze update voltooit de v3-rebuild door de Box/Quiz oefenervaring volledig
