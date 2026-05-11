@@ -116,59 +116,6 @@ export function getDueBooks(fsrsCards, allBooks) {
   };
 }
 
-// Books NOT currently due but with a card — i.e. legitimate Train Ahead
-// candidates. Returned sorted by `due` ascending (closest-to-due first),
-// matching the spec's "FSRS-ordered, NOT random" requirement.
-//
-// Unseen books are excluded: they're already picked up by Branch 2 of
-// pickNextBook before the session-complete screen ever activates.
-// Including them as Train Ahead candidates would let the user "train
-// ahead" on books FSRS already considers due, which is just confusing.
-export function getTrainAheadCandidates(fsrsCards, allBooks, now = new Date()) {
-  const candidates = [];
-  allBooks.forEach(book => {
-    const card = fsrsCards[book.id];
-    if (!card) return;
-    if (isDueNow(card, now)) return;
-    candidates.push({ book, due: new Date(card.due) });
-  });
-  candidates.sort((a, b) => a.due - b.due);
-  return candidates;
-}
-
-// Build a Train Ahead queue for a given horizon. Returns an array of
-// books in due-ascending order (the order they'll be presented in the
-// quiz). Horizons:
-//   'count5'    — 5 closest-to-due
-//   'count10'   — 10 closest-to-due
-//   'week'      — all books due within the next 7 days (calendar)
-//   'remaining' — every non-due book with a card
-export function buildTrainAheadQueue(fsrsCards, allBooks, horizon, now = new Date()) {
-  const candidates = getTrainAheadCandidates(fsrsCards, allBooks, now);
-  if (horizon === 'count5')    return candidates.slice(0, 5).map(c => c.book);
-  if (horizon === 'count10')   return candidates.slice(0, 10).map(c => c.book);
-  if (horizon === 'remaining') return candidates.map(c => c.book);
-  if (horizon === 'week') {
-    const cutoff = now.getTime() + 7 * 24 * 60 * 60 * 1000;
-    return candidates.filter(c => c.due.getTime() <= cutoff).map(c => c.book);
-  }
-  return [];
-}
-
-// Counts per horizon — used to disable submenu options that would
-// produce zero books, and to disable the parent Train Ahead button
-// itself when no horizon has any candidates.
-export function getTrainAheadCounts(fsrsCards, allBooks, now = new Date()) {
-  const candidates = getTrainAheadCandidates(fsrsCards, allBooks, now);
-  const cutoff = now.getTime() + 7 * 24 * 60 * 60 * 1000;
-  return {
-    count5: Math.min(5, candidates.length),
-    count10: Math.min(10, candidates.length),
-    week: candidates.filter(c => c.due.getTime() <= cutoff).length,
-    remaining: candidates.length,
-  };
-}
-
 // Serialize card for localStorage (dates → ISO strings)
 export function serializeCard(card) {
   return {

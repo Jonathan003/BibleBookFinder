@@ -21,7 +21,7 @@ const helpContent = {
       },
       {
         icon: '⏸️',
-        text: 'Wanneer "Klaar om te oefenen" op het startscherm — of "Te doen" in de quiz — op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. Aan het eind van een sessie krijg je twee keuzes: de sessie afsluiten of "Train vooruit" gebruiken om wat extra te oefenen. Train vooruit is bedoeld als bonus, niet als gewone routine.',
+        text: 'Wanneer "Klaar om te oefenen" op het startscherm — of "Te doen" in de quiz — op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. Kom terug wanneer je tijd hebt; het is geen probleem als dat niet elke dag is.',
       },
       {
         icon: '⚙️',
@@ -35,25 +35,15 @@ const helpContent = {
         q: 'Wat betekent "Klaar om te oefenen" op het startscherm versus "Te doen" in de quiz?',
         a: 'Hetzelfde getal, twee namen. "Klaar om te oefenen" staat op het startscherm en is een uitnodiging: zoveel boeken wachten op je als je een sessie start. "Te doen" verschijnt in de quiz zelf en is een aftelteller: zoveel boeken nog te beantwoorden in deze sessie. Beide getallen tonen het aantal boeken dat het FSRS-algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. De andere naam in de quiz is bewust gekozen omdat "Klaar om te oefenen" daar gek leest — je bent al aan het oefenen.',
       },
-      // ─── 2. Train Vooruit ──────────────────────────────────────────
-      {
-        q: 'Wat is Train Vooruit en wanneer gebruik ik het?',
-        a: 'Train Vooruit is een knop die verschijnt op het sessie-compleet-scherm (wanneer "Te doen" op 0 staat). Het laat je extra oefenen op boeken die nog niet aan de beurt zijn — je kiest 5 boeken, 10 boeken, deze week, of alle resterende. De boeken worden gekozen op volgorde van wanneer ze gepland staan (eerstvolgende eerst), dus je oefent precies wat het dichtst bij is. FSRS werkt gewoon door — vroege herhalingen geven automatisch iets minder stabiliteitswinst, maar dat is normaal en geen probleem. Train Vooruit is bedoeld voor momenten dat je extra tijd hebt, voor een vakantie, of gewoon omdat je zin hebt om door te gaan. Het is geen vervanger voor het normale schema; gebruik het als bonus, niet als hoofdroutine.',
-      },
-      // ─── 3. Drilling all-Mastered ──────────────────────────────────
-      {
-        q: 'Wat als ik elke dag Train Vooruit doe tot alles Beheerst is?',
-        a: 'Mag prima — het is geen "verkeerd gebruik" en de app blokkeert het niet. Wel een paar nuances. Je kunt op die manier alle 66 boeken sneller naar Beheerst tillen (ruwweg 1-2 weken bij intensief vooruit-trainen), naar Verankerd in 1-2 maanden, en naar Permanent in ongeveer een half jaar. Maar: meerdere herhalingen op dezelfde dag tellen niet evenveel als evenveel herhalingen verspreid over weken. FSRS schaalt de stabiliteitswinst met de retrievability (hoe ver weg het volgende moment was) — dezelfde dag is dichtbij, dus de winst per herhaling is kleiner. Je verspilt geen tijd, maar je krijgt minder rendement per minuut dan bij een gewone schema-volger. Geen oordeel: doe wat voor jou werkt. Het algoritme houdt het bij.',
-      },
       // ─── 4. Doos Modus introduction ────────────────────────────────
       {
         q: 'Wat is Doos Modus en waarvoor dient het?',
         a: 'Doos Modus is een aparte oefenmodus, los van het normale schema. Alle gekozen boeken beginnen in doos 1. Een goed antwoord verplaatst dat boek een doos hoger; een fout antwoord verplaatst het een doos lager. Je sessie is klaar wanneer alle gekozen boeken in doos 5 (de "verankerde" doos) staan. Het is een snelle, op zichzelf staande sessie — typisch 10-20 minuten — bedoeld voor wanneer je gewoon zin hebt om te trainen zonder je voortgang te beïnvloeden. Een persoonlijk record per selectie (alle 66, alleen Pentateuch, alleen Evangeliën, etc.) wordt bijgehouden voor tijd, fouten, en langste reeks. Je kunt zoveel sessies achter elkaar doen als je wilt; alleen je beste tijd telt mee.',
       },
-      // ─── 5. Doos Modus vs the other modes ──────────────────────────
+      // ─── 5. Doos Modus vs Quiz Modus ───────────────────────────────
       {
-        q: 'Wat is het verschil tussen Doos Modus, Quiz Modus en Train Vooruit?',
-        a: 'Quiz Modus volgt het FSRS-schema — je werkt aan boeken die volgens het algoritme nu aan de beurt zijn. Train Vooruit haalt boeken eerder naar voren dan gepland (bonus-oefening op de eerstvolgende boeken). Doos Modus negeert het schema volledig: je kiest een selectie (alle 66 of een groep), elk boek begint in doos 1, en je werkt totdat alles in doos 5 staat. Het is een cram-modus zonder schema-impact: je beheersniveaus, gouden lijntjes, streak en herhaalintervallen veranderen er niet door. Gebruik Quiz voor lange-termijngeheugen, Doos Modus voor een korte intensieve sessie wanneer je iets even goed wilt vastzetten — bijvoorbeeld voor een vergadering waarin je snel moet kunnen opzoeken.',
+        q: 'Wat is het verschil tussen Doos Modus en Quiz Modus?',
+        a: 'Quiz Modus volgt het FSRS-schema — je werkt aan boeken die volgens het algoritme nu aan de beurt zijn. Doos Modus negeert het schema volledig: je kiest een selectie (alle 66 of een groep), elk boek begint in doos 1, en je werkt totdat alles in doos 5 staat. Het is een cram-modus zonder schema-impact: je beheersniveaus, gouden lijntjes, streak en herhaalintervallen veranderen er niet door. Gebruik Quiz voor lange-termijngeheugen, Doos Modus voor een korte intensieve sessie wanneer je iets even goed wilt vastzetten — bijvoorbeeld voor een vergadering waarin je snel moet kunnen opzoeken.',
       },
       // ─── 6. Doos Modus and the schedule ────────────────────────────
       {
@@ -90,12 +80,7 @@ const helpContent = {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
         a: 'De gouden lijn verschijnt onder een boek zodra het niveau Beheerst (of hoger — Verankerd, Permanent) heeft bereikt. Concreet betekent dat: het algoritme heeft minstens drie correcte antwoorden gezien en de berekende stabiliteit ligt boven 7 dagen. De lijn is een visuele "dit boek zit erin"-markering, vergelijkbaar met WaniKani\'s Burned-status, en helpt je in één oogopslag zien welke boeken je nog moet oppikken. Pas dus enkele weken oefenen voordat de eerste gouden lijntjes verschijnen — dat is normaal. Je kunt de lijn ook helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
-      // ─── 9. Forecast ────────────────────────────────────────────────
-      {
-        q: 'Wat toont de "Komende 7 dagen"-balk?',
-        a: 'Een vooruitblik: hoeveel boeken op elke dag van de komende week voor herhaling klaarstaan. Dit helpt je plannen — je kunt zien wanneer een drukke dag aankomt en eventueel iets vooruit doen, of een rustige dag verwachten. Er is geen verplichting; het is informatief.',
-      },
-      // ─── 10. Pause ──────────────────────────────────────────────────
+      // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Kan ik een quiz pauzeren?',
         a: 'Eigenlijk niet — maar dat is geen probleem. Tik op "← Terug" en je gaat direct naar het startscherm. Je gedane antwoorden zijn al opgeslagen (FSRS commit per antwoord), dus geen voortgang verloren. Wel wordt je sessie officieel afgesloten zodra je weggaat. Wil je later doorgaan, dan kies je opnieuw Snel/Normaal/Volledig op het startscherm. De boeken die je nog niet had gedaan, staan dan vanzelf weer "Klaar om te oefenen".',
@@ -104,11 +89,11 @@ const helpContent = {
       // ─── Voortgang begrijpen — vervolg ──────────────────────────────
       {
         q: 'Wat betekent "Klaar om te oefenen" op het startscherm?',
-        a: 'Het toont hoeveel boeken het algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. Wanneer dit getal op 0 staat verschijnt in plaats daarvan een rust-kaart, met een boodschap die past bij hoe lang je rust hebt: "Sessie klaar" als het volgende boek binnen een uur terugkomt, "Klaar voor vandaag" als het later vandaag is, of "Klaar — geniet van de rust" als er pas morgen of later iets gepland staat. Eén dag uitstellen is geen probleem; meerdere dagen achter elkaar overslaan loopt op.',
+        a: 'Het toont hoeveel boeken het algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. Wanneer dit getal op 0 staat verschijnt in plaats daarvan een rust-kaart met de boodschap "Klaar voor nu — kom terug wanneer je tijd hebt". Eén dag uitstellen is geen probleem; meerdere dagen achter elkaar overslaan loopt op.',
       },
       {
         q: 'Waarom kan ik niet doortrainen als "Klaar om te oefenen" op 0 staat?',
-        a: 'Je kunt wel — maar je voordeel ervan is bijna nul, en je kunt zelfs licht slechter af zijn. Het idee achter spaced repetition is dat je geheugen sterker wordt door de pauze tussen herhalingen, niet door extra herhalingen op iets dat al zit. Een boek dat al "Beheerst" is opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer. Voor de uren of dagen waarin een boek "rust" doet je brein onbewust werk — daarom voelt het de volgende keer makkelijker. Wil je toch verder oefenen, gebruik dan Train Vooruit (op het sessie-compleet-scherm) of Doos Modus.',
+        a: 'Je kunt wel — maar je voordeel ervan is bijna nul, en je kunt zelfs licht slechter af zijn. Het idee achter spaced repetition is dat je geheugen sterker wordt door de pauze tussen herhalingen, niet door extra herhalingen op iets dat al zit. Een boek dat al "Beheerst" is opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer. Voor de uren of dagen waarin een boek "rust" doet je brein onbewust werk — daarom voelt het de volgende keer makkelijker. Wil je toch verder oefenen, gebruik dan Doos Modus.',
       },
       {
         q: 'Hoe wordt mijn trainingstijd bijgehouden?',
@@ -216,27 +201,17 @@ const helpContent = {
         q: 'What\'s the difference between "Ready to practice" on the home screen and "Due" during the quiz?',
         a: 'Same number, two names. "Ready to practice" appears on the home screen and frames the count as an invitation: this many books are waiting when you start a session. "Due" appears in the quiz itself and frames the same count as a session countdown: this many books still to answer in this run. Both numbers show the books FSRS wants to review now — unseen books plus books whose review interval has passed. The different name in the quiz is deliberate because "Ready to practice" reads oddly mid-session — you\'re already practicing.',
       },
-      // ─── 2. Train Ahead ─────────────────────────────────────────────
-      {
-        q: 'What is Train Ahead and when should I use it?',
-        a: 'Train Ahead is a button that appears on the session-complete screen (when "Due" reaches 0). It lets you practice extra on books that are not yet due — pick 5 books, 10 books, this week, or all remaining. Books are picked in order of how soon they were scheduled (closest first), so you train exactly what would have come up next. FSRS keeps running normally — early reviews give slightly smaller stability gains automatically, which is fine and not a problem. Train Ahead is intended for moments when you have extra time, before a vacation, or simply because you feel like continuing. It\'s a bonus, not a replacement for the regular schedule; use it on top, not instead of, the daily flow.',
-      },
-      // ─── 3. Drilling all-Mastered ───────────────────────────────────
-      {
-        q: 'What if I do Train Ahead every day until everything is Mastered?',
-        a: 'Perfectly fine — it\'s not "wrong use" and the app doesn\'t block it. A few nuances though. You can push all 66 books to Mastered faster this way (roughly 1-2 weeks of intensive Train-Ahead use), to Anchored in about 1-2 months, and to Permanent in about half a year. But: multiple reviews in one day don\'t count as much as the same number spread across weeks. FSRS scales stability gain by retrievability (how distant the next scheduled moment was) — same-day is close, so per-rep gain is smaller. You\'re not wasting time, just getting less return per minute than a regular schedule-follower. No judgment: do what works for you. The algorithm tracks it.',
-      },
-      // ─── 4. Box Mode introduction ───────────────────────────────────
+      // ─── 2. Box Mode introduction ───────────────────────────────────
       {
         q: 'What is Box Mode and what is it for?',
         a: 'Box Mode is a separate practice mode, independent of the regular schedule. Every selected book starts in box 1. A correct answer moves that book up one box; a wrong answer moves it down one box. Your session is finished when every selected book reaches box 5 (the "rooted" box). It\'s a quick, standalone session — typically 10-20 minutes — meant for moments when you simply feel like training without affecting your progress. Personal bests per selection (all 66, just Pentateuch, just Gospels, etc.) are tracked for time, mistakes, and longest streak. You can run as many sessions back-to-back as you want; only your best time counts.',
       },
-      // ─── 5. Box Mode vs other modes ─────────────────────────────────
+      // ─── 3. Box Mode vs Quiz Mode ──────────────────────────────────
       {
-        q: 'How is Box Mode different from Quiz Mode and Train Ahead?',
-        a: 'Quiz Mode follows the FSRS schedule — you work on books the algorithm decides are due now. Train Ahead pulls books forward earlier than scheduled (bonus practice on the next-soonest books). Box Mode ignores the schedule entirely: you pick a selection (all 66 or a group), every book starts in box 1, and you work until everything reaches box 5. It\'s a cram mode with no schedule impact: your mastery levels, gold lines, streak, and review intervals don\'t change because of it. Use Quiz for long-term memory, Box Mode for a quick intensive session when you want to nail something down fast — for instance before a meeting where you\'ll need to look up books quickly.',
+        q: 'How is Box Mode different from Quiz Mode?',
+        a: 'Quiz Mode follows the FSRS schedule — you work on books the algorithm decides are due now. Box Mode ignores the schedule entirely: you pick a selection (all 66 or a group), every book starts in box 1, and you work until everything reaches box 5. It\'s a cram mode with no schedule impact: your mastery levels, gold lines, streak, and review intervals don\'t change because of it. Use Quiz for long-term memory, Box Mode for a quick intensive session when you want to nail something down fast — for instance before a meeting where you\'ll need to look up books quickly.',
       },
-      // ─── 6. Box Mode and the schedule ───────────────────────────────
+      // ─── 4. Box Mode and the schedule ───────────────────────────────
       {
         q: 'Does Box Mode affect my FSRS schedule or my streak?',
         a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status stays the same. Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won\'t defend your streak. The only data that persists is your personal best per selection (fastest time, fewest mistakes, longest streak).',
@@ -271,12 +246,7 @@ const helpContent = {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
         a: 'The gold line appears under a book once it has reached tier Mastered (or higher — Anchored, Permanent). Concretely: the algorithm has seen at least three correct answers and the calculated stability is above 7 days. The line is a visual "this book is rooted" marker, similar to WaniKani\'s Burned status, and helps you see at a glance which books still need work. Expect a few weeks of practice before the first gold lines appear — that\'s normal. You can also turn the line off entirely via Settings → Grid → "Mastered books" if you prefer practicing without the visual progress aid.',
       },
-      // ─── 9. Forecast ────────────────────────────────────────────────
-      {
-        q: 'What does the "Next 7 days" bar show?',
-        a: 'A look-ahead: how many books are scheduled for review on each upcoming day this week. Useful for planning — you can see when a busy day is coming and pull a few forward, or anticipate a quiet one. There\'s no obligation; it\'s informational.',
-      },
-      // ─── 10. Pause ──────────────────────────────────────────────────
+      // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Can I pause a quiz session?',
         a: 'Not really — but that\'s fine. Tap "← Back" and you\'ll go straight to the home screen. Your answered questions are already saved (FSRS commits per answer), so no progress is lost. The session is officially closed when you leave, though. To continue later, pick Quick/Standard/Full again on the home screen — books you hadn\'t done yet show up as "Ready to practice" automatically.',
@@ -285,11 +255,11 @@ const helpContent = {
       // ─── Understanding progress — continued ─────────────────────────
       {
         q: 'What does "Ready to practice" mean on the home screen?',
-        a: 'It shows how many books the algorithm wants to review now — unseen books plus books whose review interval has passed. When this number reaches 0, a rest card appears in its place with a message that matches how long your rest is: "Session complete" when the next book comes back within an hour, "Done for today" when it\'s later today, or "Done — enjoy the rest" when nothing is due until tomorrow or later. Postponing one day is fine; skipping multiple days in a row piles up.',
+        a: 'It shows how many books the algorithm wants to review now — unseen books plus books whose review interval has passed. When this number reaches 0, a rest card appears in its place with the message "Done for now — come back when you have time". Postponing one day is fine; skipping multiple days in a row piles up.',
       },
       {
         q: 'Why can\'t I keep training when "Ready to practice" reads 0?',
-        a: 'You can — but the benefit is near zero, and you may even be slightly worse off. Spaced repetition works because your memory strengthens *during* the wait between reviews, not from extra reps on something already stable. Re-drilling a Mastered book adds no new strength; it just resets the timer. During the hours or days a book "rests", your brain quietly does work — that\'s why the next time feels easier. If you want to keep practicing, use Train Ahead (on the session-complete screen) or Box Mode.',
+        a: 'You can — but the benefit is near zero, and you may even be slightly worse off. Spaced repetition works because your memory strengthens *during* the wait between reviews, not from extra reps on something already stable. Re-drilling a Mastered book adds no new strength; it just resets the timer. During the hours or days a book "rests", your brain quietly does work — that\'s why the next time feels easier. If you want to keep practicing, use Box Mode.',
       },
       {
         q: 'How is my training time tracked?',

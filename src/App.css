@@ -266,26 +266,6 @@
   margin: 0;
 }
 
-.all-caught-up-next {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding-top: 0.4rem;
-  border-top: 1px solid rgba(59,130,246,0.15);
-}
-
-.all-caught-up-next-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.all-caught-up-next-time {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
 /* ─── Tier bar + legend ──────────────────────────────────────────────
    Stacked horizontal bar showing the count in each tier, plus a legend
    of chips below for tiers that are non-empty. Replaces the previous
@@ -383,7 +363,7 @@
 /* "X books close to Mastered" indicator. Subtle by design — it's
    secondary information, an explanation of the rep-gate rather than a
    metric the user is competing against. Sits between the tier legend
-   and the streak/forecast row so it reads as a footnote on the tier
+   and the streak row so it reads as a footnote on the tier
    visualization, not as its own section. */
 .close-to-mastery {
   margin-top: 0.5rem;
@@ -393,39 +373,15 @@
   line-height: 1.4;
 }
 
-/* ─── Streak + forecast row ──────────────────────────────────────────
-   Two compact cards side by side on tablet+, stacked on phone. Both
-   are derived state — streak from quizHistory, forecast from FSRS due
-   dates — so they're cheap to render and always in sync with the
-   underlying data.
-
-   Layout: flexbox rather than grid because either card may be absent
-   (no streak yet, or no forecast data) and flexbox handles "the
-   remaining card fills the row" naturally. With grid 'auto 1fr', a
-   solo forecast card would render at content width with empty 1fr
-   space beside it. */
+/* ─── Streak card ──────────────────────────────────────────────────
+   Compact streak indicator, derived from quizHistory. Wrapper kept as
+   .momentum-section so the surrounding spacing tokens still apply. */
 .momentum-section {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
-}
-
-@media (min-width: 520px) {
-  .momentum-section {
-    flex-direction: row;
-    align-items: stretch;
-  }
-}
-
-.momentum-section .streak-card {
-  flex: 0 0 auto;
-}
-
-.momentum-section .forecast-card {
-  flex: 1 1 0;
-  min-width: 0;
 }
 
 .streak-card {
@@ -461,75 +417,6 @@
 .streak-best {
   font-size: 0.7rem;
   opacity: 0.85;
-}
-
-.forecast-card {
-  padding: 0.75rem 0.9rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.forecast-title {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-
-.forecast-bars {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.25rem;
-  height: 60px;
-}
-
-.forecast-day {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  height: 100%;
-  min-width: 0;
-}
-
-.forecast-bar-track {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  min-height: 0;
-}
-
-.forecast-bar-fill {
-  width: 70%;
-  max-width: 14px;
-  background: var(--tier-unseen);
-  border-radius: 3px 3px 0 0;
-  transition: height 0.3s ease;
-}
-
-.forecast-bar-fill.has-due {
-  background: var(--tier-mastered);
-}
-
-.forecast-count {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  height: 0.85rem;
-  line-height: 0.85rem;
-}
-
-.forecast-label {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
-  text-transform: lowercase;
 }
 
 /* Hint paragraph below the menu buttons in caught-up state. Reminds
@@ -905,8 +792,8 @@
    pinned in the top-right corner. The panel itself is transparent —
    the visual structure (cards, hero, etc.) lives inside.
 
-   min-height matches the Quiz panel's natural content height (~360px:
-   stat cards + tier bar + 7-day forecast) so switching between
+   min-height matches the Quiz panel's natural content height (~320px:
+   stat cards + tier bar + streak card) so switching between
    Quiz and Box selection in the home screen doesn't shift the
    surrounding layout. The flex-column display lets the inner Box
    dashboard expand vertically to fill the same space. */

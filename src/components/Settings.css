@@ -466,3 +466,47 @@
 .settings-subsection:first-child {
   margin-top: 0.2rem;
 }
+
+/* ─── Advanced details (collapsible) ──────────────────────────────
+   Used to tuck away rarely-needed settings (e.g. the FSRS learning
+   pace, which most users never touch in the schedule-free model).
+   Closed by default — opens with a single tap. Inside, settings
+   render with the same .setting-row styling as elsewhere. */
+.advanced-details {
+  margin: 0.4rem 0 0.8rem;
+}
+
+.advanced-summary {
+  cursor: pointer;
+  padding: 0.4rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  list-style: none;
+  user-select: none;
+}
+
+.advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+  color: var(--text-secondary, #888);
+}
+
+.advanced-details[open] > .advanced-summary::before {
+  transform: rotate(90deg);
+}
+
+.advanced-summary:hover,
+.advanced-summary:focus-visible {
+  color: var(--text-primary, #1a1a2e);
+  outline: none;
+}

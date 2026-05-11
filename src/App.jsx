@@ -3,9 +3,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats, getTierStats, countCloseToMastery, TIERS } from './fsrs';
-import { computeForecast, getNextDueTime, formatNextDue, forecastDayLabel, getCelebrationLevel } from './forecast';
 import { computeStreakInfo } from './streak';
-import { useRefreshableMemo } from './useRefreshableMemo';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration } from './timeFormat';
 import { getBoxModeBests } from './boxModeStorage';
@@ -272,28 +270,6 @@ function App() {
   const closeToMasteryCount = useMemo(
     () => countCloseToMastery(fsrsCards, bibleBooks),
     [fsrsCards]
-  );
-
-  // Time-dependent derived values. These all call `new Date()` internally
-  // (filtering or bucketing by current time), so a plain useMemo on
-  // [fsrsCards] would go stale: the cached value still reflects whatever
-  // `now` was when first computed. useRefreshableMemo re-evaluates every
-  // 60 s while the menu is visible, keeping the "Next book" countdown
-  // and 7-day forecast bars honest as time passes. Disabled outside the
-  // menu so we don't run timers behind Quiz/Study/Settings (their own
-  // state changes drive the renders they need).
-  const onMenu = view === 'menu';
-  const forecast = useRefreshableMemo(
-    () => computeForecast(fsrsCards, bibleBooks, 7),
-    [fsrsCards],
-    60 * 1000,
-    onMenu
-  );
-  const nextDue = useRefreshableMemo(
-    () => getNextDueTime(fsrsCards, bibleBooks),
-    [fsrsCards],
-    60 * 1000,
-    onMenu
   );
 
   // Streak from quizHistory — purely derived, no separate state.
@@ -644,33 +620,15 @@ function App() {
                     <span className="stat-label">{t.readyToPractice}</span>
                   </div>
                 </div>
-              ) : (() => {
-                // Three-level celebration based on how far away the next
-                // book is. Avoids the misleading "Done for today" message
-                // when in reality the next book is back in 5 minutes
-                // (Learning-tier short intervals).
-                const level = getCelebrationLevel(nextDue);
-                const titleKey =
-                  level === 'session-end' ? 'sessionEndTitle' :
-                  level === 'multi-day'   ? 'doneForDaysTitle' :
-                                            'doneForTodayTitle';
-                const bodyKey =
-                  level === 'session-end' ? 'sessionEndBody' :
-                  level === 'multi-day'   ? 'doneForDaysBody' :
-                                            'doneForTodayBody';
-                return (
-                  <div className={`all-caught-up all-caught-up-${level}`}>
-                    <div className="all-caught-up-title">{t[titleKey]}</div>
-                    <p className="all-caught-up-body">{t[bodyKey]}</p>
-                    <div className="all-caught-up-next">
-                      <span className="all-caught-up-next-label">{t.nextBookDue}:</span>
-                      <span className="all-caught-up-next-time">
-                        {nextDue ? formatNextDue(nextDue, lang) : t.nothingScheduled}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
+              ) : (
+                // Flat "done for now" message — no countdown, no schedule
+                // pressure. Practice happens when the user has time, not on
+                // a calendar the algorithm projects for them.
+                <div className="all-caught-up">
+                  <div className="all-caught-up-title">{t.allCaughtUpTitle}</div>
+                  <p className="all-caught-up-body">{t.allCaughtUpBody}</p>
+                </div>
+              )}
 
               {/* Tier-stack progress bar. Replaces the binary mastered/
                   not-mastered linear bar. Each segment is one tier, in
@@ -722,56 +680,20 @@ function App() {
                 )}
               </div>
 
-              {/* Streak indicator + 7-day forecast. Both are derived from
-                  existing state (quizHistory and fsrsCards respectively);
-                  neither needs any persistence. Streak hidden when zero
-                  to avoid scolding the fresh user with "0 day streak".
-                  Forecast shown only when there's data — empty fresh
-                  account would render a meaningless flat bar. */}
-              {(streakInfo.current > 0 || forecast.some(d => d.count > 0)) && (
+              {/* Streak indicator. Hidden when zero to avoid scolding the
+                  fresh user with "0 day streak". */}
+              {streakInfo.current > 0 && (
                 <div className="momentum-section">
-                  {streakInfo.current > 0 && (
-                    <div className="streak-card">
-                      <span className="streak-flame">🔥</span>
-                      <span className="streak-number">{streakInfo.current}</span>
-                      <span className="streak-label">
-                        {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
-                        {streakInfo.longest > streakInfo.current && (
-                          <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {forecast.some(d => d.count > 0) && (
-                    <div className="forecast-card">
-                      <div className="forecast-title">{t.forecastTitle}</div>
-                      <div className="forecast-bars">
-                        {(() => {
-                          // Normalize bar heights against the 7-day max so
-                          // the visual scale is always meaningful regardless
-                          // of absolute counts. Min 4px so days with >0
-                          // due books are at least visible — purely-zero
-                          // days stay flat.
-                          const maxCount = Math.max(1, ...forecast.map(d => d.count));
-                          return forecast.map((day, i) => {
-                            const heightPct = day.count === 0 ? 0 : Math.max(8, (day.count / maxCount) * 100);
-                            return (
-                              <div key={i} className="forecast-day">
-                                <div className="forecast-bar-track">
-                                  <div
-                                    className={`forecast-bar-fill ${day.count > 0 ? 'has-due' : ''}`}
-                                    style={{ height: `${heightPct}%` }}
-                                  />
-                                </div>
-                                <span className="forecast-count">{day.count || ''}</span>
-                                <span className="forecast-label">{forecastDayLabel(day.date, i, lang)}</span>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                  )}
+                  <div className="streak-card">
+                    <span className="streak-flame">🔥</span>
+                    <span className="streak-number">{streakInfo.current}</span>
+                    <span className="streak-label">
+                      {streakInfo.current === 1 ? t.dayStreakSingle : t.dayStreak}
+                      {streakInfo.longest > streakInfo.current && (
+                        <span className="streak-best"> · {t.streakBest} {streakInfo.longest}</span>
+                      )}
+                    </span>
+                  </div>
                 </div>
               )}
               </div>

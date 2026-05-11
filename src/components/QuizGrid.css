@@ -740,25 +740,9 @@
   line-height: 1.2;
 }
 
-.session-complete-next {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.95rem;
-}
-
-.session-complete-next-label {
-  color: var(--text-secondary, #555);
-}
-
-.session-complete-next-time {
-  color: var(--text-primary, #1a1a2e);
-  font-weight: 600;
-}
-
 /* Rest message: the two-line "Stoppen versterkt..." / "Wachten is..." block.
    Uses the secondary background as a subtle card so it reads as a separate
-   thought from the next-due line above. */
+   thought from the title above. */
 .session-complete-rest {
   background: var(--bg-secondary, #ffffff);
   border: 1px solid var(--border, #ddd);
@@ -840,119 +824,6 @@
   background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
   color: #fff;
   border-color: transparent;
-}
-
-/* Train Ahead container holds the parent button + collapsible submenu.
-   When .open is set, the parent button has its bottom corners flat so
-   the submenu reads as a continuation of the same control. */
-.session-complete-trainahead {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  position: relative;
-}
-
-.session-complete-trainahead-btn {
-  width: 100%;
-}
-
-.session-complete-trainahead.open .session-complete-trainahead-btn {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom-color: transparent;
-}
-
-.trainahead-caret {
-  margin-left: auto;
-  font-size: 0.85rem;
-  color: var(--text-secondary, #888);
-}
-
-/* Submenu — flat-top so it visually attaches to the parent button.
-   Each option is a horizontal row: label on the left, candidate count
-   on the right, separated by space-between. The count helps the user
-   choose: "5 boeken (5)" vs "alle resterende (61)" makes the scope
-   immediately clear. */
-.trainahead-menu {
-  display: flex;
-  flex-direction: column;
-  border: 2px solid var(--border, #ddd);
-  border-top: none;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-  background: var(--bg-secondary, #fff);
-  overflow: hidden;
-}
-
-.trainahead-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: none;
-  background: transparent;
-  font-size: 0.95rem;
-  color: var(--text-primary, #1a1a2e);
-  cursor: pointer;
-  text-align: left;
-  min-height: 44px;          /* keep tap target ≥44px on mobile */
-  border-top: 1px solid var(--border, #ddd);
-}
-
-.trainahead-option:first-child {
-  border-top: none;
-}
-
-.trainahead-option:disabled {
-  color: var(--text-secondary, #888);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.trainahead-option:not(:disabled):hover,
-.trainahead-option:not(:disabled):focus-visible {
-  background: var(--bg-primary, #f5f5f7);
-}
-
-.trainahead-option-label {
-  flex: 1;
-}
-
-.trainahead-option-count {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--text-secondary, #666);
-  background: var(--bg-primary, #f0f0f0);
-  border-radius: 999px;
-  padding: 0.1rem 0.55rem;
-  font-size: 0.85rem;
-  min-width: 1.6rem;
-  text-align: center;
-}
-
-.trainahead-option:disabled .trainahead-option-count {
-  opacity: 0.5;
-}
-
-/* ─── Train Ahead in-quiz pill ────────────────────────────────────────
-   Sits in the topbar, between prompt-row and quiz-stats. Subtle so it
-   doesn't compete with the prompt; uses the accent (purple) so the user
-   knows this is a deliberately-different mode from regular due-driven
-   play. Compact — single line, narrow padding — to fit phone landscape. */
-.trainahead-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  align-self: center;
-  margin: 0.25rem 0;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent, #7C3AED) 12%, transparent);
-  color: var(--accent, #7C3AED);
-  font-size: 0.78rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Phone landscape: compress vertical spacing so the session-complete

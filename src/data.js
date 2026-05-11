@@ -301,26 +301,10 @@ export const translations = {
     // due right now. Replaces the Quiz Mode primary button so the
     // user isn't tempted to over-rehearse stable cards (which FSRS
     // research shows hurts retention vs. waiting).
-    // Three-level celebration: shown when dueNow=0. The level is chosen
-    // by getCelebrationLevel() based on how far away the next book is.
-    // Old single allCaughtUpTitle/Body kept for backwards compat in any
-    // edge case the level helper can't classify.
-    allCaughtUpTitle: '✓ Klaar voor vandaag',
-    allCaughtUpBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
-    // 'session-end' — next book due within an hour
-    sessionEndTitle: '✓ Sessie klaar',
-    sessionEndBody: 'Je sessie is af. De volgende boeken komen zo terug — neem even pauze.',
-    // 'today' — next book due later today
-    doneForTodayTitle: '✓ Klaar voor vandaag',
-    doneForTodayBody: 'Geen boeken klaar om te oefenen. Het wachten is geen pauze — het is wanneer je geheugen het werk doet.',
-    // 'multi-day' — next book is tomorrow or later
-    doneForDaysTitle: '✓ Klaar — geniet van de rust',
-    doneForDaysBody: 'Niets gepland tot je volgende boek terugkomt. Je geheugen consolideert tussen herhalingen — dit is het belangrijkste deel.',
-    nextBookDue: 'Volgende boek',
+    allCaughtUpTitle: '✓ Klaar voor nu',
+    allCaughtUpBody: 'Geen boeken klaar om te oefenen. Kom terug wanneer je tijd hebt — er is geen schema.',
     nothingScheduled: 'Niks ingepland',
     extraPracticeHint: 'Toch oefenen? Studie Modus telt niet mee voor je schema.',
-    // Forecast (next 7 days)
-    forecastTitle: 'Komende 7 dagen',
     // Streak — consecutive days with at least one quiz session.
     // "Streak" is also used for in-quiz consecutive-correct count;
     // dayStreak / dayStreakSingle distinguish them in display.
@@ -339,12 +323,10 @@ export const translations = {
     welcomeBack24h: 'Welkom terug! Laten we kijken wat je nog weet.',
     welcomeBack7d: 'Welkom terug! Ga verder waar je gebleven was — geen druk.',
     // ─── Session-complete screen ──────────────────────────────────────
-    // Shown when DUE=0 with no unseen books, OR when a Train Ahead batch
-    // finishes. Replaces the eliminated "random from all 66" Branch 4 in
-    // pickNextBook — the user has genuinely finished and any further
-    // training is a deliberate choice (Study Mode, or Train Ahead).
+    // Shown when DUE=0 with no unseen books, or when the user hits their
+    // Quick/Standard pick-count limit. The user has genuinely finished;
+    // any further training is a deliberate choice (Box Mode).
     sessionCompleteTitle: '✨ Sessie compleet',
-    sessionCompleteNextLabel: 'Volgend boek (volgens schema)',
     sessionCompleteRestTitle: '🧠 Stoppen versterkt je geheugen meer dan doortrainen.',
     sessionCompleteRestBody: 'Wachten is geen pauze — het is wanneer je geheugen het werk doet.',
     // Today's totals line. {N} {M} {T} are filled in by the component.
@@ -357,22 +339,6 @@ export const translations = {
     sessionCompleteSessionSingle: 'sessie',
     sessionCompleteMinutes: 'minuten getraind',
     sessionCompleteFinish: 'Sessie afsluiten',
-    sessionCompleteTrainAhead: 'Train vooruit',
-    // ─── Train Ahead ──────────────────────────────────────────────────
-    // The submenu opens after tapping "Train vooruit". Each option shows
-    // its candidate count from getTrainAheadCounts(); options with 0
-    // candidates render as disabled. The parent button itself is
-    // disabled when every horizon has 0 candidates.
-    trainAheadHorizonCount5: '5 boeken',
-    trainAheadHorizonCount10: '10 boeken',
-    trainAheadHorizonWeek: 'deze week (7 dagen)',
-    trainAheadHorizonRemaining: 'alle resterende',
-    // In-quiz status when a Train Ahead session is in progress. The
-    // countdown reuses t.due ("Te doen") rather than a new label —
-    // semantically it's the same thing: how many books left in the run.
-    trainAheadInProgress: 'Train vooruit',
-    // Back-button confirmation text on the session-complete screen.
-    // Same wording as the regular summary's `done` for consistency.
 
     // ─── Box Mode (Doos Modus) ─────────────────────────────────────
     // Cram-style training. All selected books start in box 1; correct
@@ -418,6 +384,7 @@ export const translations = {
     settingsSubsectionShared: 'Algemeen',
     settingsSubsectionQuiz: 'Quiz Modus',
     settingsSubsectionBoxMode: 'Doos Modus',
+    settingsAdvanced: 'Geavanceerd',
 
     // ─── v2 Box Mode time pressure setting ───────────────────────
     boxModeFailModeLabel: 'Bij fout antwoord',
@@ -590,22 +557,10 @@ export const translations = {
     closeToMasterySingle: '1 book close to Mastered — 1 more correct answer',
     closeToMastery: 'books close to Mastered — 1 more correct answer each',
     // Menu — "all caught up" celebration
-    // Three-level celebration — see NL section for design rationale.
-    allCaughtUpTitle: '✓ Done for today',
-    allCaughtUpBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
-    // 'session-end' — next book due within an hour
-    sessionEndTitle: '✓ Session complete',
-    sessionEndBody: 'Your session is done. The next books come back soon — take a breather.',
-    // 'today' — next book due later today
-    doneForTodayTitle: '✓ Done for today',
-    doneForTodayBody: 'No books ready to practice. The wait is not a pause — it\'s when your memory does the work.',
-    // 'multi-day' — next book is tomorrow or later
-    doneForDaysTitle: '✓ Done — enjoy the rest',
-    doneForDaysBody: 'Nothing scheduled until your next book comes back. Your memory consolidates between reviews — this is the most important part.',
-    nextBookDue: 'Next book',
+    allCaughtUpTitle: '✓ Done for now',
+    allCaughtUpBody: 'No books ready to practice. Come back when you have time — there is no schedule.',
     nothingScheduled: 'Nothing scheduled',
     extraPracticeHint: 'Want extra practice? Study Mode does not affect your schedule.',
-    forecastTitle: 'Next 7 days',
     dayStreak: 'day streak',
     dayStreakSingle: 'day',
     streakBest: 'Best',
@@ -623,7 +578,6 @@ export const translations = {
     // ─── Session-complete screen ──────────────────────────────────────
     // See NL section for design rationale.
     sessionCompleteTitle: '✨ Session complete',
-    sessionCompleteNextLabel: 'Next book (per schedule)',
     sessionCompleteRestTitle: '🧠 Stopping strengthens your memory more than pushing through.',
     sessionCompleteRestBody: 'The wait is not a pause — it\'s when your memory does the work.',
     sessionCompleteTodayLabel: 'Today',
@@ -632,14 +586,6 @@ export const translations = {
     sessionCompleteSessionSingle: 'session',
     sessionCompleteMinutes: 'minutes trained',
     sessionCompleteFinish: 'End session',
-    sessionCompleteTrainAhead: 'Train ahead',
-    // ─── Train Ahead ──────────────────────────────────────────────────
-    // See NL section for design rationale.
-    trainAheadHorizonCount5: '5 books',
-    trainAheadHorizonCount10: '10 books',
-    trainAheadHorizonWeek: 'this week (7 days)',
-    trainAheadHorizonRemaining: 'all remaining',
-    trainAheadInProgress: 'Train ahead',
 
     // ─── Box Mode ──────────────────────────────────────────────────
     boxModeTitle: 'Box Mode',
@@ -679,6 +625,7 @@ export const translations = {
     settingsSubsectionShared: 'Shared',
     settingsSubsectionQuiz: 'Quiz Mode',
     settingsSubsectionBoxMode: 'Box Mode',
+    settingsAdvanced: 'Advanced',
 
     // ─── v2 Box Mode time pressure setting ───────────────────────
     boxModeFailModeLabel: 'On wrong answer',

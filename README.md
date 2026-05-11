@@ -12,12 +12,9 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 
 **Progress tracking**
 - **Six-tier ladder** — Books climb Unseen → Learning → Familiar → Mastered → Anchored → Permanent as the FSRS algorithm builds confidence. Replaces the binary mastered/not-mastered split with a tangible long-term goal (Permanent ≈ 6+ months stability)
-- **7-day forecast** — Bar chart on the home screen showing how many books are due each upcoming day, so you can plan around busy or quiet days
 - **Day streak** — Consecutive-days counter (with grace day for "yesterday" so night owls aren't punished by midnight rollover); your best streak ever is shown alongside
-- **Three-level rest celebration** — When nothing's due now, the message matches reality: "Session complete" if the next book is back within an hour, "Done for today" if later today, "Done — enjoy the rest" if tomorrow or later
-- **Session-complete screen** — When all books in the chosen session are answered, the quiz pauses on a clear stopping point (rather than refilling with random books). Two explicit choices: end the session, or use Train Ahead for bonus practice — making "stop" the obvious default rather than an act of will
-- **Train Ahead** — Optional bonus practice on books that aren't yet due. Pick a horizon (5 books / 10 books / next 7 days / all remaining); books are presented closest-to-scheduled first. FSRS keeps running normally — early reviews just give slightly smaller per-rep stability gains, which is the algorithm working as intended. Useful before a vacation, on quiet days, or when you simply have extra time
-- **Learning pace** — Flexible (~20% forgetting risk, lightest schedule for irregular practice), Relaxed (~15%), Balanced (default, ~10%), or Intensive (~5%, fastest mastery but daily practice required). Switching is safe: existing FSRS data stays intact, only future repetitions use the new setting
+- **Session-complete screen** — When all books in the chosen session are answered, the quiz pauses on a clear stopping point (rather than refilling with random books). One action: end the session — "stop" is the obvious default rather than an act of will
+- **Learning pace** (advanced) — Flexible / Relaxed / Balanced / Intensive control FSRS `request_retention`. Hidden behind Settings → Advanced since the schedule-free home screen makes this lever rarely needed. Switching is safe: existing FSRS data stays intact, only future repetitions use the new setting
 
 **Your data**
 - **Multi-user** — Up to 10 profiles with separate progress, settings, and FSRS data
@@ -68,16 +65,13 @@ Hosted on **GitHub Pages** (primary) with auto-deploy via GitHub Actions on ever
 
 Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("X books mastered in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Quiz progress wipes the counter; backups carry it across devices via `_schemaVersion: 3`.
 
-## Design philosophy: stop when due reaches zero
+## Design philosophy: open practice, no schedule chrome
 
-Spaced repetition works because of the *gap* between reviews, not the volume of reviews. When the algorithm says "no books are due", that gap is exactly the period during which your memory consolidates — re-drilling stable books resets that timer without adding strength. So the app treats reaching `due = 0` as a genuine stopping point, not a transition into a "keep going" filler mode. Two choices are then surfaced explicitly:
+The app is built for a small dataset (66 books) and users who often already know many of the answers — a fundamentally different problem than Anki's "thousands of unfamiliar cards" use case for which FSRS was designed. So FSRS runs underneath as a smart picker (it still decides which book to ask next based on stability, difficulty, and elapsed time), but its calendar projection is not surfaced to the user. There is no 7-day forecast, no "next book due at 9 PM" countdown, no three-tier rest celebration based on how close the next review is. Practice happens when the user has time — in bed before sleep, on a coffee break, between shifts — and the home screen reflects that: a flat "Done for now" appears when nothing is currently due, with no countdown or pressure to come back at a specific moment.
 
-1. **End the session** — the recommended default. The rest message ("Stoppen versterkt geheugen") makes the case in one line so it doesn't feel like the app is hiding work from you.
-2. **Train Ahead** — optional bonus practice on not-yet-due books, FSRS-ordered closest-due-first. The algorithm continues to work correctly under early reviews; users with extra time (or pre-vacation needs) get a legitimate path forward without the app pretending it's free.
+Spaced repetition's core insight still applies: re-drilling stable books resets the FSRS timer without adding strength. So the session-complete screen is a real stopping point with one clear action — end the session — rather than a transition into bonus practice. Users who want to keep training have Box Mode, which is a separate Leitner-style cram independent of FSRS scheduling.
 
-For users who want shorter committed sessions, the Quick (5) and Standard (10) launchers on the home screen offer a fixed-budget alternative to the open-ended Full session. Same algorithm, same FSRS commits per answer — just a clearer "I'm done" stopping point.
-
-The same principle applies elsewhere: the home-screen "Ready to practice" counter reaches 0 honestly instead of always showing busywork; the celebration tier matches actual rest length; and the schedule is allowed to be empty without that being a failure state.
+For shorter committed sessions, the Quick (5) and Standard (10) launchers on the home screen offer a fixed-budget alternative to the open-ended Full session. Same algorithm, same FSRS commits per answer — just a clearer "I'm done" stopping point.
 
 ## Update notifications
 

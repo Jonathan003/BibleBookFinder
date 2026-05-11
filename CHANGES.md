@@ -1,4 +1,85 @@
-# Kleine mobile-layout fixes na v3.3
+# v4 — Schedule-free practice (Commit 1: deletions)
+
+The app's identity is shifting from "follow your FSRS schedule" to "open
+practice when you have time." 66 books is a small dataset and many users
+already know much of the answer space on day 1, so Anki-style calendar
+projection is misapplied. FSRS still runs underneath as a smart picker
+(deciding which book to ask next based on stability, difficulty, and
+elapsed time), but the calendar chrome around it is removed.
+
+This commit is the deletion pass — pure removals, no new mechanics.
+Commits 2 and 3 will add the new gold-line = "confident" model, the
+all-66 celebration screen, dark mode, and the Quiz/Box uniformity pass.
+
+**Removed:**
+- 7-day forecast bar chart on the home screen. Its motivational message
+  ("be ready, Tuesday is busy") is exactly the wrong frame for "open the
+  app when you feel like it."
+- "Next book due: tomorrow at 9 PM" countdown on the all-caught-up
+  celebration and the session-complete screen.
+- Three-tier rest celebration ("Session complete" / "Done for today" /
+  "Done — enjoy the rest"). Replaced with a single flat "Done for now —
+  come back when you have time" message. The schedule-aware tiering
+  assumed users care when the algorithm thinks they should be back; they
+  don't.
+- Train Ahead feature in its entirety. The button + submenu on the
+  session-complete screen, the in-quiz pill, the four horizon options
+  (5 / 10 / week / remaining), the `buildTrainAheadQueue` and
+  `getTrainAheadCounts` helpers in `fsrs.js`, the entire Branch 0 in
+  `pickNextBook`, the dedicated state/refs/handler. Users who want to
+  keep training past their due queue have Box Mode.
+- Pace setting moved into a collapsible `<details>` Advanced section in
+  Settings → Quiz Mode. Default is Intensive. The four-way Flexible /
+  Relaxed / Balanced / Intensive choice is rarely needed in the new
+  schedule-free model, and the labels reference scheduling pressure the
+  user no longer sees.
+- `src/forecast.js` is now fully unused. Delete it manually after
+  applying this zip (`computeForecast`, `getNextDueTime`, `formatNextDue`,
+  `getCelebrationLevel`, `forecastDayLabel` — all dead).
+- Translation keys removed: `forecastTitle`, `nextBookDue`,
+  `sessionCompleteNextLabel`, `sessionCompleteTrainAhead`,
+  `trainAheadHorizonCount5/10/Week/Remaining`, `trainAheadInProgress`,
+  `sessionEndTitle/Body`, `doneForTodayBody`, `doneForDaysTitle/Body`.
+- CSS removed: `.forecast-*`, `.all-caught-up-next*`, `.trainahead-*`,
+  `.session-complete-trainahead*`, `.session-complete-next*`,
+  `.momentum-section`'s flexbox row layout (was sized for streak +
+  forecast cards side-by-side; now wraps just the streak card).
+- FAQ entries removed from `Help.jsx`: Train Vooruit / Train Ahead
+  (nl + en), "What if I do Train Ahead every day until everything is
+  Mastered" (nl + en), "Wat toont de Komende 7 dagen-balk" / "What does
+  the Next 7 days bar show" (nl + en). FAQ entries describing the
+  three-tier rest message and Train Ahead-based "keep practicing"
+  advice rewritten to reference Box Mode instead.
+
+**Added:**
+- `settingsAdvanced` translation key (nl: "Geavanceerd", en: "Advanced").
+- `.advanced-details` and `.advanced-summary` CSS rules in
+  `Settings.css` for the new collapsible.
+
+**Unchanged but worth knowing:**
+- FSRS itself, including the `isDueNow` Learn-Ahead-Limit logic, the
+  six-tier ladder, `MASTERY_MIN_REPS = 3`, and the `stability > 7d`
+  mastery threshold — all preserved. The picker is unchanged; only the
+  UI surface around it is.
+- Quick (5) / Standard (10) / Full launchers — kept; their sizes are
+  still computed from `stats.dueNow`.
+- Day streak — kept for now. Replacing with cumulative active time vs.
+  removing is a Commit 2 design decision.
+- Share message, milestones, Box Mode, reset flow — unchanged.
+
+**Manual cleanup after extracting:**
+1. Delete `src/forecast.js` (it's no longer imported anywhere).
+2. Run `npm run dev` and verify the home screen renders, an empty due
+   queue shows "Done for now", and the session-complete screen has
+   only the End Session button.
+3. Grep the repo for `trainAhead`, `Train Ahead`, `forecast`,
+   `nextDue`, `getCelebrationLevel`, `forecastDayLabel`,
+   `sessionCompleteNextLabel`, `sessionEndTitle`, `doneForDaysTitle`,
+   `nextBookDue` — should all be zero hits.
+
+---
+
+
 
 Twee gerelateerde scroll-issues opgelost op telefoons met gesture-
 navigation (Samsung S22+ en vergelijkbaar):
