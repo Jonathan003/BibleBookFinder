@@ -1,3 +1,99 @@
+# v3.2 update — Tussenscherm bij Terug-knop verwijderd
+
+Wanneer je tijdens een actieve Quiz Mode sessie op Terug klikt, verscheen
+een tussenscherm met "Stats so far" / "Tussenstand" met twee knoppen:
+**Verder oefenen** en **Klaar**. Dit scherm is verwijderd.
+
+## Wat zit er in deze zip
+
+### Terug-knop in Quiz Mode gaat direct naar home
+
+**Probleem:** het tussenscherm dwong een keuze af waar er geen echte
+keuze nodig was. De **Klaar**-knop riep `saveCurrentSegment()` aan om de
+sessie in `quizHistory` op te slaan. Maar er bestaat al een
+*autosave-on-unmount* effect dat exact hetzelfde doet wanneer QuizGrid
+unmount — wat sowieso gebeurt zodra je terug bent op het hoofdmenu. De
+twee mechanismen deden dubbel werk; het tussenscherm was overbodig.
+
+De **Verder oefenen**-knop dismissten gewoon het scherm zonder iets te
+doen. Effectief: een extra klik om "nee toch maar niet" te zeggen tegen
+een vraag die je niet had gesteld.
+
+**Oplossing:** Terug-knop tijdens een actieve sessie roept direct
+`onBack()` aan → terug naar home. De autosave-on-unmount zorgt
+automatisch dat de partiële sessie wordt opgeslagen in `quizHistory`,
+zodat streak en "Vandaag X sessies" stats blijven kloppen.
+
+Wat er gebeurt vanuit gebruikersperspectief:
+- Tijdens quiz Terug klikken → meteen home, geen tussenscherm
+- Streak en vandaag-stats blijven correct werken (autosave)
+- Volgende keer Quiz openen → kies opnieuw Quick/Standard/Volledig
+
+Een sessie wordt "officieel afgerond" wanneer alle limiet-boeken
+beantwoord zijn (sessie-compleet scherm verschijnt → klik Klaar →
+quizHistory entry). Tot dan is elke Terug = "ik ga even weg" en wordt
+de sessie als-is opgeslagen.
+
+### Verwijderde code en assets
+
+**`src/components/QuizGrid.jsx`:**
+- `handleBack` callback vereenvoudigd: één regel die `onBack()` aanroept
+- Hele `if (showSummary) { ... }` rendering blok (~60 regels) verwijderd
+- `const [showSummary, setShowSummary] = useState(false)` weggehaald
+- `showSummary` uit de phase-tracking `useEffect` weggehaald
+- Ongebruikte import `formatDuration` van `../timeFormat` weggehaald
+
+**`src/data.js`:** 10 dode translation keys verwijderd in zowel NL als EN:
+`sessionSummaryTitle`, `sessionReviewed`, `sessionMinutes`,
+`sessionCorrect`, `sessionNewBests`, `sessionNewlyMastered`,
+`sessionTotal`, `sessionPauseHint`, `keepGoing`, `done`. Plus het
+bijbehorende uitlegcomment-blok.
+
+**`src/components/QuizGrid.css`:** 13 dode CSS-classes verwijderd
+(~120 regels CSS): `.summary-screen`, `.summary-title`, `.summary-stats`,
+`.summary-stat`, `.summary-number`, `.summary-label`, `.summary-best`,
+`.summary-newly-mastered`, `.summary-delta`, `.summary-total-time`,
+`.summary-pause-hint`, `.summary-buttons`, plus de `.quiz-btn` variant
+binnen `.summary-buttons`. De gerelateerde stale comment-referentie naar
+`.summary-screen` in de session-complete header is bijgewerkt.
+
+### Wat niet gewijzigd is
+
+- `finishSession()` callback **behouden** — wordt nog steeds gebruikt
+  door `handleEndSession` op het sessie-compleet scherm. Daar blijft de
+  Klaar-knop ("Klaar") werken om een afgeronde sessie expliciet te
+  boeken.
+- De autosave-on-unmount logica is ongewijzigd. Het was er al; het
+  werkte al; het werkt nu nog steeds.
+- FSRS scheduling, mastery tiers, persoonlijke records: niets aan
+  geraakt. Alle echte leervoortgang werd al per-antwoord direct
+  gecommit en is nooit afhankelijk geweest van het tussenscherm.
+
+### Ster-marker bij verankerde boeken in Box Mode verwijderd
+
+Boeken die in Box Mode doos 5 hadden bereikt ("verankerd") kregen twee
+visuele markers: een gouden lijn onderaan de cel **én** een vierpuntige
+ster (✦) in de hoek rechtsboven. De ster is verwijderd; alleen de gouden
+lijn blijft.
+
+Reden: Quiz Modus markeert "Beheerst" boeken met *alleen* een gouden
+lijn onderaan. Box Modus had ook al die lijn, maar met daarbovenop nog
+de ster. Dubbele visuele signalen zonder extra informatie. De ster is
+weggehaald zodat beide modi exact dezelfde "boek-op-niveau" marker
+gebruiken.
+
+**Bestand:** `src/components/BoxMode.css` — de `::after` regel onder
+`.book-cell.boxmode-rooted` (8 regels CSS) verwijderd. `position:
+relative` op de `.book-cell.boxmode-rooted` zelf behouden voor het
+geval een toekomstige marker hem nodig heeft.
+
+### Build-verificatie
+
+Clean build slaagt op vite 6 + React 19. Bundle iets kleiner doordat
+dode code/strings/CSS verwijderd zijn.
+
+---
+
 # v3.1 update — Flexibel leertempo + sessielengte-keuze
 
 Deze update voegt twee samenhangende verbeteringen toe die Quiz Modus

@@ -12,7 +12,6 @@ import {
 import { getNextDueTime, formatNextDue } from '../forecast';
 import { computeTodayStats } from '../streak';
 import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
-import { formatDuration } from '../timeFormat';
 import './QuizGrid.css';
 
 // Per-question cap for the cumulative training-time counter. If the user
@@ -95,7 +94,6 @@ export default function QuizGrid({
   // the saved durationMs reflects engagement-time, not wall-clock time
   // (which would include idle/AFK).
   const [sessionMs, setSessionMs] = useState(0);
-  const [showSummary, setShowSummary] = useState(false);
   const [milestone, setMilestone] = useState(null); // message string | null
   const [showNewBest, setShowNewBest] = useState(false);
   // Snapshot of the time that earned the current "new record" badge. Kept
@@ -229,13 +227,12 @@ export default function QuizGrid({
   }, [addQuizSession]);
 
   // Report phase upward so App's header knows whether to show focus-mode
-  // (quiz actively playing) or full nav (summary/pause/session-complete).
+  // (quiz actively playing) or full nav (session-complete screen).
   useEffect(() => {
     if (onPhaseChange) {
-      const paused = showSummary || sessionComplete;
-      onPhaseChange(paused ? 'paused' : 'playing');
+      onPhaseChange(sessionComplete ? 'paused' : 'playing');
     }
-  }, [showSummary, sessionComplete, onPhaseChange]);
+  }, [sessionComplete, onPhaseChange]);
 
   // Measure prompt row height to perfectly position overlay
   useEffect(() => {
@@ -451,13 +448,21 @@ export default function QuizGrid({
     onBack();
   }, [saveCurrentSegment, onBack]);
 
+  // Back during an active session goes straight to the home screen.
+  // The autosave-on-unmount effect (see useEffect at the top of the
+  // component) writes the partial session to quizHistory automatically
+  // when QuizGrid is removed from the tree, so streak and today-stats
+  // stay correct without an interstitial "Stats so far / Done" prompt.
+  //
+  // Earlier versions showed a summary screen on Back with Keep going /
+  // Done buttons. Removed because (a) Done's saveCurrentSegment call
+  // duplicated what autosave-on-unmount already does, (b) Keep going
+  // just dismissed the prompt, and (c) the screen forced the user to
+  // make a decision they hadn't asked for. A session is what the user
+  // accomplished in one sitting; Back ends it cleanly.
   const handleBack = useCallback(() => {
-    if (score.total > 0) {
-      setShowSummary(true);
-    } else {
-      onBack();
-    }
-  }, [score.total, onBack]);
+    onBack();
+  }, [onBack]);
 
   // Start a Train Ahead segment with the chosen horizon. Saves the
   // current segment first (so a finished regular run is recorded as
@@ -829,68 +834,6 @@ export default function QuizGrid({
   }
 
   if (!targetBook) return null;
-
-  // Session summary screen
-  if (showSummary) {
-    // sessionMs is the per-question-capped accumulator; using it here
-    // (rather than wall-clock Date.now() - sessionStartTime) means the
-    // displayed minutes reflect actual training engagement, not idle
-    // tab time. Floors at 1 min so a sub-minute productive session
-    // doesn't read as "0 min".
-    const durationMin = Math.max(1, Math.round(sessionMs / 60000));
-    return (
-      <div className="quiz-grid summary-screen">
-        <h2 className="summary-title">{t.sessionSummaryTitle}</h2>
-        <div className="summary-stats">
-          <div className="summary-stat">
-            <span className="summary-number">{score.total}</span>
-            <span className="summary-label">{t.sessionReviewed}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="summary-number">{durationMin}</span>
-            <span className="summary-label">{t.sessionMinutes}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="summary-number">{score.correct}</span>
-            <span className="summary-label">{t.sessionCorrect}</span>
-          </div>
-          {sessionNewBests > 0 && (
-            <div className="summary-stat summary-best">
-              <span className="summary-number">⚡ {sessionNewBests}×</span>
-              <span className="summary-label">{t.sessionNewBests}</span>
-            </div>
-          )}
-          {/* Newly mastered this session — only shown when > 0. A "+0" would
-              feel like punishment for a productive review-only session, and
-              the existing per-session stats already convey activity. The
-              delta (X → Y of 66) gives concrete progress feedback the menu
-              screen's static "X/66 mastered" can't match. */}
-          {sessionMasteredBooks.size > 0 && (
-            <div className="summary-stat summary-newly-mastered">
-              <span className="summary-number">+{sessionMasteredBooks.size}</span>
-              <span className="summary-label">{t.sessionNewlyMastered}</span>
-              <span className="summary-delta">
-                {stats.mastered - sessionMasteredBooks.size} → {stats.mastered} {t.of} 66
-              </span>
-            </div>
-          )}
-          <div className="summary-stat summary-total-time">
-            <span className="summary-number">{formatDuration(totalQuizMs)}</span>
-            <span className="summary-label">{t.sessionTotal}</span>
-          </div>
-        </div>
-        <p className="summary-pause-hint">{t.sessionPauseHint}</p>
-        <div className="summary-buttons">
-          <button className="btn" onClick={() => { setShowSummary(false); setStartTime(Date.now()); }}>
-            {t.keepGoing}
-          </button>
-          <button className="btn quiz-btn" onClick={finishSession}>
-            {t.done}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="quiz-grid">

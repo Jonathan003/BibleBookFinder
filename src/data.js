@@ -259,20 +259,6 @@ export const translations = {
     allBooks: 'Alle boeken',
     books: 'boeken',
     wrongShowCorrect: 'Fout — kijk naar het blauwe vakje!',
-    // Session summary (renamed from "Sessie afgerond" → "Tussenstand"
-    // because the screen isn't truly an end-state: Keep going lets you
-    // continue. "Tussenstand" reads as "interim score / progress so far",
-    // which is what the screen actually shows.)
-    sessionSummaryTitle: 'Tussenstand',
-    sessionReviewed: 'boeken gereviewd',
-    sessionMinutes: 'minuten',
-    sessionCorrect: 'correct binnen de tijd',
-    sessionNewBests: 'nieuw persoonlijk record',
-    sessionNewlyMastered: 'nieuw beheerst deze sessie',
-    sessionTotal: 'Totale trainingstijd',
-    sessionPauseHint: 'Trainingstijd pauzeert wanneer je weggaat. Kom gerust later terug.',
-    keepGoing: 'Verder oefenen',
-    done: 'Klaar',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Totale trainingstijd',
     // Restore confirmation dialog
@@ -570,20 +556,6 @@ export const translations = {
     allBooks: 'All Books',
     books: 'books',
     wrongShowCorrect: 'Wrong — look for the blue cell!',
-    // Session summary (renamed from "Session complete" → "Stats so far"
-    // because the screen isn't truly an end-state: Keep going lets you
-    // continue. "Stats so far" reads as a progress check, which is what
-    // the screen actually shows.)
-    sessionSummaryTitle: 'Stats so far',
-    sessionReviewed: 'books reviewed',
-    sessionMinutes: 'minutes',
-    sessionCorrect: 'correct within time',
-    sessionNewBests: 'new personal record',
-    sessionNewlyMastered: 'newly mastered this session',
-    sessionTotal: 'Total training time',
-    sessionPauseHint: 'Training time pauses when you leave. Come back anytime.',
-    keepGoing: 'Keep going',
-    done: 'Done',
     // Total training time label (shared across Settings, Stats screen, share)
     totalTrainingTime: 'Total training time',
     // Restore confirmation dialog

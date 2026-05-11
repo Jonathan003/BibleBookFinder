@@ -636,127 +636,13 @@
   text-align: center;
 }
 
-/* ── Session summary screen ── */
-.summary-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  padding: 2rem 1.5rem;
-  min-height: 60vh;
-}
-
-.summary-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-primary, #1a1a2e);
-  margin: 0;
-}
-
-.summary-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  width: 100%;
-  max-width: 320px;
-}
-
-.summary-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--bg-secondary, #ffffff);
-  border: 1px solid var(--border, #ddd);
-  border-radius: 12px;
-  padding: 1rem 0.75rem;
-  gap: 0.3rem;
-}
-
-.summary-number {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--correct);
-}
-
-.summary-label {
-  font-size: 0.78rem;
-  color: var(--text-secondary, #555);
-  text-align: center;
-  line-height: 1.3;
-}
-
-.summary-best .summary-number {
-  color: var(--mastery);
-}
-
-/* Newly mastered this session — uses the accent color (purple) to match
-   the home screen's "X Mastered of 66" stat, signaling "long-term progress
-   indicator". The amber --mastery variable is reserved for the cell-level
-   golden-line markers; using it here would be inconsistent. The delta line
-   below the label gives concrete before→after context (e.g. "20 → 23 of 66")
-   that the standalone stat alone wouldn't convey. */
-.summary-newly-mastered .summary-number {
-  color: var(--accent);
-}
-
-.summary-delta {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--text-secondary, #888);
-  margin-top: 0.15rem;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Total training time spans the full row below the per-session stats.
-   Visually distinct (slightly muted, full-width) because it's a cumulative
-   counter, not a session-specific number. */
-.summary-total-time {
-  grid-column: 1 / -1;
-  border-top: 1px solid var(--border, #ddd);
-  padding-top: 0.75rem;
-  margin-top: 0.25rem;
-  opacity: 0.85;
-}
-
-/* Pause hint clarifies that "Stats so far" is interim, not an end-state.
-   Subtle so it doesn't compete with the numbers above. */
-.summary-pause-hint {
-  font-size: 0.85rem;
-  color: var(--text-secondary, #666);
-  text-align: center;
-  margin: 0 0 1rem;
-  max-width: 320px;
-  line-height: 1.4;
-}
-
-.summary-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 260px;
-}
-
-.summary-buttons .btn {
-  width: 100%;
-  justify-content: center;
-  padding: 0.85rem 1rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 2px solid var(--border, #ddd);
-  background: var(--bg-secondary, #fff);
-  color: var(--text-primary, #1a1a2e);
-}
-
-.summary-buttons .quiz-btn {
-  background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
-  color: #fff;
-  border-color: transparent;
-}
-
+/* ── Session summary screen removed in v3.2 — Back now goes directly
+   to the home screen, with autosave-on-unmount preserving the partial
+   session in quizHistory. The .summary-* class block that lived here
+   (summary-screen, summary-title, summary-stats, summary-stat,
+   summary-number, summary-label, summary-best, summary-newly-mastered,
+   summary-delta, summary-total-time, summary-pause-hint,
+   summary-buttons) was removed when the screen itself was removed. */
 /* Landscape: hint fits on 2 lines */
 @media (orientation: landscape) {
   .hint-overlay {
@@ -833,9 +719,8 @@
 
 /* ─── Session-complete screen ──────────────────────────────────────────
    Shown when DUE+unseen=0 (normal segment) or when a Train Ahead queue
-   empties. Layout mirrors the existing .summary-screen for visual
-   consistency, but content is restructured around three explicit
-   choices (End / Study / Train ahead). */
+   empties. Centered, stat-grid + action-buttons layout — formerly
+   mirrored the now-removed .summary-screen for visual consistency. */
 .session-complete-screen {
   display: flex;
   flex-direction: column;
