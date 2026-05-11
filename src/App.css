@@ -159,22 +159,16 @@
   animation: slideUp 0.3s ease;
 }
 
-/* v4.4: bumped desktop max-width from 600 → 720. At 600px the dashboard
-   panel and mode cards looked phone-sized in the middle of a 1820px
-   monitor — way too much empty whitespace flanking the content. 720px
-   keeps the layout feeling like a focused app (not edge-to-edge) but
-   gives each element room to breathe. */
 @media (min-width: 768px) {
   .menu { max-width: 720px; }
-  /* And widen all the interior elements that previously capped at 520
-     so they actually fill the wider menu. Mode cards, dashboard panel,
-     home-quiz-launchers, home-start-btn — all 4 share the same cap
-     historically and need to scale together for visual rhythm. */
-  .mode-cards,
-  .dashboard-panel,
-  .home-quiz-launchers,
-  .home-start-btn { max-width: 640px; }
 }
+/* NOTE (v4.6): the desktop max-width overrides for .mode-cards,
+   .dashboard-panel, .home-quiz-launchers, .home-start-btn previously
+   lived here but didn't take effect — each of those four selectors
+   has a later base rule further down the file that sets
+   max-width: 520px, and CSS cascade prefers the later rule when
+   specificity is equal. Moved the overrides to the very end of
+   the file (search for "v4.6 desktop overrides") so they win. */
 
 .stats {
   display: grid;
@@ -1242,4 +1236,24 @@
 
 .celebration-66-inline .celebration-title {
   font-size: 1.15rem;
+}
+
+/* ─── v4.6 desktop overrides ─────────────────────────────────────────
+   Width caps for the home-screen layout elements on desktop. Placed
+   at the END of the file deliberately so they win CSS cascade — each
+   of the four selectors here has a base rule further up in the file
+   that sets max-width: 520px (or, for .home-quiz-launchers, also 520px).
+   Earlier v4.4 attempted these same overrides inside an early media
+   query at the top of the file; that didn't work because the base
+   rules come later in source order and CSS prefers later rules at
+   equal specificity.
+   The goal of this block is purely visual rhythm: at the 720px menu
+   width on desktop, all four interior elements share 640px so they
+   align edge-to-edge with each other and the user doesn't see the
+   dashboard panel sitting narrower than the mode-cards row below it. */
+@media (min-width: 768px) {
+  .mode-cards,
+  .dashboard-panel,
+  .home-quiz-launchers,
+  .home-start-btn { max-width: 640px; }
 }

@@ -1,4 +1,48 @@
-# v4 commit 4.5 — Box dashboard stripped to essentials
+# v4 commit 4.6 — Fix: desktop max-width overrides weren't being applied
+
+User asked why the dashboard panel was narrower than the Box Mode /
+Quiz Mode tab row sitting below it on desktop. Inspected: my v4.4
+desktop max-width overrides (`.mode-cards`, `.dashboard-panel`,
+`.home-quiz-launchers`, `.home-start-btn` → 640px) were not taking
+effect at all. They appeared in DevTools as crossed-out rules.
+
+**Root cause:** the media query I added in v4.4 lived near the TOP
+of App.css (line ~167), but each of the four selectors has a base
+rule with `max-width: 520px` further DOWN the file (lines 683, 810,
+964, 1007). When two rules have equal specificity, CSS cascade
+prefers the rule that comes later in source order. The base 520px
+rules came later, so they won — my 640px overrides were dead code.
+
+**Fix:** moved the media query to the very end of App.css. Now it
+comes after every base rule, wins the cascade, and the four
+elements actually scale to 640px on desktop. Mode cards, dashboard
+panel, launchers, and start button now all share the same 640px
+cap and align edge-to-edge horizontally on desktop. The user no
+longer sees the dashboard panel floating narrower than the row
+below it.
+
+I'd assumed v4.4's media query was working because the menu
+container `max-width: 720px` rule WAS taking effect — that rule
+also lived in the top media query but `.menu` has no later base
+rule overriding it (the original `.menu` rule is at line ~152,
+BEFORE the media query at 167). So one part of v4.4 worked and
+the other didn't, masking the bug. Lesson: when adding CSS
+overrides, check that no later base rule will clobber them.
+
+## Smoke test
+
+1. Open on a wide desktop viewport (≥768px). Box Mode dashboard
+   panel and the mode-cards row below it should now be the same
+   visible width (~640px each), aligned edge-to-edge.
+2. Same check on Quiz Mode: the celebration card spans the same
+   width as the mode-cards below.
+3. Launcher chips (Quick / Standard / Full) span the same width.
+4. Mobile (≤767px viewport) unchanged — all four still at 520px
+   max-width, no regression.
+
+---
+
+
 
 Tester feedback after 4.4: "it is like to show information just to
 show information... not interesting... useless information." Three
