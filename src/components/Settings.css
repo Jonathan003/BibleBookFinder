@@ -1,6 +1,11 @@
 .settings-page {
   padding: 1rem 1.5rem;
-  min-height: calc(100vh - 80px);
+  /* 100dvh (dynamic viewport height) instead of 100vh — 100vh is fixed
+     at the first measurement and doesn't track browser-UI movement on
+     mobile, so the version-info at page bottom ends up behind the
+     gesture-navigation pill on Samsung S22+, Pixel, etc. dvh follows
+     the actual visible viewport, keeping the bottom row reachable. */
+  min-height: calc(100dvh - 80px);
   max-width: 500px;
   margin: 0 auto;
 }
