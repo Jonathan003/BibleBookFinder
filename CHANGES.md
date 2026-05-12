@@ -1,3 +1,107 @@
+# v6 commit 6.1 — Fix in-session celebration time + unify "Today" rounding
+
+Two related fixes for time display, surfaced when Jonathan completed
+his first all-66 session and noticed three different time numbers
+that should have agreed:
+- In-session celebration: **19m**
+- "Today" line: **10 minutes trained**
+- Share message: **9m**
+
+## Fix 1 — In-session celebration double-counted the current session
+
+`src/components/QuizGrid.jsx` line 802 was:
+```js
+{formatDuration(totalQuizMs + sessionMs)}
+```
+
+This double-counted because `addTrainingTime(cappedMs)` is called
+**per question** (correct-answer handler ~line 536, wrong-answer
+handler ~line 655). Both call sites increment the user's
+`totalQuizMs` by the same `cappedMs` that's being added to the
+local `sessionMs` state. So by the time the celebration renders at
+session-complete, `totalQuizMs` already contains every per-question
+contribution from this session — adding `sessionMs` on top doubles it.
+
+Jonathan's case made the bug obvious: his first ever session, ~9.5m
+of play, both `totalQuizMs` and `sessionMs` ≈ 9.5m, and the formula
+produced ~19m. The home-screen celebration in `App.jsx` line 707
+has always used the simpler `formatDuration(currentUser.totalQuizMs)`
+and was correct.
+
+**Change:** drop the `+ sessionMs` term. Now matches home-screen
+formula and share message source. All three places read from the
+same fact.
+
+## Fix 2 — "Today" line used a different rounding than everything else
+
+`src/components/QuizGrid.jsx` ~line 789 was:
+```js
+const todayMinutes = Math.max(0, Math.round(todayMs / 60000));
+// ...
+{todayMs > 0 && (<>{' · '}{todayMinutes} {t.sessionCompleteMinutes}</>)}
+```
+
+This rendered as "X minutes trained" with `X = Math.round(ms/60000)`.
+But everywhere else in the app (share message, home-screen
+celebration, Settings → Data, all `formatDuration` call sites) uses
+`Math.floor(ms/60000)` because `formatDuration` floors. So:
+
+- 9.5m wall-clock → "**10 minutes trained**" here, "**9m**" everywhere else.
+- 65m wall-clock → "**65 minutes trained**" here, "**1h 5m**" everywhere else
+  (formatDuration switches to hours at the 60-minute boundary).
+
+The second case is worse — the unit changes between displays, not
+just the rounding direction.
+
+**Change:** use `formatDuration(todayMs)` here too, with a new label
+`t.sessionCompleteTrainedLabel` (just "trained" / "getraind" — the
+unit is now baked into formatDuration's output). Now reads
+"X minutes trained" → "Xm trained" or "Xh Ym trained".
+
+Removed the now-unused `todayMinutes` variable. The old
+`sessionCompleteMinutes` translation keys are kept in `data.js` as
+dormant (no longer referenced) so any old exports/imports that
+might still carry them through don't crash. Their values are
+unchanged.
+
+## Outcome
+
+After this commit, Jonathan's three numbers all agree (within
+`formatDuration`'s floor rounding):
+
+| Display | Before | After |
+|---|---|---|
+| In-session celebration | 19m | **9m** |
+| "Today" line | 10 minutes trained | **9m trained** |
+| Share message | 9m | **9m** |
+| Home-screen celebration | (already 9m) | 9m |
+
+## Files touched
+
+- `src/components/QuizGrid.jsx` — two lines: celebration formula
+  (one line), Today line render (one line). Plus the `todayMinutes`
+  variable definition removed (replaced by a comment explaining why).
+- `src/data.js` — added `sessionCompleteTrainedLabel` (NL + EN).
+
+## Smoke test
+
+1. **Reset progress, play one full session to 66 confident.**
+   In-session celebration → trophy + total time. Total time should
+   roughly equal your session duration (~`formatDuration(sessionMs)`),
+   not double.
+2. **"Today" line** in the same session-complete view should
+   read "X books · 1 session · Ym trained" where Y matches the
+   celebration's number.
+3. **Tap End session → home screen.** Home celebration trophy
+   shows the same total. Share message text matches.
+4. **Start another session** (say, after another day's play).
+   In-session celebration should show cumulative total
+   (yesterday + today), not double either day.
+5. **Play long enough to exceed 60 minutes** total: "Today" line
+   should switch to "1h Xm trained" format, not "65m trained".
+
+---
+
 # v6 commit 6 — Quiz panel title (balance the share icon)
 
 After v5.1, Jonathan reviewed the home dashboard on mobile and

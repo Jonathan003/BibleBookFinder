@@ -383,6 +383,11 @@ export const translations = {
     sessionCompleteSessions: 'sessies',
     sessionCompleteSessionSingle: 'sessie',
     sessionCompleteMinutes: 'minuten getraind',
+    // v6.1: new label used by the rewritten "Today" line that calls
+    // formatDuration(todayMs) instead of formatting minutes by hand.
+    // sessionCompleteMinutes is no longer referenced; kept here so any
+    // older exports/imports that still send it through don't crash.
+    sessionCompleteTrainedLabel: 'getraind',
     sessionCompleteFinish: 'Sessie afsluiten',
 
     // ─── Box Mode (Doos Modus) ─────────────────────────────────────
@@ -655,6 +660,11 @@ export const translations = {
     sessionCompleteSessions: 'sessions',
     sessionCompleteSessionSingle: 'session',
     sessionCompleteMinutes: 'minutes trained',
+    // v6.1: new label used by the rewritten "Today" line that calls
+    // formatDuration(todayMs) instead of formatting minutes by hand.
+    // sessionCompleteMinutes is no longer referenced; kept here so any
+    // older exports/imports that still send it through don't crash.
+    sessionCompleteTrainedLabel: 'trained',
     sessionCompleteFinish: 'End session',
 
     // ─── Box Mode ──────────────────────────────────────────────────

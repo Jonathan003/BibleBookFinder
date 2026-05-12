@@ -786,7 +786,14 @@ export default function QuizGrid({
     const todayBooks = today.books + liveBooks;
     const todaySessions = today.sessions + liveSessions;
     const todayMs = today.durationMs + liveMs;
-    const todayMinutes = Math.max(0, Math.round(todayMs / 60000));
+    // v6.1: dropped `todayMinutes = Math.round(todayMs / 60000)`. The
+    // "Today" line now uses formatDuration(todayMs) for consistency
+    // with the share message, home-screen celebration, and Settings
+    // → Data screen. Previous Math.round behavior caused visible
+    // discrepancies: a 9.5m session displayed as "10 minutes trained"
+    // here but "9m" everywhere else (formatDuration uses Math.floor).
+    // formatDuration also scales gracefully past 60 minutes — a 65m
+    // session showed "65 minutes trained" before, now "1h 5m trained".
     const sessionsLabel = todaySessions === 1 ? t.sessionCompleteSessionSingle : t.sessionCompleteSessions;
     const isAll66 = getConfidentCount(confidentBuffersRef.current || {}, bibleBooks) === 66;
     return (
@@ -799,7 +806,20 @@ export default function QuizGrid({
             {totalQuizMs > 0 && (
               <div className="celebration-time">
                 <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
-                <span className="celebration-time-value">{formatDuration(totalQuizMs + sessionMs)}</span>
+                <span className="celebration-time-value">{formatDuration(totalQuizMs)}</span>
+                {/* v6.1: was `formatDuration(totalQuizMs + sessionMs)`,
+                    which double-counted the current session. Reason:
+                    addTrainingTime(cappedMs) is called per question
+                    (correct-answer handler line ~536, wrong-answer
+                    handler line ~655), incrementing totalQuizMs by the
+                    same cappedMs that's being added to sessionMs. So by
+                    the time the celebration renders, totalQuizMs ALREADY
+                    includes the entire current session — adding sessionMs
+                    on top doubled it. Jonathan's screenshot showed total
+                    19m for a single ~9.5m session: 9.5 (totalQuizMs) +
+                    9.5 (sessionMs) = 19. The home-screen celebration
+                    (App.jsx) uses just `formatDuration(totalQuizMs)` and
+                    has always been right; this is now consistent. */}
               </div>
             )}
           </div>
@@ -815,7 +835,7 @@ export default function QuizGrid({
             <strong>{t.sessionCompleteTodayLabel}:</strong>{' '}
             {todayBooks} {t.sessionCompleteBooks}
             {' · '}{todaySessions} {sessionsLabel}
-            {todayMs > 0 && (<>{' · '}{todayMinutes} {t.sessionCompleteMinutes}</>)}
+            {todayMs > 0 && (<>{' · '}{formatDuration(todayMs)} {t.sessionCompleteTrainedLabel}</>)}
           </p>
         )}
 
