@@ -1128,7 +1128,7 @@ function App() {
 
           {view === 'settings' && (
             <Settings
-              config={{ grid: config.grid, quiz: config.quiz, display: config.display, study: config.study, t }}
+              config={{ ...config, t }}
               onSave={saveConfig}
               onBack={() => {
                 const back = previousView || 'menu';

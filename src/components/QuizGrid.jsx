@@ -1153,6 +1153,7 @@ export default function QuizGrid({
         aria-valuenow={(!feedback && timerStart != null) ? timerProgress : 0}
       >
         <div
+          key={timerStart || 'idle'}
           className="quiz-timer-bar-fill"
           style={{
             transform: `scaleX(${(!feedback && timerStart != null) ? timerProgress : 0})`,
