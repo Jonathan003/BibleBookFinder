@@ -1,3 +1,215 @@
+# v5 commit 5 — Box Mode scope picker UX
+
+Three related changes to Box Mode that were queued at the start of
+the v4 work but pushed back repeatedly while we cleaned up the
+home dashboard. Now shipped as a single commit since they all touch
+the same files and the same UX surface.
+
+## 1. Remove the grey-out of out-of-scope books in the in-session grid
+
+Pre-v5: while playing a scope-restricted session (e.g. Pentateuch
+only), all 66 books rendered in the grid, but the 61 out-of-scope
+books were `opacity: 0.4` and `disabled` — a visual grey wash. The
+intent was to communicate "you can't tap these," but Jonathan
+flagged that the wash also tells the user where the answer pool is,
+which defeats part of the test. The grid is supposed to feel like
+"find Leviticus among all the books," not "find Leviticus among
+these 5 highlighted slots."
+
+**Change:** dropped `.book-cell.boxmode-out-of-scope { opacity: 0.4;
+cursor: not-allowed; }` from BoxMode.css, and removed the
+`boxmode-out-of-scope` class from the className string in
+BoxMode.jsx (line 796 of the pre-v5 file). Also dropped `!isInScope`
+from the `disabled` attribute so out-of-scope cells stay tab-
+focusable — but the existing `onClick={() => isInScope &&
+handleBookClick(book)}` guard already no-ops out-of-scope taps,
+so behavior is preserved.
+
+Added `aria-disabled={!isInScope ...}` so assistive tech still
+announces the out-of-scope state without the visual grey-out
+giving the answer away.
+
+## 2. Long-press multi-select on the scope picker
+
+Pre-v5: scope was a single string in component state, and tapping
+a scope chip replaced the selection wholesale. There was no way to
+say "Pentateuch + Gospels" without playing each separately.
+
+**Design:**
+- **Short tap** on a scope chip → replace selection with just that
+  scope. Identical to old behavior.
+- **Long-press** (held 500ms) on a group chip → toggle that group
+  in/out of a multi-selection. Visual feedback during the hold is
+  an amber wash that fills the chip from left to right over the
+  500ms (CSS `@keyframes boxmode-hold-fill`). If released early,
+  the wash snaps off and it counts as a short tap.
+- **Long-press on 'All 66 books'** → treated as a short tap (the
+  catch-all isn't multi-selectable; replaces selection with just
+  'all').
+- **Auto-normalize:** if the user selects all 9 groups via
+  multi-select, the canonical key collapses to `'all'` (so personal-
+  best storage doesn't fragment into a redundant 9-group multi
+  entry). If they deselect everything, fall back to `['all']`.
+
+**Implementation:**
+- Replaced `const [scope, setScope] = useState('all')` with
+  `const [selectedScopes, setSelectedScopes] = useState(['all'])`.
+- Added `pressTimerRef` for the 500ms timer and `pressFiredRef` for
+  the "long-press already fired this interaction" flag that
+  prevents the click event following pointerup from re-firing the
+  short-tap.
+- Pointer events: `onPointerDown` starts the timer, `onPointerUp` /
+  `onPointerLeave` / `onPointerCancel` all cancel it. Click handler
+  reads `pressFiredRef` and bails out if a long-press already
+  fired during the same interaction.
+- New `holdingScopeId` state drives a `.holding` CSS class on the
+  chip currently being held, which triggers the fill animation.
+
+## 3. Canonical scope keys + multi-scope storage
+
+A multi-scope session needs a canonical storage key so the same
+combination (e.g. Pentateuch + Gospels) always compares against the
+same personal best across sessions. Without a canonical form,
+selecting `['group:law', 'group:gospels']` and
+`['group:gospels', 'group:law']` would store under two different
+keys despite being the same set.
+
+**Key format (canonical, sorted alphabetically):**
+- `'all'` — the catch-all (66 books).
+- `'group:law'` / `'group:gospels'` / etc. — single group, unchanged
+  from v4.
+- `'multi:gospels+law'` — 2-8 groups, IDs sorted alphabetically and
+  joined with `+`. The sort is the canonicalization step.
+
+**`computeScopeKey(selectedScopes)`** (module-level helper) does the
+sort + format. **`filterBooksByScope`** in boxMode.js was extended
+to recognize the `'multi:'` prefix and filter accordingly. Both
+single-scope formats keep working — fully backward-compatible.
+
+**`scopeDisplayName(scopeKey, lang, t)`** (module-level helper)
+formats any canonical key for display:
+- `'all'` → "All 66 books" / "Alle 66 boeken"
+- `'group:law'` → "Pentateuch"
+- `'multi:gospels+law'` → "Pentateuch · Gospels"
+  (group order preserved from the canonical sort; middle dot
+  separator).
+
+Used in three places:
+- Selection screen: when multi-select is active, a `<strong>` line
+  beneath the multi-hint shows the current selection summary
+  ("Pentateuch · Gospels — 9 books"). Updates live as the user
+  toggles groups.
+- Playing-screen pill: replaces the previous generic
+  `t.boxModeInProgress` ("Box Mode") text with the scope summary.
+  E.g. "📦 Pentateuch · Gospels" while you're mid-session. Keeps
+  the user oriented and serves as a sanity check for multi-scope
+  selections.
+- End screen: scope label uses the helper, so completion titles
+  like "Pentateuch · Gospels cleared!" work without crashing the
+  old `.split('—')` path.
+
+## Multi-scope personal-bests behaviour
+
+`boxModeStorage.js` was not modified. The existing
+`recordCompletion(userId, scope, sessionData)` already keys on
+whatever scope string the caller passes — so multi-scope sessions
+DO get their own personal-best entries automatically, e.g.
+`user.boxModeBests['multi:gospels+law']`.
+
+App.jsx's home dashboard records list (the `BOX_SCOPE_KEYS` array
+at line ~841) only lists the canonical 9 single-scope keys, so
+multi-scope entries are stored but NOT shown in the home
+dashboard records list. They DO appear in the end-screen
+"previous best" comparison after completing the same multi-scope
+combination twice. This is intentional: the home dashboard is the
+single-scope leaderboard, and the user-driven combinations stay
+in the per-session feedback loop without cluttering the
+canonical list.
+
+(If you decide later you DO want multi-scope bests visible on
+home, the smallest change would be appending a `'multi:*'` filter
+to the App.jsx mapping that pulls multi entries below the 9
+canonical ones. Deferred — let's see if the multi-select feature
+even gets daily use first.)
+
+## Pause / resume
+
+Pause snapshot (`onPause({ scope, state, pausedAt })`) now reads
+the scope string from `stateRef.current.scope` rather than from
+component state. `state.scope` is set by `createInitialState` from
+the canonical key, and is the source of truth during a running
+session. This is functionally equivalent to the v4 behavior for
+single-scope sessions and correct-by-construction for multi-scope.
+
+On resume, the resume effect populates `selectedScopes` from the
+paused canonical key so that if the user backs out via "Another
+selection" on the end screen, they see their previous multi
+already highlighted in the picker. Pure cosmetic — not required
+for the resumed session itself to work.
+
+## Files touched
+
+- `src/boxMode.js` — `filterBooksByScope` extended for `'multi:'`.
+- `src/components/BoxMode.jsx` — state, helpers, long-press
+  handlers, picker JSX, pill text, end-screen label, book-cell
+  className + disabled.
+- `src/components/BoxMode.css` — removed grey-out, added
+  `.boxmode-scope-option.holding` + keyframes, added
+  `.boxmode-multi-hint` styles.
+- `src/data.js` — added `boxModeScopeMultiHint` (both languages)
+  and `book` singular key (both languages).
+- `src/App.jsx` — not modified. The home dashboard's
+  `BOX_SCOPE_KEYS` filter naturally excludes multi entries.
+
+## Smoke test
+
+1. **Box Mode → scope picker:** all 10 chips render (1 catch-all
+   + 9 groups), 'All 66 books' is selected by default.
+2. **Short-tap a group:** selection replaces with that group only,
+   amber border highlights it.
+3. **Long-press a group (hold 500ms):** chip fills with amber wash
+   over 500ms. On fire, 'all' chip deselects (mutually exclusive),
+   pressed group becomes selected. Multi-hint line appears below
+   the picker with selection summary.
+4. **Long-press a second group:** both stay selected. Summary
+   updates: "Pentateuch · Gospels — 9 books".
+5. **Long-press one of the selected groups:** that group toggles
+   off. If only one remains, it stays as single-scope.
+6. **Long-press 'All 66 books':** treated as short-tap, replaces
+   selection with just 'all'. (Catch-all isn't multi-selectable.)
+7. **Tap Start session with multi-scope:** session starts with
+   exactly the union of selected books in the pool. In-session
+   pill shows "📦 Pentateuch · Gospels".
+8. **In-session grid:** all 66 books rendered with normal colors,
+   no grey wash. Tapping an out-of-scope book does nothing (no
+   click, no error) — silently no-ops.
+9. **Complete the multi-scope session:** end screen shows
+   "Pentateuch · Gospels cleared!" title. First completion: "new
+   personal best!" indicator. Second completion of same
+   combination: comparison vs previous time.
+10. **Pause + resume:** during a multi-scope session, tap Back →
+    Resume on home screen → re-enters with the same multi-scope
+    state. End the session via "Another selection" → scope picker
+    shows the previous multi-selection highlighted.
+11. **Scroll the picker on mobile:** long-press accidentally
+    triggered during a scroll should NOT toggle — `onPointerLeave`
+    / `onPointerCancel` cancel the timer when the pointer moves
+    off the chip during a scroll gesture.
+
+## Decisions deliberately deferred
+
+- Multi-scope entries in the home dashboard records list — needs
+  UX thinking about whether to show them and how (alphabetical?
+  grouped? capped at most-recent-3?). Deferred until daily-use
+  feedback.
+- Long-press discoverability on desktop without touch — the hint
+  text says "long-press to combine" regardless of pointer type.
+  Mouse-down-and-hold works identically to touch-and-hold, so the
+  feature is usable, but desktop users may not find it without
+  reading the hint. Acceptable trade for v5.
+
+---
+
 # v4 commit 4.12 — Remove dashboard-panel min-height floor
 
 After 4.10 (compact celebration) and 4.11 (single Start button)

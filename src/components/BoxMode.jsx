@@ -50,6 +50,76 @@ function parseTimePressure(value) {
   return { mode: m[1], ms: Number(m[2]) * 1000 };
 }
 
+// v5: long-press threshold for multi-select on scope chips.
+// 500ms is the standard threshold across mobile platforms (Android,
+// iOS) and feels deliberate without being slow. Shorter triggers on
+// accidental holds during scrolling; longer feels sluggish.
+const LONG_PRESS_MS = 500;
+
+// v5: total number of canonical groups in the 'all' scope. If the
+// user multi-selects all of them, we normalize to 'all' so personal-
+// bests don't fragment into a redundant 9-group multi entry.
+const TOTAL_GROUPS = 9;
+
+/**
+ * v5: compute the canonical scope key for storage / filtering from
+ * a list of selected scope IDs. The list contains either ['all'] or
+ * one+ 'group:xxx' entries.
+ *
+ * Outputs (canonical forms):
+ *   - 'all'                     when the list is ['all'] or empty
+ *   - 'group:law'               when the list is ['group:law']
+ *   - 'multi:gospels+law'       when 2-8 groups are selected;
+ *                               group IDs are sorted alphabetically
+ *                               so the same combination always
+ *                               produces the same key (for
+ *                               personal-best comparison across
+ *                               sessions).
+ *   - 'all'                     when all 9 groups are selected
+ *                               (normalized to avoid a redundant
+ *                               multi entry).
+ */
+function computeScopeKey(selected) {
+  if (!selected || selected.length === 0) return 'all';
+  if (selected.length === 1) return selected[0];
+  const groupIds = selected
+    .filter(s => s.startsWith('group:'))
+    .map(s => s.slice('group:'.length))
+    .sort();
+  if (groupIds.length === TOTAL_GROUPS) return 'all';
+  if (groupIds.length === 1) return `group:${groupIds[0]}`;
+  return `multi:${groupIds.join('+')}`;
+}
+
+/**
+ * v5: human-readable display name for any canonical scope key.
+ * Used by the playing-screen pill, the end-screen completion title,
+ * and the selection-screen summary line. Single-line; the caller
+ * can wrap or truncate as needed for its layout.
+ *
+ * Examples:
+ *   'all'                       → 'All 66 books' (or NL equivalent)
+ *   'group:law'                 → 'Pentateuch'
+ *   'multi:gospels+law'         → 'Pentateuch · Gospels' (group order
+ *                                 preserved from the canonical sort;
+ *                                 separator is the middle dot).
+ */
+function scopeDisplayName(scopeKey, lang, t) {
+  if (scopeKey === 'all') return t.boxModeScopeAll;
+  if (scopeKey.startsWith('group:')) {
+    const groupId = scopeKey.slice('group:'.length);
+    return (groupNames[lang]?.[groupId] || groupNames.nl[groupId] || groupId)
+      .split('—')[0].trim();
+  }
+  if (scopeKey.startsWith('multi:')) {
+    const groupIds = scopeKey.slice('multi:'.length).split('+');
+    return groupIds
+      .map(id => (groupNames[lang]?.[id] || groupNames.nl[id] || id).split('—')[0].trim())
+      .join(' · ');
+  }
+  return scopeKey;
+}
+
 export default function BoxMode({ ownerUserId, onBack, initialPausedSession = null, onPause }) {
   const { config, t, lang } = useAppConfig();
   const { otColumns, ntColumns, displayMode, testamentsLayout, gridRef } = useGridLayout();
@@ -58,8 +128,24 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // Phase: 'selecting' | 'playing' | 'complete'
   const [phase, setPhase] = useState('selecting');
 
-  // Selection state — scope is locked in when transitioning to 'playing'.
-  const [scope, setScope] = useState('all');
+  // Selection state — v5: now a list of selected scope IDs to support
+  // multi-select via long-press. Short-tap replaces the list with a
+  // single scope; long-press toggles a group in/out. The scope KEY
+  // passed to createInitialState / recordCompletion is derived via
+  // computeScopeKey when transitioning to 'playing'.
+  // - Default ['all'] (one element, the catch-all).
+  // - List contains either ['all'] OR one+ 'group:xxx' entries (never
+  //   mixed — 'all' is mutually exclusive with groups).
+  // - If empty, we fall back to ['all'] in handlers.
+  const [selectedScopes, setSelectedScopes] = useState(['all']);
+  // Visual feedback: chip currently being long-pressed. Drives the
+  // .holding CSS class for the hold-fill animation.
+  const [holdingScopeId, setHoldingScopeId] = useState(null);
+  // Refs for the long-press timer (500ms) and the "did long-press
+  // fire?" flag that prevents the onClick handler from re-firing the
+  // short-tap after a successful long-press.
+  const pressTimerRef = useRef(null);
+  const pressFiredRef = useRef(false);
 
   // The full Box Mode game state, or null when not playing.
   const [state, setState] = useState(null);
@@ -239,10 +325,25 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // picker and jump straight back into playing with the saved game
   // state. Per-question timer (timerStart) is NOT restored — it
   // re-anchors on the next currentBookId pick effect.
+  // v5: the pause snapshot stores the canonical `scope` string (e.g.
+  // 'multi:gospels+law'). We don't strictly need to populate
+  // selectedScopes here — the user is going straight to 'playing' and
+  // selectedScopes only matters in the scope-picker UI — but doing it
+  // anyway means that if the user backs out of the resumed session via
+  // "Another selection" on the end screen, they'll see their previous
+  // multi-selection still highlighted in the picker, which is the
+  // less-surprising behavior.
   useEffect(() => {
     if (!initialPausedSession) return;
     const s = initialPausedSession;
-    if (s.scope) setScope(s.scope);
+    if (s.scope) {
+      if (s.scope === 'all' || s.scope.startsWith('group:')) {
+        setSelectedScopes([s.scope]);
+      } else if (s.scope.startsWith('multi:')) {
+        const groupIds = s.scope.slice('multi:'.length).split('+');
+        setSelectedScopes(groupIds.map(id => `group:${id}`));
+      }
+    }
     if (s.state) {
       setState(s.state);
       stateRef.current = s.state;
@@ -255,6 +356,10 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
 
   const startSession = useCallback(() => {
     const failMode = config.boxMode?.failMode || 'soft';
+    // v5: derive canonical scope key from the selectedScopes list.
+    // Empty / all-9 normalize to 'all'; single entry stays as-is;
+    // 2-8 groups become 'multi:groupId1+...' (sorted).
+    const scope = computeScopeKey(selectedScopes);
     const initial = createInitialState({ books: bibleBooks, scope, failMode });
     const firstBookId = pickNextBookId(initial);
     if (firstBookId == null) {
@@ -269,7 +374,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     setHintVisible(false);
     setHighlightedBox(null);
     setPhase('playing');
-  }, [config.boxMode?.failMode, scope]);
+  }, [config.boxMode?.failMode, selectedScopes]);
 
   // ─── Quiz loop actions ─────────────────────────────────────────────
 
@@ -399,9 +504,17 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
       // (silently reset to the scope picker, losing all session
       // progress) was a long-standing complaint — same surface fix as
       // for Quiz Mode.
+      // v5: scope on the snapshot is taken from the running state
+      // (state.scope is the canonical key set by createInitialState)
+      // rather than from selectedScopes — `state.scope` is the source
+      // of truth during a running session and may differ from the
+      // current selectedScopes if the user has clicked around in the
+      // picker after pausing (not currently reachable from the UI
+      // since pausing goes back to the home screen, but safer to
+      // mirror the in-game scope verbatim).
       if (onPause && stateRef.current) {
         onPause({
-          scope,
+          scope: stateRef.current.scope,
           state: stateRef.current,
           pausedAt: Date.now(),
         });
@@ -413,13 +526,95 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     } else {
       onBack();
     }
-  }, [phase, onBack, onPause, scope]);
+  }, [phase, onBack, onPause]);
 
   // Cleanup is handled implicitly by useTimeoutManager on unmount.
+
+  // ─── v5: long-press scope picker handlers ──────────────────────────
+  // Short-tap: replace the entire selection with this one scope.
+  // Long-press (held LONG_PRESS_MS): toggle this group in/out of the
+  //   selection (multi-select). 'all' is mutually exclusive with
+  //   groups — long-pressing a group while 'all' is selected swaps
+  //   to that group as the start of a fresh multi.
+  //
+  // Browser event sequence on a held tap:
+  //   pointerdown → (500ms passes) timer fires onLongPress; pressFired
+  //     becomes true; click WILL still fire on release but onClick
+  //     guards against it.
+  //   pointerdown → pointerup before 500ms → timer cancelled; click
+  //     fires onShortTap normally.
+  //
+  // pointerleave / pointercancel cancel the timer without firing
+  // either action — important for accidental holds during page-level
+  // scrolling on mobile.
+
+  const cancelHoldTimer = useCallback(() => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    setHoldingScopeId(null);
+  }, []);
+
+  const handleScopeLongPress = useCallback((scopeId) => {
+    pressFiredRef.current = true;
+    setHoldingScopeId(null);
+    if (scopeId === 'all') {
+      // 'all' isn't multi-selectable. Treat long-press identically to
+      // short-tap — replace selection with ['all'].
+      setSelectedScopes(['all']);
+      return;
+    }
+    // Group toggle. If 'all' is currently selected, drop it (mutually
+    // exclusive). Toggle this group in/out. Empty → fall back to 'all'.
+    // All-9 → collapse to 'all' (canonical form).
+    setSelectedScopes(prev => {
+      let next = prev.filter(s => s !== 'all');
+      if (next.includes(scopeId)) {
+        next = next.filter(s => s !== scopeId);
+      } else {
+        next = [...next, scopeId];
+      }
+      if (next.length === 0) return ['all'];
+      if (next.length === TOTAL_GROUPS) return ['all'];
+      return next;
+    });
+  }, []);
+
+  const handleScopePointerDown = useCallback((scopeId) => {
+    pressFiredRef.current = false;
+    setHoldingScopeId(scopeId);
+    pressTimerRef.current = setTimeout(() => {
+      handleScopeLongPress(scopeId);
+    }, LONG_PRESS_MS);
+  }, [handleScopeLongPress]);
+
+  const handleScopeClick = useCallback((scopeId) => {
+    // If the long-press already fired during this interaction, the
+    // click event that follows pointerup is the residual event and
+    // must be ignored. Reset the flag for the next interaction.
+    if (pressFiredRef.current) {
+      pressFiredRef.current = false;
+      return;
+    }
+    // Short tap: replace selection.
+    setSelectedScopes([scopeId]);
+  }, []);
 
   // ─── Selection screen ──────────────────────────────────────────────
 
   if (phase === 'selecting') {
+    const scopeKeyPreview = computeScopeKey(selectedScopes);
+    const selectionLabel = scopeDisplayName(scopeKeyPreview, lang, t);
+    const selectionBookCount = scopeKeyPreview === 'all'
+      ? 66
+      : (scopeKeyPreview.startsWith('group:')
+          ? bibleBooks.filter(b => b.group === scopeKeyPreview.slice('group:'.length)).length
+          : (() => {
+              const groupIds = scopeKeyPreview.slice('multi:'.length).split('+');
+              const set = new Set(groupIds);
+              return bibleBooks.filter(b => set.has(b.group)).length;
+            })());
     return (
       <div className="boxmode-screen boxmode-selecting">
         <div className="boxmode-header">
@@ -431,8 +626,12 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
 
         <div className="boxmode-scope-options">
           <button
-            className={`boxmode-scope-option ${scope === 'all' ? 'selected' : ''}`}
-            onClick={() => setScope('all')}
+            className={`boxmode-scope-option ${selectedScopes.includes('all') ? 'selected' : ''} ${holdingScopeId === 'all' ? 'holding' : ''}`}
+            onPointerDown={() => handleScopePointerDown('all')}
+            onPointerUp={cancelHoldTimer}
+            onPointerLeave={cancelHoldTimer}
+            onPointerCancel={cancelHoldTimer}
+            onClick={() => handleScopeClick('all')}
           >
             <span className="scope-label">{t.boxModeScopeAll}</span>
             <span className="scope-count">66</span>
@@ -441,11 +640,17 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
             const count = bibleBooks.filter(b => b.group === groupId).length;
             const groupLabel = (groupNames[lang]?.[groupId] || groupNames.nl[groupId] || '').split('—')[0].trim();
             const id = `group:${groupId}`;
+            const isSelected = selectedScopes.includes(id);
+            const isHolding = holdingScopeId === id;
             return (
               <button
                 key={id}
-                className={`boxmode-scope-option ${scope === id ? 'selected' : ''}`}
-                onClick={() => setScope(id)}
+                className={`boxmode-scope-option ${isSelected ? 'selected' : ''} ${isHolding ? 'holding' : ''}`}
+                onPointerDown={() => handleScopePointerDown(id)}
+                onPointerUp={cancelHoldTimer}
+                onPointerLeave={cancelHoldTimer}
+                onPointerCancel={cancelHoldTimer}
+                onClick={() => handleScopeClick(id)}
               >
                 <span className="scope-label">{groupLabel}</span>
                 <span className="scope-count">{count}</span>
@@ -453,6 +658,21 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
             );
           })}
         </div>
+
+        {/* v5: long-press affordance + current selection summary.
+            The summary tells the user what they'll be training on,
+            which is especially useful for multi-scope selections
+            where the chip highlighting alone doesn't communicate
+            "5 + 4 = 9 books total". */}
+        <p className="boxmode-multi-hint">
+          {t.boxModeScopeMultiHint || 'Tap to choose · long-press to combine'}
+          {selectedScopes.length > 1 && (
+            <>
+              <br />
+              <strong>{selectionLabel} — {selectionBookCount} {selectionBookCount === 1 ? (t.book || 'book') : (t.books || 'books')}</strong>
+            </>
+          )}
+        </p>
 
         <button className="btn boxmode-start-btn" onClick={startSession}>
           {t.boxModeStart}
@@ -467,9 +687,11 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
 
   if (phase === 'complete' && state && finishedSessionData) {
     const prev = getBoxModeBestForScope(ownerUserId, state.scope);
-    const scopeLabel = scope === 'all'
-      ? t.boxModeScopeAll
-      : (groupNames[lang]?.[state.scope.slice('group:'.length)] || '').split('—')[0].trim();
+    // v5: use the scopeDisplayName helper so multi-scope keys
+    // (`multi:gospels+law`) get a readable label ("Pentateuch · Gospels")
+    // instead of crashing the split('—') path. The helper handles all
+    // three canonical forms.
+    const scopeLabel = scopeDisplayName(state.scope, lang, t);
     const totalBooks = state.selectedBookIds.length;
 
     return (
@@ -571,12 +793,13 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     return (
       <button
         key={book.id}
-        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${!isInScope ? ' boxmode-out-of-scope' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
+        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}
         onClick={() => isInScope && handleBookClick(book)}
-        disabled={!isInScope || feedback === 'wrong' && book.id !== correctBookId}
+        disabled={feedback === 'wrong' && book.id !== correctBookId}
+        aria-disabled={!isInScope || (feedback === 'wrong' && book.id !== correctBookId)}
       >
         <span className="book-name">{displayName}</span>
       </button>
@@ -641,9 +864,16 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
           )}
         </div>
 
-        {/* Box Mode pill */}
+        {/* Box Mode pill — v5: surfaces the active scope summary in
+            place of the generic "Box Mode in progress" text. For
+            single-scope sessions this is "📦 Pentateuch" / "📦 All 66
+            books"; for multi-scope sessions it becomes
+            "📦 Pentateuch · Gospels". Keeps the user oriented when
+            mid-session and useful as a sanity check for multi-scope
+            selections (especially before the picker UX is fully
+            muscle-memorized). */}
         <div className="trainahead-pill boxmode-pill" aria-live="polite">
-          📦 {t.boxModeInProgress}
+          📦 {scopeDisplayName(state.scope, lang, t)}
           {state.hintUsedOnCurrent && <span className="boxmode-hint-marker"> · 💡 {t.boxModeHintMarker}</span>}
           {state.slowOnCurrent && <span className="boxmode-slow-marker"> · ⏱ {t.boxModeTimePressureSlowMarker || 'too slow'}</span>}
         </div>

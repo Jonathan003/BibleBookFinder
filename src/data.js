@@ -277,6 +277,7 @@ export const translations = {
     readyToPractice: 'Klaar om te oefenen',
     practiced: 'Geoefend',
     allBooks: 'Alle boeken',
+    book: 'boek',
     books: 'boeken',
     wrongShowCorrect: 'Fout — kijk naar het blauwe vakje!',
     // Total training time label (shared across Settings, Stats screen, share)
@@ -392,6 +393,9 @@ export const translations = {
     boxModeTitle: 'Doos Modus',
     boxModeIntro: 'Een snelle, op zichzelf staande oefensessie. Alle gekozen boeken beginnen in doos 1. Goede antwoorden gaan een doos hoger, foute antwoorden een doos lager. Klaar als alles in doos 5 staat.',
     boxModeScopeAll: 'Alle 66 boeken',
+    // v5: hint text below the scope picker explaining the long-press
+    // gesture for multi-scope selection.
+    boxModeScopeMultiHint: 'Tik om te kiezen · houd ingedrukt om te combineren',
     boxModeStart: 'Start sessie',
     boxModeDisclaimer: 'Doos Modus heeft geen invloed op je gewone schema. Het is puur extra oefening.',
     boxModeInProgress: 'Doos Modus',
@@ -581,6 +585,7 @@ export const translations = {
     readyToPractice: 'Ready to practice',
     practiced: 'Practiced',
     allBooks: 'All Books',
+    book: 'book',
     books: 'books',
     wrongShowCorrect: 'Wrong — look for the blue cell!',
     // Total training time label (shared across Settings, Stats screen, share)
@@ -659,6 +664,9 @@ export const translations = {
     boxModeTitle: 'Box Mode',
     boxModeIntro: 'A quick, standalone practice session. Every selected book starts in box 1. Correct answers move a book up, wrong answers move it down. You\'re done when everything reaches box 5.',
     boxModeScopeAll: 'All 66 books',
+    // v5: hint text below the scope picker explaining the long-press
+    // gesture for multi-scope selection.
+    boxModeScopeMultiHint: 'Tap to choose · long-press to combine',
     boxModeStart: 'Start session',
     boxModeDisclaimer: 'Box Mode does not affect your regular schedule. It\'s pure extra practice.',
     boxModeInProgress: 'Box Mode',

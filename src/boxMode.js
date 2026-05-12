@@ -100,6 +100,15 @@ export function filterBooksByScope(books, scope) {
     const groupId = scope.slice('group:'.length);
     return books.filter(b => b.group === groupId);
   }
+  // v5: multi-scope. Format: 'multi:groupId1+groupId2+...' (group IDs
+  // sorted alphabetically by the caller — see computeScopeKey in
+  // BoxMode.jsx — so the same combination always maps to the same key
+  // for personal-best comparison).
+  if (scope.startsWith('multi:')) {
+    const groupIds = scope.slice('multi:'.length).split('+');
+    const set = new Set(groupIds);
+    return books.filter(b => set.has(b.group));
+  }
   // Unknown scope: empty selection rather than crash
   return [];
 }
