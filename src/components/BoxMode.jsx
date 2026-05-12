@@ -50,12 +50,6 @@ function parseTimePressure(value) {
   return { mode: m[1], ms: Number(m[2]) * 1000 };
 }
 
-// v5: long-press threshold for multi-select on scope chips.
-// 500ms is the standard threshold across mobile platforms (Android,
-// iOS) and feels deliberate without being slow. Shorter triggers on
-// accidental holds during scrolling; longer feels sluggish.
-const LONG_PRESS_MS = 500;
-
 // v5: total number of canonical groups in the 'all' scope. If the
 // user multi-selects all of them, we normalize to 'all' so personal-
 // bests don't fragment into a redundant 9-group multi entry.
@@ -128,24 +122,16 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // Phase: 'selecting' | 'playing' | 'complete'
   const [phase, setPhase] = useState('selecting');
 
-  // Selection state — v5: now a list of selected scope IDs to support
-  // multi-select via long-press. Short-tap replaces the list with a
-  // single scope; long-press toggles a group in/out. The scope KEY
-  // passed to createInitialState / recordCompletion is derived via
-  // computeScopeKey when transitioning to 'playing'.
+  // Selection state — v5: a list of selected scope IDs to support
+  // multi-select. v5.1: every tap on a chip toggles it in/out
+  // (filter-chip pattern). The scope KEY passed to createInitialState
+  // / recordCompletion is derived via computeScopeKey when
+  // transitioning to 'playing'.
   // - Default ['all'] (one element, the catch-all).
   // - List contains either ['all'] OR one+ 'group:xxx' entries (never
   //   mixed — 'all' is mutually exclusive with groups).
   // - If empty, we fall back to ['all'] in handlers.
   const [selectedScopes, setSelectedScopes] = useState(['all']);
-  // Visual feedback: chip currently being long-pressed. Drives the
-  // .holding CSS class for the hold-fill animation.
-  const [holdingScopeId, setHoldingScopeId] = useState(null);
-  // Refs for the long-press timer (500ms) and the "did long-press
-  // fire?" flag that prevents the onClick handler from re-firing the
-  // short-tap after a successful long-press.
-  const pressTimerRef = useRef(null);
-  const pressFiredRef = useRef(false);
 
   // The full Box Mode game state, or null when not playing.
   const [state, setState] = useState(null);
@@ -530,44 +516,32 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
 
   // Cleanup is handled implicitly by useTimeoutManager on unmount.
 
-  // ─── v5: long-press scope picker handlers ──────────────────────────
-  // Short-tap: replace the entire selection with this one scope.
-  // Long-press (held LONG_PRESS_MS): toggle this group in/out of the
-  //   selection (multi-select). 'all' is mutually exclusive with
-  //   groups — long-pressing a group while 'all' is selected swaps
-  //   to that group as the start of a fresh multi.
+  // ─── v5.1: filter-chip scope picker handler ───────────────────────
+  // Every tap on a scope chip toggles. No timing-based gestures
+  // (long-press was removed in v5.1 — see CHANGES.md). The toggle
+  // logic:
   //
-  // Browser event sequence on a held tap:
-  //   pointerdown → (500ms passes) timer fires onLongPress; pressFired
-  //     becomes true; click WILL still fire on release but onClick
-  //     guards against it.
-  //   pointerdown → pointerup before 500ms → timer cancelled; click
-  //     fires onShortTap normally.
+  // - Tap 'All 66 books' → replace selection with just ['all'].
+  //   ('all' is the catch-all reset; mutually exclusive with groups.)
+  // - Tap a group while 'all' is selected → drop 'all', select just
+  //   that group. Starts a fresh multi-selection.
+  // - Tap a group while other groups are selected →
+  //     - already in selection: remove it (toggle off)
+  //     - not in selection: add it
+  //     - removing leaves empty: fall back to ['all']
+  //     - adding reaches all 9: collapse to ['all'] (canonical form)
   //
-  // pointerleave / pointercancel cancel the timer without firing
-  // either action — important for accidental holds during page-level
-  // scrolling on mobile.
+  // Result: every interaction is one tap. Works identically on
+  // touch, mouse, and keyboard. No discoverability text needed —
+  // the chip's selected/unselected visual state communicates the
+  // toggle. A summary line below the picker appears once the
+  // selection has 2+ chips active.
 
-  const cancelHoldTimer = useCallback(() => {
-    if (pressTimerRef.current) {
-      clearTimeout(pressTimerRef.current);
-      pressTimerRef.current = null;
-    }
-    setHoldingScopeId(null);
-  }, []);
-
-  const handleScopeLongPress = useCallback((scopeId) => {
-    pressFiredRef.current = true;
-    setHoldingScopeId(null);
+  const handleScopeTap = useCallback((scopeId) => {
     if (scopeId === 'all') {
-      // 'all' isn't multi-selectable. Treat long-press identically to
-      // short-tap — replace selection with ['all'].
       setSelectedScopes(['all']);
       return;
     }
-    // Group toggle. If 'all' is currently selected, drop it (mutually
-    // exclusive). Toggle this group in/out. Empty → fall back to 'all'.
-    // All-9 → collapse to 'all' (canonical form).
     setSelectedScopes(prev => {
       let next = prev.filter(s => s !== 'all');
       if (next.includes(scopeId)) {
@@ -579,26 +553,6 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
       if (next.length === TOTAL_GROUPS) return ['all'];
       return next;
     });
-  }, []);
-
-  const handleScopePointerDown = useCallback((scopeId) => {
-    pressFiredRef.current = false;
-    setHoldingScopeId(scopeId);
-    pressTimerRef.current = setTimeout(() => {
-      handleScopeLongPress(scopeId);
-    }, LONG_PRESS_MS);
-  }, [handleScopeLongPress]);
-
-  const handleScopeClick = useCallback((scopeId) => {
-    // If the long-press already fired during this interaction, the
-    // click event that follows pointerup is the residual event and
-    // must be ignored. Reset the flag for the next interaction.
-    if (pressFiredRef.current) {
-      pressFiredRef.current = false;
-      return;
-    }
-    // Short tap: replace selection.
-    setSelectedScopes([scopeId]);
   }, []);
 
   // ─── Selection screen ──────────────────────────────────────────────
@@ -626,12 +580,8 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
 
         <div className="boxmode-scope-options">
           <button
-            className={`boxmode-scope-option ${selectedScopes.includes('all') ? 'selected' : ''} ${holdingScopeId === 'all' ? 'holding' : ''}`}
-            onPointerDown={() => handleScopePointerDown('all')}
-            onPointerUp={cancelHoldTimer}
-            onPointerLeave={cancelHoldTimer}
-            onPointerCancel={cancelHoldTimer}
-            onClick={() => handleScopeClick('all')}
+            className={`boxmode-scope-option ${selectedScopes.includes('all') ? 'selected' : ''}`}
+            onClick={() => handleScopeTap('all')}
           >
             <span className="scope-label">{t.boxModeScopeAll}</span>
             <span className="scope-count">66</span>
@@ -641,16 +591,11 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
             const groupLabel = (groupNames[lang]?.[groupId] || groupNames.nl[groupId] || '').split('—')[0].trim();
             const id = `group:${groupId}`;
             const isSelected = selectedScopes.includes(id);
-            const isHolding = holdingScopeId === id;
             return (
               <button
                 key={id}
-                className={`boxmode-scope-option ${isSelected ? 'selected' : ''} ${isHolding ? 'holding' : ''}`}
-                onPointerDown={() => handleScopePointerDown(id)}
-                onPointerUp={cancelHoldTimer}
-                onPointerLeave={cancelHoldTimer}
-                onPointerCancel={cancelHoldTimer}
-                onClick={() => handleScopeClick(id)}
+                className={`boxmode-scope-option ${isSelected ? 'selected' : ''}`}
+                onClick={() => handleScopeTap(id)}
               >
                 <span className="scope-label">{groupLabel}</span>
                 <span className="scope-count">{count}</span>
@@ -659,20 +604,16 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
           })}
         </div>
 
-        {/* v5: long-press affordance + current selection summary.
-            The summary tells the user what they'll be training on,
-            which is especially useful for multi-scope selections
-            where the chip highlighting alone doesn't communicate
-            "5 + 4 = 9 books total". */}
-        <p className="boxmode-multi-hint">
-          {t.boxModeScopeMultiHint || 'Tap to choose · long-press to combine'}
-          {selectedScopes.length > 1 && (
-            <>
-              <br />
-              <strong>{selectionLabel} — {selectionBookCount} {selectionBookCount === 1 ? (t.book || 'book') : (t.books || 'books')}</strong>
-            </>
-          )}
-        </p>
+        {/* v5.1: selection summary appears only when multi-scope is
+            active (2+ chips selected). For single-scope sessions the
+            chip's selected highlight is sufficient — no extra text
+            below the picker. Removes the v5 "long-press" hint that's
+            no longer relevant. */}
+        {selectedScopes.length > 1 && (
+          <p className="boxmode-multi-hint">
+            <strong>{selectionLabel} — {selectionBookCount} {selectionBookCount === 1 ? (t.book || 'book') : (t.books || 'books')}</strong>
+          </p>
+        )}
 
         <button className="btn boxmode-start-btn" onClick={startSession}>
           {t.boxModeStart}

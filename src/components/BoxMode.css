@@ -275,47 +275,12 @@
   color: #b45309;
 }
 
-/* v5: long-press hold animation. While the user is pressing a scope
-   chip (pointer down), the chip fills with an amber wash from left to
-   right over 500ms. If they release before the fill completes,
-   it's a short tap (replace selection). If the fill completes,
-   long-press fires (toggle multi-select) and the wash snaps off as
-   the chip's selected-state visual takes over. Animation is purely
-   visual — the timer in JS drives the actual fire moment. */
-.boxmode-scope-option.holding {
-  position: relative;
-  overflow: hidden;
-}
-.boxmode-scope-option.holding::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: color-mix(in srgb, #f59e0b 18%, transparent);
-  transform-origin: left center;
-  transform: scaleX(0);
-  animation: boxmode-hold-fill 500ms linear forwards;
-  pointer-events: none;
-  z-index: 0;
-}
-.boxmode-scope-option.holding > * {
-  position: relative;
-  z-index: 1;
-}
-@keyframes boxmode-hold-fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-
-/* v5: hint text below the scope picker explaining the long-press
-   gesture. Italic and secondary color so it reads as guidance, not
-   instruction the user must follow. Hidden on touch-incapable
-   environments via the @media query — long-press is hard to discover
-   with a mouse, but the same gesture works with mouse-down-and-hold
-   so we leave the hint visible regardless. (Future: detect pointer
-   type and adapt copy.) */
+/* v5.1: selection summary text below the scope picker. Only appears
+   when 2+ chips are selected (multi-scope mode). Uses italic +
+   secondary color so it reads as supplementary info, not a required
+   instruction. The class name kept from v5 even though the meaning
+   shifted from "hint about long-press" to "summary of multi-
+   selection" — same visual treatment fits both. */
 .boxmode-multi-hint {
   font-size: 0.78rem;
   color: var(--text-secondary, #666);

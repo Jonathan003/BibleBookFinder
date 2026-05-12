@@ -1,3 +1,126 @@
+# v5 commit 5.1 — Scope picker: long-press → filter-chip tap-to-toggle
+
+After v5 shipped, Jonathan asked how multi-select is handled in
+modern software. Honest answer: filter-chip tap-to-toggle is the
+standard pattern for small fixed-list selections (Material 3 filter
+chips, Google Photos filter row, Spotify genre selection, Airbnb
+amenity filters). Long-press was the wrong tool for this surface:
+
+- **Discoverability:** users won't find a long-press gesture without
+  reading hint text — and we had to add hint text precisely because
+  of that. Filter chips don't need explanation.
+- **Timing risk:** accidental holds during a mobile scroll could
+  trigger an unintended toggle. Releasing just before the 500ms fire
+  point would trigger an unintended replace. Both failure modes
+  vanish with tap-to-toggle.
+- **Pattern mismatch:** long-press conventionally means "I want to
+  do something OTHER than open this." Scope chips aren't openable —
+  they're filters. So there's no second action to disambiguate from.
+
+Jonathan's stated goal — "I want it to work good on all devices" —
+favors tap-to-toggle: works identically on touch, mouse, and
+keyboard, no platform-specific timing windows, no special gestures
+to learn.
+
+## Behavioral spec (unchanged from v5)
+
+The toggle logic is exactly the same as v5's long-press handler.
+Only the input is simplified:
+
+- **Tap 'All 66 books'** → replace selection with just `['all']`.
+  ('all' is the catch-all reset; mutually exclusive with groups.)
+- **Tap a group while 'all' is selected** → drop 'all', select just
+  that group. Starts a fresh multi-selection.
+- **Tap a group while other groups are selected:**
+  - already in selection → remove it (toggle off)
+  - not in selection → add it
+  - removing leaves empty → fall back to `['all']`
+  - adding reaches all 9 → collapse to `['all']` (canonical form)
+
+Canonical scope keys (`'all'` / `'group:xxx'` / `'multi:gospels+law'`
+with sorted IDs), the personal-best storage path, the in-session
+pill summary, and the end-screen scope label all stay identical to
+v5. Only the input gesture changes.
+
+## Code removed
+
+- `holdingScopeId` state + `pressTimerRef` + `pressFiredRef` refs
+- `LONG_PRESS_MS` constant
+- `cancelHoldTimer`, `handleScopeLongPress`, `handleScopePointerDown`
+  callbacks
+- `handleScopeClick` (the old short-tap "replace" handler — the new
+  `handleScopeTap` does toggle for all chips, which is what the user
+  actually wants every time)
+- `.boxmode-scope-option.holding` CSS rule + `.holding::before`
+  pseudo-element + `@keyframes boxmode-hold-fill`
+- Pointer event props on chips (`onPointerDown`, `onPointerUp`,
+  `onPointerLeave`, `onPointerCancel`)
+- v5's hint text "Tap to choose · long-press to combine" — no
+  longer relevant
+- `boxModeScopeMultiHint` translation key in both languages
+  (Dutch + English entries removed)
+
+## Code added
+
+- `handleScopeTap(scopeId)` — one unified handler doing the toggle
+  logic for all chips. Replaces both `handleScopeClick` and
+  `handleScopeLongPress`.
+
+## Selection summary line
+
+The summary line below the picker (e.g. "Pentateuch · Gospels — 9
+books") is kept — still useful for confirming what the multi-scope
+combination will train. But it now appears ONLY when 2+ chips are
+selected. For single-scope selections, the picker's own
+selected-chip highlight is sufficient — no extra text below.
+
+`.boxmode-multi-hint` CSS class name kept (less churn than renaming
+to `.boxmode-selection-summary`), styling unchanged. The class is
+now only ever applied to the summary line, never to a hint.
+
+## Files touched
+
+- `src/components/BoxMode.jsx` — state, removed handlers, added
+  handleScopeTap, simplified chip JSX, simplified summary line.
+- `src/components/BoxMode.css` — removed holding rules + keyframes,
+  kept .boxmode-multi-hint (now repurposed for summary only).
+- `src/data.js` — removed `boxModeScopeMultiHint` from both
+  languages.
+
+## Smoke test
+
+1. **Picker initial state:** 'All 66 books' selected, no summary
+   line below.
+2. **Tap Pentateuch:** 'All' deselects, Pentateuch selected. Still
+   no summary line (only 1 chip selected).
+3. **Tap Gospels:** both Pentateuch and Gospels highlighted.
+   Summary line appears: **"Pentateuch · Gospels — 9 books"**.
+4. **Tap Pentateuch again:** it deselects. Only Gospels remains.
+   Summary line disappears.
+5. **Tap Gospels again:** would leave empty → falls back to 'All
+   66 books' (auto-recovery).
+6. **Tap each of 9 groups in turn:** when the 9th is tapped, all
+   collapse to 'All 66 books' (canonical form).
+7. **Tap 'All 66 books' while groups are selected:** acts as
+   reset — replaces selection with just 'all'.
+8. **Mobile:** every tap toggles. No scroll-vs-tap conflict, no
+   timing window. Same behavior as desktop.
+9. **Keyboard:** focus a chip with Tab, press Enter/Space to
+   toggle. Works as a regular button.
+10. **Tap Start session with multi-scope:** session starts with
+    the union of selected books. In-session pill shows
+    "📦 Pentateuch · Gospels". End screen shows
+    "Pentateuch · Gospels cleared!".
+
+## Why not show a "Clear" or "Reset" button?
+
+Spotify and other filter-chip UIs sometimes have a separate "Clear
+filters" link. Not needed here — tapping 'All 66 books' is already
+the reset (it's a chip in the picker itself, mutually exclusive
+with groups). One chip serves the catch-all + reset role.
+
+---
+
 # v5 commit 5 — Box Mode scope picker UX
 
 Three related changes to Box Mode that were queued at the start of
