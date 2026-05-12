@@ -201,12 +201,12 @@ export const translations = {
     auto: 'Automatisch',
     portraitMode: 'Portret',
     landscapeMode: 'Liggend',
-    masterySpeed: 'Meesterschapssnelheid',
-    masterySpeedDesc: '(antwoord binnen deze tijd = beheerst)',
     // v6.3: unified speed setting replacing both masterySpeed (Quiz Mode)
     // and Box Mode time pressure. One slider, 2000–30000ms range, used
     // identically by both modes — only the consequence on timer expiry
-    // differs (Box demotes, Quiz silently rates Hard for FSRS).
+    // differs (Box demotes, Quiz silently rates Hard for FSRS). The old
+    // `masterySpeed` / `masterySpeedDesc` keys were removed in v6 commit
+    // 13 (dead-code cleanup) after no remaining references confirmed.
     targetSpeedLabel: 'Doeltijd per boek',
     targetSpeedDesc: '(de tijd waarbinnen je een boek wilt vinden)',
     fast: 'Snel',
@@ -244,11 +244,10 @@ export const translations = {
     // natural Dutch translation of confident-with-a-thing. Freeing up
     // "Vertrouwd" required renaming the FSRS Familiar tier (which
     // previously held that word) to "Bekend" — see tierFamiliar below.
-    // `mastered` is kept as a backward-compat alias for any remaining
-    // call sites and for backup imports that still reference the old
-    // word.
+    // The old `mastered` key (held the "Beheerst" string in v3 and was
+    // kept as a backward-compat alias through v4-v8) was confirmed
+    // unreferenced anywhere and removed in v6 commit 13.
     confident: 'Vertrouwd',
-    mastered: 'Beheerst',
     abbreviationsPortrait: 'Afkortingen (portret)',
     abbreviationsPortraitDesc: '(rechtop)',
     abbreviationsLandscape: 'Afkortingen (liggend)',
@@ -281,19 +280,14 @@ export const translations = {
     sessionSizeBooks: 'boeken',
     sessionSizeBookSingle: 'boek',
     sessionSizeMinutes: 'min',
-    // Two keys exist for the same FSRS due-count by design — this is
-    // intentional and should NOT be unified:
-    //   - readyToPractice ("Klaar om te oefenen") is the home-menu label.
-    //     It frames the count as a preparation invitation: "here's what's
-    //     waiting for you when you start a session".
-    //   - due ("Te doen") is the in-quiz / Train-Ahead label. It frames
-    //     the same count as a session countdown: "this is how many books
-    //     remain in the current run". "Klaar om te oefenen" inside the
-    //     quiz would read oddly — you ARE practicing.
-    // Help.jsx has a dedicated FAQ entry explaining both terms refer to
-    // the same number, just in different contexts.
+    // `due` ("Te doen") is the in-quiz / Train-Ahead label — frames the
+    // FSRS due count as a session countdown ("this is how many books
+    // remain in the current run"). Used by QuizGrid.jsx. The old
+    // `readyToPractice` companion key (formerly used on the home menu
+    // to frame the same count as a preparation invitation) was removed
+    // in v6 commit 7 along with the home stat card itself, then the
+    // key itself in v6 commit 13.
     due: 'Te doen',
-    readyToPractice: 'Klaar om te oefenen',
     practiced: 'Geoefend',
     allBooks: 'Alle boeken',
     book: 'boek',
@@ -310,15 +304,15 @@ export const translations = {
     celebrationTimeLabel: 'Totale tijd:',
     celebration66Reset: 'Start een nieuwe ronde',
     celebration66ResetConfirm: 'Tik nogmaals om voortgang te wissen',
-    // ─── Pause / resume + dashboard remaining-to-gold (v4 commit 4) ───
+    // ─── Pause / resume (v4 commit 4) ─────────────────────────────────
     // Resume CTA on the home screen when a paused session exists. The
     // user tapped "← Back" mid-session; we kept the snapshot. Discard
-    // wipes it without starting a new run. "Naar goud" = the dashboard
-    // counter showing how many books still need a gold line.
+    // wipes it without starting a new run. The old `toGold` dashboard
+    // counter ("naar goud") was removed along with the home stat card
+    // in v6 commit 7; key removed in v6 commit 13.
     resumeSession: 'Sessie hervatten',
     resumeSessionDesc: 'Ga verder waar je gebleven was',
     discardPausedSession: 'Onderbroken sessie weggooien',
-    toGold: 'naar goud',
     // ─── Box Mode dashboard (v4.1, labels improved v4.4) ────────
     // Stat-card labels for the redesigned Box panel. Renamed in v4.4
     // because "1 cleared of 9, 8 to go" wasn't clear — "cleared" is
@@ -571,9 +565,8 @@ export const translations = {
     auto: 'Auto',
     portraitMode: 'Portrait',
     landscapeMode: 'Landscape',
-    masterySpeed: 'Mastery Speed',
-    masterySpeedDesc: '(answer within this time = mastered)',
-    // v6.3: see Dutch version above for rationale.
+    // v6.3: see Dutch version above for rationale. Old `masterySpeed` /
+    // `masterySpeedDesc` keys removed in v6 commit 13.
     targetSpeedLabel: 'Target time per book',
     targetSpeedDesc: '(the time within which you want to find a book)',
     fast: 'Fast',
@@ -599,9 +592,9 @@ export const translations = {
     importError: 'Invalid file.',
     importWarning: '⚠️ Restoring will overwrite your progress and preferences. Device-specific settings (columns, abbreviations, OT/NT layout) stay on this device.',
     hintReveal: 'Hint:',
-    // See NL section for design rationale.
+    // See NL section for design rationale. Old `mastered` key removed
+    // in v6 commit 13.
     confident: 'Confident',
-    mastered: 'Mastered',
     abbreviationsPortrait: 'Abbreviations (portrait)',
     abbreviationsPortraitDesc: '(upright)',
     abbreviationsLandscape: 'Abbreviations (landscape)',
@@ -628,17 +621,12 @@ export const translations = {
     sessionSizeBooks: 'books',
     sessionSizeBookSingle: 'book',
     sessionSizeMinutes: 'min',
-    // Two keys exist for the same FSRS due-count by design — this is
-    // intentional and should NOT be unified. See the corresponding NL
-    // block for the full rationale; in short:
-    //   - readyToPractice ("Ready to practice") frames the menu count
-    //     as a preparation invitation.
-    //   - due ("Due") frames the same count inside the quiz / Train
-    //     Ahead as a session countdown.
-    // Help.jsx has a dedicated FAQ entry explaining both terms refer to
-    // the same number.
+    // `due` ("Due") is the in-quiz / Train-Ahead label — frames the
+    // FSRS due count as a session countdown. The old `readyToPractice`
+    // companion key (formerly used on the home menu) was removed in v6
+    // commit 7 along with the home stat card itself, then the key in
+    // v6 commit 13.
     due: 'Due',
-    readyToPractice: 'Ready to practice',
     practiced: 'Practiced',
     allBooks: 'All Books',
     book: 'book',
@@ -652,11 +640,12 @@ export const translations = {
     celebrationTimeLabel: 'Total time:',
     celebration66Reset: 'Start a new run',
     celebration66ResetConfirm: 'Tap again to wipe progress',
-    // See NL section for design rationale (v4 commit 4).
+    // See NL section for design rationale (v4 commit 4). The old
+    // `toGold` dashboard counter ("to gold") was removed along with
+    // the home stat card in v6 commit 7; key removed in v6 commit 13.
     resumeSession: 'Resume session',
     resumeSessionDesc: 'Pick up where you left off',
     discardPausedSession: 'Discard paused session',
-    toGold: 'to gold',
     // See NL section for design rationale (v4.1; labels improved v4.4).
     scopesCleared: 'cleared',
     scopesToGo: 'to go',

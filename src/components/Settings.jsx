@@ -394,7 +394,9 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         <>
           {/* ─── Shared ───────────────────────────────────────────── */}
           {/* Settings that genuinely apply across both modes (Quiz and
-              Box). auto-scroll is universal; mastered-books toggle
+              Box). auto-scroll is universal; the confident-books
+              toggle (label: "Vertrouwde boeken" / "Confident books",
+              translation key still `highlightFound` for backward-compat)
               affects the gold-line cell decoration which both modes
               show; theme is app-wide.
 
