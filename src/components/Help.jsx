@@ -139,7 +139,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── 8. Gold line — confident signal (v4) ────────────────────────
       {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
-        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
+        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -155,7 +155,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // vraag hieronder.
       {
         q: 'Moet ik elke dag trainen?',
-        a: 'Nee. Spaced repetition werkt juist door de wachttijd tussen herhalingen — je geheugen wordt sterker tijdens de pauze, niet door extra herhalingen op iets dat al zit. Eén dag overslaan is geen probleem. Meerdere dagen achter elkaar overslaan loopt op — wanneer je terugkomt zal "Te doen" in de quiz hoger staan, maar er is geen straf, je werkt het gewoon weer weg in je eigen tempo. Wanneer "Te doen" in de quiz op 0 staat heb je voor nu klaar; doortrainen helpt je geheugen niet meer (re-drillen van een beheerst boek voegt geen nieuwe sterkte toe, het reset alleen de timer). Wil je toch verder oefenen, gebruik dan Doos Modus — die heeft geen invloed op je FSRS-schema.',
+        a: 'Nee. Spaced repetition werkt juist door de wachttijd tussen herhalingen — je geheugen wordt sterker tijdens de pauze, niet door extra herhalingen op iets dat al zit. Eén dag overslaan is geen probleem. Meerdere dagen achter elkaar overslaan loopt op — wanneer je terugkomt zal "Te doen" in de quiz hoger staan, maar er is geen straf, je werkt het gewoon weer weg in je eigen tempo. Wanneer "Te doen" in de quiz op 0 staat heb je voor nu klaar; doortrainen helpt je geheugen niet meer (een stabiel boek opnieuw oefenen voegt geen nieuwe sterkte toe, het reset alleen de timer). Wil je toch verder oefenen, gebruik dan Doos Modus — die heeft geen invloed op je FSRS-schema.',
       },
       {
         q: 'Hoe wordt mijn trainingstijd bijgehouden?',
@@ -209,7 +209,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── Data, opslag en delen ──────────────────────────────────────
       {
         q: 'Wordt mijn voortgang opgeslagen?',
-        a: 'Ja, in de lokale opslag van je browser — apart per gebruiker. Maar alle voortgang gaat verloren als iemand de browserdata wist. Maak regelmatig een back-up via Instellingen → Data. Bij het herstellen van een back-up gaan je voortgang en persoonlijke voorkeuren (taal, leertempo, snelheid, beheerste boeken-markering) mee, maar apparaat-specifieke instellingen (aantal kolommen, afkortingen, OT/NT layout) blijven van het toestel waarop je herstelt. Zo kan je dezelfde back-up gebruiken op je telefoon, tablet en pc zonder dat de schermafmetingen van het ene toestel die van het andere verstoren.',
+        a: 'Ja, in de lokale opslag van je browser — apart per gebruiker. Maar alle voortgang gaat verloren als iemand de browserdata wist. Maak regelmatig een back-up via Instellingen → Data. Bij het herstellen van een back-up gaan je voortgang en persoonlijke voorkeuren (taal, leertempo, snelheid, vertrouwde-boeken-markering) mee, maar apparaat-specifieke instellingen (aantal kolommen, afkortingen, OT/NT layout) blijven van het toestel waarop je herstelt. Zo kan je dezelfde back-up gebruiken op je telefoon, tablet en pc zonder dat de schermafmetingen van het ene toestel die van het andere verstoren.',
       },
       {
         q: 'Waar wordt mijn back-up opgeslagen, en kan ik kiezen waar?',
@@ -221,7 +221,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         q: 'Wat doet de Delen-knop?',
-        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik heb 33 van 66 bijbelboeken beheerst (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere snelheid, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je beheerste boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je Quiz-voortgang resetten via Instellingen → Data → "🗑️ Quiz-voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige snelheid, dus alles wat je daarna beheerst telt voor die snelheid.',
+        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik ben vertrouwd met 33 van 66 bijbelboeken (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere snelheid, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je vertrouwde boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je Quiz-voortgang resetten via Instellingen → Data → "🗑️ Quiz-voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige snelheid, dus alles wat je daarna leert telt voor die snelheid.',
       },
 
       // ─── Update banner — moved to bottom ────────────────────────────
@@ -367,7 +367,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── 8. Gold line — confident signal (v4) ───────────────────────
       {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
-        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Grid → "Mastered books" if you prefer practicing without the visual progress aid.',
+        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Grid → "Confident books" if you prefer practicing without the visual progress aid.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -382,7 +382,7 @@ No pressure to practice daily. Train when you have the time.`,
       // training) is now combined into the merged question below.
       {
         q: 'Do I need to train every day?',
-        a: 'No. Spaced repetition works *because* of the wait between reviews — your memory strengthens during the pause, not from extra reps on things already stable. Skipping a day is fine. Skipping multiple days in a row piles up — when you come back the in-quiz "Due" counter will be higher, but there\'s no penalty, you just work it off at your own pace. When "Due" inside the quiz reads 0 you\'re done for now; extra reps don\'t help (re-drilling a Mastered book adds no new strength; it just resets the timer). If you want to keep practicing anyway, use Box Mode — it has no effect on your FSRS schedule.',
+        a: 'No. Spaced repetition works *because* of the wait between reviews — your memory strengthens during the pause, not from extra reps on things already stable. Skipping a day is fine. Skipping multiple days in a row piles up — when you come back the in-quiz "Due" counter will be higher, but there\'s no penalty, you just work it off at your own pace. When "Due" inside the quiz reads 0 you\'re done for now; extra reps don\'t help (re-drilling a stable book adds no new strength; it just resets the timer). If you want to keep practicing anyway, use Box Mode — it has no effect on your FSRS schedule.',
       },
       {
         q: 'How is my training time tracked?',
@@ -436,7 +436,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── Data, storage, sharing ─────────────────────────────────────
       {
         q: 'Is my progress saved?',
-        a: "Yes, in your browser's local storage — separately per user. But all progress is lost if someone clears the browser data. Create regular backups via Settings → Data. When you restore a backup, your progress and personal preferences (language, learning pace, mastery speed, mastered-book highlight) come with it, but device-specific settings (column counts, abbreviations, OT/NT layout) stay on the device you're restoring to. This way you can use the same backup on your phone, tablet, and PC without the screen-tuned settings of one device disturbing the others.",
+        a: "Yes, in your browser's local storage — separately per user. But all progress is lost if someone clears the browser data. Create regular backups via Settings → Data. When you restore a backup, your progress and personal preferences (language, learning pace, target speed, confident-book highlight) come with it, but device-specific settings (column counts, abbreviations, OT/NT layout) stay on the device you're restoring to. This way you can use the same backup on your phone, tablet, and PC without the screen-tuned settings of one device disturbing the others.",
       },
       {
         q: 'Where is my backup saved, and can I choose where?',
@@ -448,7 +448,7 @@ No pressure to practice daily. Train when you have the time.`,
       },
       {
         q: 'What does the Share button do?',
-        a: 'The Share button shares your progress as text with a link to the app — for example "I mastered 33 out of 66 Bible books (10s) in the Bible Book Finder quiz!". On phone or tablet it opens your system share sheet so you can send to WhatsApp, email, etc.; on desktop it copies the message to your clipboard so you can paste it yourself. The speed in parentheses (e.g. "(10s)") is only included if you haven\'t changed your mastery speed since you started (or since your last reset). If you switched to a different speed partway through, the speed is left out — otherwise it would be misleading, because your mastered books are then a mix of different speeds. Want the speed back in your share message? Then reset your Quiz progress via Settings → Data → "🗑️ Reset Quiz progress". The reset re-couples your progress to your current speed, so everything you master afterwards counts for that speed.',
+        a: 'The Share button shares your progress as text with a link to the app — for example "I\'m confident on 33 out of 66 Bible books (10s) in the Bible Book Finder quiz!". On phone or tablet it opens your system share sheet so you can send to WhatsApp, email, etc.; on desktop it copies the message to your clipboard so you can paste it yourself. The speed in parentheses (e.g. "(10s)") is only included if you haven\'t changed your speed setting since you started (or since your last reset). If you switched to a different speed partway through, the speed is left out — otherwise it would be misleading, because your confident books are then a mix of different speeds. Want the speed back in your share message? Then reset your Quiz progress via Settings → Data → "🗑️ Reset Quiz progress". The reset re-couples your progress to your current speed, so everything you learn afterwards counts for that speed.',
       },
 
       // ─── Update banner — moved to bottom ────────────────────────────

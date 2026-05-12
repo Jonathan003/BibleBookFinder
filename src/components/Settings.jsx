@@ -419,7 +419,7 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.autoScroll || 'Auto-scroll'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
             <Toggle value={display.autoScroll !== false} onChange={v => updateField('display', 'autoScroll', v)} />
           </SettingRow>
-          <SettingRow label={t.highlightFound || 'Mastered books'} desc={t.highlightFoundDesc || '(highlight mastered books)'}>
+          <SettingRow label={t.highlightFound || 'Confident books'} desc={t.highlightFoundDesc || '(show gold line under confident books)'}>
             <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
           </SettingRow>
           {/* Theme: light/dark/auto. v4 dark-mode addition. 'auto' follows

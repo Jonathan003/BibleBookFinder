@@ -211,8 +211,14 @@ export const translations = {
     targetSpeedDesc: '(de tijd waarbinnen je een boek wilt vinden)',
     fast: 'Snel',
     slow: 'Rustig',
-    highlightFound: 'Beheerste boeken',
-    highlightFoundDesc: '(markeer boeken die je beheerst)',
+    // Settings → Grid toggle that controls the gold-line decoration
+    // under cells. v6 commit 8.2 renamed from "Beheerste boeken" to
+    // "Vertrouwde boeken" to match the concept's new label (the gold-
+    // line trigger is the "Vertrouwd" signal, renamed in 8.1 from
+    // "Zeker"). The translation key `highlightFound` is kept as-is to
+    // avoid cascading changes — only the displayed string moved.
+    highlightFound: 'Vertrouwde boeken',
+    highlightFoundDesc: '(toon gouden lijn onder vertrouwde boeken)',
     autoScroll: 'Automatisch scrollen',
     autoScrollDesc: '(scroll naar het gevraagde boek bij elke vraag)',
     theme: 'Thema',
@@ -333,7 +339,14 @@ export const translations = {
     restoreWarning: 'Dit vervangt je huidige voortgang. Deze actie kan niet ongedaan gemaakt worden.',
     restoreCurrent: 'Huidig',
     restoreIncoming: 'Back-up',
-    restoreMastered: 'beheerst',
+    // Restore dialog stat label. The number it accompanies is the
+    // FSRS-Rooted count (getBookStats().mastered, which uses isMastered
+    // = stability > 7d + reps). v6 commit 8.2 updated the displayed
+    // value from "beheerst" to "geworteld" to match the tier name the
+    // user sees in the home-screen tier bar. The translation KEY name
+    // `restoreMastered` is kept to avoid cascading changes — only the
+    // value moved.
+    restoreMastered: 'geworteld',
     restoreContinue: 'Doorgaan',
     restoreCancel: 'Annuleren',
     // Update banner
@@ -377,14 +390,18 @@ export const translations = {
     dayStreak: 'dagen op rij',
     dayStreakSingle: 'dag',
     streakBest: 'Beste',
-    // Milestones
-    milestone10: 'Goed zo! 10 boeken beheerst! 🎉',
-    milestone20: 'Geweldig! 20 boeken beheerst! 🎉',
+    // Milestones — fire on the CONFIDENT (gold-line) count, not the
+    // FSRS-mastered count. Wording uses "vertrouwd" to match the
+    // confident concept's label (renamed in 8.1 from "zeker"). Older
+    // wording used "beheerst" which was both the wrong concept and the
+    // old word; both got fixed in commit 8.2.
+    milestone10: 'Goed zo! 10 boeken vertrouwd! 🎉',
+    milestone20: 'Geweldig! 20 boeken vertrouwd! 🎉',
     milestone33: 'Halverwege! 33 van 66 boeken! 🎉',
-    milestone39: 'Alle Hebreeuwse-Aramese Geschriften beheerst! 🎉',
-    milestoneNT: 'Alle Christelijke Griekse Geschriften beheerst! 🎉',
-    milestone50: 'Fantastisch! 50 boeken beheerst! 🎉',
-    milestone66: 'Alle 66 boeken beheerst! 🏆',
+    milestone39: 'Alle Hebreeuwse-Aramese Geschriften vertrouwd! 🎉',
+    milestoneNT: 'Alle Christelijke Griekse Geschriften vertrouwd! 🎉',
+    milestone50: 'Fantastisch! 50 boeken vertrouwd! 🎉',
+    milestone66: 'Alle 66 boeken vertrouwd! 🏆',
     // Welcome back
     welcomeBack24h: 'Welkom terug! Laten we kijken wat je nog weet.',
     welcomeBack7d: 'Welkom terug! Ga verder waar je gebleven was — geen druk.',
@@ -561,8 +578,10 @@ export const translations = {
     targetSpeedDesc: '(the time within which you want to find a book)',
     fast: 'Fast',
     slow: 'Relaxed',
-    highlightFound: 'Mastered books',
-    highlightFoundDesc: '(highlight mastered books)',
+    // See NL section for rationale (v6 commit 8.2 setting-label rename
+    // to match the renamed concept).
+    highlightFound: 'Confident books',
+    highlightFoundDesc: '(show gold line under confident books)',
     autoScroll: 'Auto-scroll',
     autoScrollDesc: '(scroll to the asked book on each question)',
     theme: 'Theme',
@@ -652,7 +671,8 @@ export const translations = {
     restoreWarning: 'This will replace your current progress. This action cannot be undone.',
     restoreCurrent: 'Current',
     restoreIncoming: 'Backup',
-    restoreMastered: 'mastered',
+    // See NL section for rationale (commit 8.2 value-only update).
+    restoreMastered: 'rooted',
     restoreContinue: 'Continue',
     restoreCancel: 'Cancel',
     // Update banner
@@ -674,14 +694,14 @@ export const translations = {
     dayStreak: 'day streak',
     dayStreakSingle: 'day',
     streakBest: 'Best',
-    // Milestones
-    milestone10: 'Nice! 10 books mastered! 🎉',
-    milestone20: 'Great! 20 books mastered! 🎉',
+    // See NL section for the milestone wording rationale (commit 8.2).
+    milestone10: 'Nice! 10 books confident! 🎉',
+    milestone20: 'Great! 20 books confident! 🎉',
     milestone33: 'Halfway! 33 of 66 books! 🎉',
-    milestone39: 'All Hebrew-Aramaic Scriptures mastered! 🎉',
-    milestoneNT: 'All Christian Greek Scriptures mastered! 🎉',
-    milestone50: 'Fantastic! 50 books mastered! 🎉',
-    milestone66: 'All 66 books mastered! 🏆',
+    milestone39: 'All Hebrew-Aramaic Scriptures confident! 🎉',
+    milestoneNT: 'All Christian Greek Scriptures confident! 🎉',
+    milestone50: 'Fantastic! 50 books confident! 🎉',
+    milestone66: 'All 66 books confident! 🏆',
     // Welcome back
     welcomeBack24h: 'Welcome back! Let\'s see what you remember.',
     welcomeBack7d: 'Welcome back! Pick up where you left off — no pressure.',
