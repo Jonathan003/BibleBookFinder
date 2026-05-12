@@ -116,7 +116,15 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       // v2 added: totalQuizMs (cumulative active-quiz time, in ms).
       // v3 added: boxModeBests (per-scope Box Mode personal records)
       //          and config.boxMode in settings.
-      _schemaVersion: 3,
+      // v4 added: confidentBuffers (per-book ring buffer driving the
+      //          gold-line signal). Before v4 these were silently
+      //          omitted from backups — on restore the per-book state
+      //          was lost and only books that were FSRS-Rooted got
+      //          their gold lines back via migrateConfidentBuffers().
+      //          Books that were confident-but-not-yet-Rooted lost
+      //          their gold line on every backup/restore round-trip,
+      //          which made the "X / 66 Vertrouwd" home stat drop.
+      _schemaVersion: 4,
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -124,6 +132,10 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         bestStreak: currentUser.bestStreak || 0,
         quizHistory: currentUser.quizHistory || [],
         fsrsCards: currentUser.fsrsCards || {},
+        // Per-book confident-state ring buffers (added in schema v4).
+        // Each entry is an array of 0-3 booleans; full-true buffer ⇒
+        // gold line on that book. See fsrs.js CONFIDENT_BUFFER_SIZE.
+        confidentBuffers: currentUser.confidentBuffers || {},
         settings: portableSettings,
         bestTimes: currentUser.bestTimes || {},
         // Box Mode personal bests per scope ('all', 'group:law', etc).

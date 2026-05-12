@@ -547,6 +547,16 @@ function App() {
       bestStreak: userData.bestStreak || 0,
       quizHistory: userData.quizHistory || [],
       fsrsCards: userData.fsrsCards || {},
+      // Per-book confident-state ring buffers. v4 schema includes
+      // this field directly (preserves the user's exact gold-line
+      // state). Pre-v4 backups don't have it — in that case we run
+      // migrateConfidentBuffers inline as a fallback so any FSRS-
+      // Rooted books in the backup still get their gold lines back.
+      // The standalone migration useEffect (~line 330) only fires on
+      // user-ID change, which doesn't happen during restore, so we
+      // can't rely on it to fix legacy imports.
+      confidentBuffers: userData.confidentBuffers
+        ?? migrateConfidentBuffers(userData.fsrsCards || {}, bibleBooks, {}),
       bestTimes: userData.bestTimes || {},
       // Box Mode per-scope personal bests. Pre-v3 backups don't have
       // this field — `|| {}` means a legacy import resets to no-bests
