@@ -167,11 +167,24 @@ export default function QuizGrid({
   // the ref, the closure would capture the mount-time value and never
   // see books transition to/from confident mid-session.
   const confidentBuffersRef = useRef(confidentBuffers);
+  // v6.3.4 (Scope B): live mirror of targetBook for the timer-expiry
+  // handler. The tick interval needs the current targetBook to commit
+  // an FSRS Hard rating + reveal the cell when the timer runs out;
+  // capturing it via closure would mean the handler always sees the
+  // book that was current when the interval was first set up, which
+  // is fine in steady state but fragile across rapid pause/resume or
+  // back-to-back books. Refs sidestep the issue.
+  const targetBookRef = useRef(targetBook);
+  // Sentinel: ensures the timer-expiry handler fires at most ONCE per
+  // question, even if the 100ms tick lands right before the cleanup
+  // race. Mirrors Box Mode's `expiryFiredRef`.
+  const expiryFiredRef = useRef(false);
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
   useEffect(() => { confidentBuffersRef.current = confidentBuffers; }, [confidentBuffers]);
+  useEffect(() => { targetBookRef.current = targetBook; }, [targetBook]);
 
   // Per-ROUND seen filter for pickNextBook's maintenance branch. Was
   // previously called sessionSeenBooksRef (v4.3) and synced from the
@@ -306,23 +319,99 @@ export default function QuizGrid({
     }
   }, [targetBook]);
 
-  // Effect 2: tick interval. Updates timerProgress every 100ms. Unlike
-  // Box Mode, there's no expiry side-effect — when remaining hits 0,
-  // we just stop scaling the fill (it stays at 0). The user can take
-  // however long they want; whatever they eventually answer is rated
-  // by actual speed in handleBookClick.
+  // Effect 2: tick interval. Updates timerProgress every 100ms.
+  //
+  // v6.3.4 (Scope B): on expiry, fires the time-up flow — mirror of
+  // Box Mode's expiry handler. The asked book is revealed in blue,
+  // the prompt becomes "Time's up — look for the blue cell!", an
+  // FSRS Hard rating is committed for the question, and the user is
+  // forced to tap the blue cell to advance (no other cells are
+  // tappable). This replaces the v6.3.3 "informational only with an
+  // amber overtime label" behavior — the modes are now uniform on
+  // time-up, and the cell-color confusion that came from amber-vs-
+  // orange under deutan colorblindness is eliminated.
   useEffect(() => {
     if (timerStart == null) return;
+    expiryFiredRef.current = false;
+
     const interval = setInterval(() => {
       const elapsed = Date.now() - timerStart;
       const remaining = Math.max(0, quizTargetSpeedMs - elapsed);
       setTimerProgress(remaining / quizTargetSpeedMs);
-      // Stop ticking once we've reached zero — no further state changes
-      // are needed (the bar visual already sits at 0) and we save a
-      // tiny bit of work on long thinking sessions.
-      if (remaining <= 0) clearInterval(interval);
+
+      if (remaining <= 0 && !expiryFiredRef.current) {
+        expiryFiredRef.current = true;
+        clearInterval(interval);
+        // Skip if user already answered, or if there's no active
+        // question (defensive — shouldn't happen since timerStart
+        // is only set when a book is asked).
+        if (feedbackRef.current) return;
+        const tb = targetBookRef.current;
+        if (!tb) return;
+
+        // Block other cells immediately so the user can only tap
+        // the about-to-be-revealed blue cell.
+        feedbackRef.current = true;
+        setHintVisible(false);
+
+        // Record the question as a slow miss in the same shape
+        // a normal slow-correct answer would use. timeTaken =
+        // quizTargetSpeedMs (exactly the threshold) keeps the
+        // training-time accumulator honest without inflating it
+        // with thinking time the user spent past the deadline.
+        const timeTaken = quizTargetSpeedMs;
+        const cappedMs = Math.min(timeTaken, MAX_ANSWER_MS);
+        setResponseTime(timeTaken);
+        setResponseTimes(prev => [...prev, timeTaken]);
+        setSessionMs(s => s + cappedMs);
+        if (addTrainingTime) addTrainingTime(cappedMs);
+
+        // FSRS Hard rating — same as a slow-correct. The book
+        // comes back soon, but not as soon as an Again (true wrong)
+        // would schedule it. The user knew the book; they just
+        // couldn't find it fast enough, which is exactly what Hard
+        // is supposed to capture.
+        const currentCardData = fsrsCardsRef.current?.[tb.id];
+        const currentCard = currentCardData
+          ? deserializeCard(currentCardData)
+          : createBookCard();
+        const result = reviewBook(scheduler, currentCard, Rating.Hard);
+        updateFsrsCard(tb.id, serializeCard(result.card));
+        logAnswerResult(tb, currentCardData, serializeCard(result.card), Rating.Hard);
+
+        // Confident buffer: push `false` — a question that timed
+        // out is by definition not a confident answer. Mirrors the
+        // slow-correct path.
+        if (updateConfidentBuffer) {
+          updateConfidentBuffer(tb.id, false);
+        }
+
+        // Score: total++ but correct stays the same — same as
+        // slow-correct. Streak resets — you didn't get this one
+        // confidently.
+        setScore(prev => ({ correct: prev.correct, total: prev.total + 1 }));
+        setStreak(0);
+
+        // Visual state mirroring Box Mode: blue reveal + orange
+        // prompt + "Time's up — look for the blue cell!" label.
+        // setCorrectBookId reveals the asked book; the prompt
+        // class chain in render handles the prompt styling based
+        // on feedback === 'time-up'.
+        setFeedback('time-up');
+        setCorrectBookId(tb.id);
+
+        // Scroll to the revealed book so a user who'd scrolled
+        // away during their search lands back on the answer.
+        // Double-rAF for the same reason wrong-tap uses it.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.querySelector(`[data-book-id="${tb.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        });
+      }
     }, 100);
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerStart, quizTargetSpeedMs]);
 
   // FSRS scheduler based on learning pace
@@ -913,14 +1002,17 @@ export default function QuizGrid({
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
-    if (showCorrect && feedback === 'correct') bgColor = '#3b82f6';
-    else if (showCorrect && feedback === 'slow') bgColor = '#f59e0b';
+    // v6.3.4 (Scope B): the asked book turns blue for any "this is the
+    // answer" state — correct, slow, wrong (revealed), or time-up. The
+    // earlier amber `#f59e0b` for slow was confusing under deutan
+    // colorblindness (visually fuses with the orange wrong-tap color),
+    // and the "you were slow" information is already carried by the
+    // prompt label ("⏱ Too slow — Xs") and the FSRS rating downgrade.
+    // No need to encode it twice in two different colors that look
+    // identical to half the users. Blue alone for the asked book =
+    // "this is what you needed to find."
+    if (showCorrect) bgColor = '#3b82f6';
     else if (isCorrectReveal) bgColor = '#3b82f6';
-    // Target book on a wrong click: use blue (same as isCorrectReveal) rather
-    // than red. Red/orange side-by-side is hard to distinguish for deutan
-    // colorblindness; blue is unambiguously the app's 'this is the answer'
-    // color in every other context.
-    else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
     else if (showWrong) bgColor = '#f97316';
 
     const showMasteryLine = config.display.highlightFound && bookIsConfident;
@@ -1036,13 +1128,11 @@ export default function QuizGrid({
 
   if (!targetBook) return null;
 
-  // v6.3.3: derive overtime flag — the timer has elapsed but the user
-  // hasn't answered yet. Used to give the bar/prompt a visible "you're
-  // now past the speed threshold" cue (the bare bar at 0% scaleX is
-  // essentially invisible on light backgrounds, especially on mobile).
-  // No flow change — the user can still answer freely; the FSRS rating
-  // will just downgrade to Hard automatically since timeTaken > target.
-  const isOvertime = !hintVisible && !feedback && timerStart != null && timerProgress <= 0;
+  // v6.3.4 (Scope B): isOvertime flag retired. The "timer expired but
+  // no answer yet" state used to be a derived flag that only changed
+  // prompt styling. It's now a real feedback state (feedback === 'time-up')
+  // committed by the timer-expiry handler, with full Box-Mode-parity
+  // behavior: blue reveal, orange prompt, forced tap-blue to advance.
 
   return (
     <div className="quiz-grid">
@@ -1077,8 +1167,7 @@ export default function QuizGrid({
             !hintVisible && feedback === 'correct' && !showNewBest ? 'prompt-correct' :
             !hintVisible && showNewBest ? 'prompt-correct' :
             !hintVisible && feedback === 'slow' ? 'prompt-slow' :
-            !hintVisible && feedback === 'wrong' ? 'prompt-wrong' :
-            isOvertime ? 'prompt-slow' : ''
+            !hintVisible && (feedback === 'wrong' || feedback === 'time-up') ? 'prompt-wrong' : ''
           }`}>
             {!hintVisible && feedback === 'correct' && !showNewBest
               ? <span className="prompt-book">✓ {t.correct} {formatTime(responseTime)}</span>
@@ -1088,8 +1177,8 @@ export default function QuizGrid({
               ? <span className="prompt-book">⏱ {t.tooSlow} — {formatTime(responseTime)}</span>
               : !hintVisible && feedback === 'wrong'
               ? <span className="prompt-book">✗ {t.wrongShowCorrect || t.wrong}</span>
-              : isOvertime
-              ? <span className="prompt-book">⏱ {lang === 'nl' ? targetBook.nl : targetBook.en}</span>
+              : !hintVisible && feedback === 'time-up'
+              ? <span className="prompt-book">⏱ {t.boxModeTimeUp || "Time's up — look for the blue cell!"}</span>
               : <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
             }
           </div>
