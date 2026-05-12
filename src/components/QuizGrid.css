@@ -817,13 +817,27 @@
   cursor: not-allowed;
 }
 
-/* End-session is the primary "this is done" action — matches the existing
-   .quiz-btn / accent-purple gradient used for "Done" on the summary screen,
-   so the user's hand can move to it without re-learning the visual hierarchy. */
-.session-complete-finish {
+/* v6.2: button-styling roles flipped.
+
+   Before 6.2: the celebration screen had only one button — "End
+   session" — and it carried the purple-gradient primary styling
+   because it was the only available action. With Continue Training
+   added as the expected default next step, the primary styling
+   moves to .session-complete-continue, and .session-complete-finish
+   falls back to the neutral .btn default (outlined, secondary).
+
+   Visual hierarchy: the user's eye lands on Continue first. End
+   session is still clearly available, just not the loud default. */
+.session-complete-continue {
   background: linear-gradient(135deg, var(--accent, #7C3AED), #8b5cf6);
   color: #fff;
   border-color: transparent;
+}
+
+.session-complete-finish {
+  /* Neutral outlined style — inherits from .btn defaults above.
+     No special background or border; the .btn rule already provides
+     the border + bg-secondary needed for a clean secondary look. */
 }
 
 /* Phone landscape: compress vertical spacing so the session-complete

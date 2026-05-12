@@ -389,6 +389,11 @@ export const translations = {
     // older exports/imports that still send it through don't crash.
     sessionCompleteTrainedLabel: 'getraind',
     sessionCompleteFinish: 'Sessie afsluiten',
+    // v6.2: second button on the in-session celebration screen. Lets the
+    // user keep training without going back to home first. Resets only
+    // sessionSeenBooks (so the maintenance picker has books to choose
+    // again); keeps score, streak, and sessionMs accumulating.
+    sessionCompleteContinue: 'Verder trainen',
 
     // ─── Box Mode (Doos Modus) ─────────────────────────────────────
     // Cram-style training. All selected books start in box 1; correct
@@ -666,6 +671,8 @@ export const translations = {
     // older exports/imports that still send it through don't crash.
     sessionCompleteTrainedLabel: 'trained',
     sessionCompleteFinish: 'End session',
+    // v6.2: see Dutch version above for design rationale.
+    sessionCompleteContinue: 'Continue training',
 
     // ─── Box Mode ──────────────────────────────────────────────────
     boxModeTitle: 'Box Mode',

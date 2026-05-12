@@ -146,12 +146,21 @@ export default function QuizGrid({
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
   useEffect(() => { confidentBuffersRef.current = confidentBuffers; }, [confidentBuffers]);
 
-  // v4.3: live mirror of sessionSeenBooks for use inside pickNextBook's
-  // maintenance branch. The branch needs to filter "already touched this
-  // session" without forcing pickNextBook's useCallback to rebuild on
-  // every pick — same pattern as confidentBuffersRef above.
-  const sessionSeenBooksRef = useRef(new Set());
-  useEffect(() => { sessionSeenBooksRef.current = sessionSeenBooks; }, [sessionSeenBooks]);
+  // Per-ROUND seen filter for pickNextBook's maintenance branch. Was
+  // previously called sessionSeenBooksRef (v4.3) and synced from the
+  // sessionSeenBooks state, but v6.2's Continue-training button needs
+  // these to diverge: the picker filter must reset between rounds so a
+  // new round has candidates again, while the session-level state must
+  // keep accumulating so saved seenBookIds reflect everything seen
+  // across the whole session (both rounds combined).
+  //
+  // Updates now happen alongside the state setter in pickNextBook; no
+  // useEffect sync needed. resetSegment clears it; handleContinueTraining
+  // clears it; paused-session restoration seeds it from the snapshot
+  // (round and session collapse to the same set on resume, which is
+  // fine — a multi-round Continue session that gets paused mid-round-2
+  // and then resumed will treat the resumed round as a fresh round).
+  const roundSeenBooksRef = useRef(new Set());
 
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
@@ -264,6 +273,8 @@ export default function QuizGrid({
     setResponseTimes([]);
     setSessionMs(0);
     setSessionSeenBooks(new Set());
+    // v6.2: a brand-new segment is also a brand-new round.
+    roundSeenBooksRef.current = new Set();
     setSessionMasteredBooks(new Set());
     setSessionHintedBooks(new Set());
     setSessionWrongBooks(new Set());
@@ -340,17 +351,22 @@ export default function QuizGrid({
         // then random within the pool (same shape as the due-pool and
         // non-confident-fallback branches).
         //
-        // Filtered by sessionSeenBooksRef so a Full maintenance session
+        // Filtered by roundSeenBooksRef so a Full maintenance session
         // (limit=null, pool=66) naturally ends after touching every book
         // once. Without the filter the same lowest-stability 8 would
         // dominate every pick and the session would loop forever; Quick
         // (limit=5) and Standard (limit=10) end via sessionLimit either
         // way, but Full needs this filter to terminate.
         //
+        // v6.2: this is roundSeenBooksRef (was sessionSeenBooksRef). The
+        // session-level sessionSeenBooks state continues to accumulate;
+        // only this per-round filter resets when the user taps Continue
+        // training on the celebration screen.
+        //
         // This pairs with the launcher fallback in App.jsx that sets
         // trainingPool = 66 when both the FSRS-due and non-confident
         // counts are zero.
-        const seen = sessionSeenBooksRef.current || new Set();
+        const seen = roundSeenBooksRef.current || new Set();
         const candidates = bibleBooks.filter(b => !seen.has(b.id));
         if (candidates.length === 0) {
           setSessionComplete(true);
@@ -375,6 +391,11 @@ export default function QuizGrid({
     sessionPickCountRef.current += 1;
 
     setTargetBook(selected);
+    // v6.2: track on the per-round ref (used by the maintenance picker
+    // filter) AND in the session-level state (used for save/stats).
+    // These coincide before any Continue Training tap; afterward the
+    // ref resets while the state keeps accumulating.
+    roundSeenBooksRef.current = new Set(roundSeenBooksRef.current).add(selected.id);
     setSessionSeenBooks(prev => {
       if (prev.has(selected.id)) return prev;
       const next = new Set(prev);
@@ -430,7 +451,16 @@ export default function QuizGrid({
       if (Array.isArray(s.sessionMasteredBooks)) setSessionMasteredBooks(new Set(s.sessionMasteredBooks));
       if (Array.isArray(s.sessionHintedBooks)) setSessionHintedBooks(new Set(s.sessionHintedBooks));
       if (Array.isArray(s.sessionWrongBooks)) setSessionWrongBooks(new Set(s.sessionWrongBooks));
-      if (Array.isArray(s.sessionSeenBooks)) setSessionSeenBooks(new Set(s.sessionSeenBooks));
+      if (Array.isArray(s.sessionSeenBooks)) {
+        setSessionSeenBooks(new Set(s.sessionSeenBooks));
+        // v6.2: on resume, treat the round and session as collapsed —
+        // we don't snapshot the per-round filter separately because a
+        // mid-Continue pause is rare and the cleanest UX is to start
+        // the resumed round fresh anyway. If the user had cycled
+        // through everything in the original round, the picker will
+        // re-fire celebration after a single new round, which is fine.
+        roundSeenBooksRef.current = new Set(s.sessionSeenBooks);
+      }
       if (typeof s.sessionNewBests === 'number') setSessionNewBests(s.sessionNewBests);
       if (typeof s.sessionMs === 'number') setSessionMs(s.sessionMs);
       if (typeof s.sessionPickCount === 'number') sessionPickCountRef.current = s.sessionPickCount;
@@ -508,6 +538,30 @@ export default function QuizGrid({
   const handleEndSession = useCallback(() => {
     finishSession();
   }, [finishSession]);
+
+  // v6.2: Continue-training button on the session-complete screen.
+  //
+  // sessionComplete=true only fires when the maintenance-mode picker
+  // (Branch 4) has exhausted its candidate pool — i.e. all 66 books are
+  // confident AND every one has already been asked in this round.
+  // Tapping Continue means "give me more books"; we clear the per-round
+  // seen filter so the picker has candidates again, then call
+  // pickNextBook. We deliberately keep the session-level sessionSeenBooks
+  // state, score, streak, sessionMs, and the various sessionXxxBooks
+  // tallies — the user wants to keep going inside the same logical
+  // session, not start over.
+  //
+  // Why the round/session split matters: when the user eventually taps
+  // End Session, saveCurrentSegment writes seenBookIds from the
+  // session-level state, so the saved entry correctly reflects every
+  // book seen across BOTH rounds. If we instead cleared the session
+  // state here, the second-round books would be the only ones in the
+  // save, under-counting the user's actual training.
+  const handleContinueTraining = useCallback(() => {
+    setSessionComplete(false);
+    roundSeenBooksRef.current = new Set();
+    pickNextBook();
+  }, [pickNextBook]);
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
@@ -840,6 +894,20 @@ export default function QuizGrid({
         )}
 
         <div className="session-complete-buttons">
+          {/* v6.2: Continue training is now the primary action.
+              Research (Quizlet Learn, Brainscape Smart Study) shows
+              users typically want to keep going after hitting a natural
+              stopping point — the dual-button pattern just makes the
+              choice explicit. End session stays available as the
+              secondary action.
+
+              Visual hierarchy: Continue gets the purple gradient that
+              used to be on End session. End session moves to the
+              neutral outlined style (the .btn default) so the eye
+              lands on Continue first. */}
+          <button className="btn session-complete-continue" onClick={handleContinueTraining}>
+            {t.sessionCompleteContinue}
+          </button>
           <button className="btn session-complete-finish" onClick={handleEndSession}>
             {t.sessionCompleteFinish}
           </button>
