@@ -564,6 +564,25 @@ export default function QuizGrid({
       // timer; both restart fresh.
       setTimerStart(Date.now());
       setTimerProgress(1);
+      // v6.3.3: re-fire auto-scroll on resume. Previously only
+      // pickNextBook ran the OT-top / NT-bottom scroll, which meant
+      // a paused-and-resumed session would land the user wherever
+      // the page happened to be — usually the wrong half for the
+      // restored question. Mirrors the pickNextBook scroll logic
+      // exactly: same scrollRef target, same delay, same sideBySide
+      // exemption (no horizontal-scroll-to-half on tablets/desktop
+      // landscape where both halves are visible).
+      if (s.targetBook && config.display.autoScroll !== false && testamentsLayout !== 'sideBySide') {
+        schedule(() => {
+          const el = scrollRef.current;
+          if (!el) return;
+          if (s.targetBook.testament === 'OT') {
+            el.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+          }
+        }, 400);
+      }
       logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
     } else {
       logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
@@ -1017,6 +1036,14 @@ export default function QuizGrid({
 
   if (!targetBook) return null;
 
+  // v6.3.3: derive overtime flag — the timer has elapsed but the user
+  // hasn't answered yet. Used to give the bar/prompt a visible "you're
+  // now past the speed threshold" cue (the bare bar at 0% scaleX is
+  // essentially invisible on light backgrounds, especially on mobile).
+  // No flow change — the user can still answer freely; the FSRS rating
+  // will just downgrade to Hard automatically since timeTaken > target.
+  const isOvertime = !hintVisible && !feedback && timerStart != null && timerProgress <= 0;
+
   return (
     <div className="quiz-grid">
       {/* v6.3: visible speed-target countdown bar — same place and
@@ -1050,7 +1077,8 @@ export default function QuizGrid({
             !hintVisible && feedback === 'correct' && !showNewBest ? 'prompt-correct' :
             !hintVisible && showNewBest ? 'prompt-correct' :
             !hintVisible && feedback === 'slow' ? 'prompt-slow' :
-            !hintVisible && feedback === 'wrong' ? 'prompt-wrong' : ''
+            !hintVisible && feedback === 'wrong' ? 'prompt-wrong' :
+            isOvertime ? 'prompt-slow' : ''
           }`}>
             {!hintVisible && feedback === 'correct' && !showNewBest
               ? <span className="prompt-book">✓ {t.correct} {formatTime(responseTime)}</span>
@@ -1060,6 +1088,8 @@ export default function QuizGrid({
               ? <span className="prompt-book">⏱ {t.tooSlow} — {formatTime(responseTime)}</span>
               : !hintVisible && feedback === 'wrong'
               ? <span className="prompt-book">✗ {t.wrongShowCorrect || t.wrong}</span>
+              : isOvertime
+              ? <span className="prompt-book">⏱ {lang === 'nl' ? targetBook.nl : targetBook.en}</span>
               : <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
             }
           </div>
