@@ -22,7 +22,7 @@ import { useAppConfig } from '../App';
 import { useGridLayout } from '../useGridLayout';
 import { useTimeoutManager } from '../useTimeoutManager';
 import {
-  createInitialState, pickNextBookId, applyAnswer, markHintUsed, markSlow, setCurrentBook,
+  createInitialState, pickNextBookId, applyAnswer, markHintUsed, setCurrentBook,
   isComplete, endSession, getBoxCounts, getRecentAnswers, getElapsedMs, TOP_BOX,
 } from '../boxMode';
 import { recordCompletion, getBoxModeBestForScope } from '../boxModeStorage';
@@ -40,15 +40,12 @@ const HIGHLIGHT_DURATION_MS = 600;
 // before the prompt changes.
 const NEXT_PICK_DELAY_MS = 700;
 
-// Parse a timePressure setting like 'soft-10s' into { mode, ms } or null
-// for 'off' / unset. Defensive against malformed values — caller treats
-// null as "no timer."
-function parseTimePressure(value) {
-  if (!value || value === 'off') return null;
-  const m = /^(soft|hard)-(\d+)s$/.exec(value);
-  if (!m) return null;
-  return { mode: m[1], ms: Number(m[2]) * 1000 };
-}
+// v6.3: parseTimePressure() removed. The pre-6.3 config field
+// boxMode.timePressure (an 'off' | 'soft-Xs' | 'hard-Xs' string) is
+// gone; Box Mode now reads config.targetSpeedMs directly as ms. There
+// is no 'off' option — the slider's upper bound (30s) effectively
+// removes pressure for users who don't want it, without needing a
+// special case in the timer code.
 
 // v5: total number of canonical groups in the 'all' scope. If the
 // user multi-selects all of them, we normalize to 'all' so personal-
@@ -166,9 +163,12 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   //   timerProgress = 0..1, fraction of the time budget remaining.
   //                   Drives the depleting bar's visual width.
   //                   Updated every 100ms while a timer is active.
-  // The timer is OFF when config.boxMode.timePressure === 'off' (or
-  // unset). In that case, neither the bar renders nor the expiry
-  // logic fires, and Box Mode behaves exactly as in v1.
+  // v6.3: the timer is ALWAYS on in Box Mode now. The pre-6.3 'off' /
+  // 'soft' / 'hard' selector is gone; the unified config.targetSpeedMs
+  // setting drives both modes, and Box Mode always uses what used to
+  // be the 'hard' expiry flow (auto-wrong with blue-cell tap to
+  // acknowledge). Users who want minimal pressure set targetSpeedMs
+  // near 30000ms.
   const [timerStart, setTimerStart] = useState(null);
   const [timerProgress, setTimerProgress] = useState(1);
   const [hintVisible, setHintVisible] = useState(false);
@@ -179,26 +179,23 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // `timerStart` in the dep array before it's been declared throws
   // a temporal-dead-zone error. (Lesson learned the hard way.)
 
+  // v6.3: read the unified speed setting. Clamped defensively to the
+  // slider's [2000, 30000] range in case a stale localStorage value
+  // sneaks through unmigrated.
+  const targetSpeedMs = Math.max(2000, Math.min(30000, config?.targetSpeedMs ?? 10000));
+
   // Effect 1: reset on each new currentBookId.
   // Triggered when entering 'playing' (first book) and on every
-  // advanceToNextBook (either after a correct or wrong answer). Skipped
-  // entirely when timePressure is off — no point resetting a non-running
-  // timer.
-  const tp = parseTimePressure(config?.boxMode?.timePressure);
+  // advanceToNextBook (either after a correct or wrong answer).
   const currentBookId = state?.currentBookId;
   useEffect(() => {
-    if (!tp) {
-      setTimerStart(null);
-      setTimerProgress(1);
-      return;
-    }
     if (phase !== 'playing' || currentBookId == null) {
       setTimerStart(null);
       return;
     }
     setTimerStart(Date.now());
     setTimerProgress(1);
-  }, [currentBookId, phase, tp?.ms, tp?.mode]);
+  }, [currentBookId, phase, targetSpeedMs]);
 
   // Effect 2: tick interval. Updates timerProgress every 100ms
   // and fires the expiry handler exactly once when the budget hits
@@ -207,49 +204,40 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // setTimerStart(null) cleanup races.
   const expiryFiredRef = useRef(false);
   useEffect(() => {
-    if (!tp || timerStart == null) return;
+    if (timerStart == null) return;
     expiryFiredRef.current = false;
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - timerStart;
-      const remaining = Math.max(0, tp.ms - elapsed);
-      setTimerProgress(remaining / tp.ms);
+      const remaining = Math.max(0, targetSpeedMs - elapsed);
+      setTimerProgress(remaining / targetSpeedMs);
 
       if (remaining <= 0 && !expiryFiredRef.current) {
         expiryFiredRef.current = true;
         clearInterval(interval);
         // Don't fire if user already answered (state changed) or is mid-
-        // feedback (correct/wrong flash already in progress).
+        // feedback (correct/wrong/time-up flash already in progress).
         const s = stateRef.current;
         if (!s || s.currentBookId == null) return;
         if (feedback) return;
 
-        if (tp.mode === 'soft') {
-          // Soft: mark this question slow; correct answer will not
-          // advance the box. Timer disappears (it already hit zero) but
-          // the user keeps answering.
-          const next = markSlow(s);
-          setState(next);
-          stateRef.current = next;
-        } else {
-          // Hard: auto-trigger wrong-answer flow. Reveals the correct
-          // book and applies demotion via applyAnswer — same effect as
-          // the user tapping the wrong book, just triggered by timeout
-          // instead of a tap. From here the user must tap the
-          // highlighted correct book to acknowledge it and advance,
-          // matching the regular wrong-answer flow.
-          setFeedback('wrong');
-          setCorrectBookId(s.currentBookId);
-          const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
-          setState(next);
-          stateRef.current = next;
-        }
+        // v6.3: always the auto-wrong flow (the pre-6.3 'hard' branch).
+        // We tag the feedback as 'time-up' rather than 'wrong' so the
+        // UI can show an honest "Time's up!" message + amber tint
+        // instead of the misleading "Wrong" label — the user didn't
+        // click incorrectly, they just ran out of time. The blue-cell-
+        // tap acknowledgment flow is identical to a wrong tap.
+        setFeedback('time-up');
+        setCorrectBookId(s.currentBookId);
+        const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
+        setState(next);
+        stateRef.current = next;
       }
     }, 100);
 
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timerStart, tp?.ms, tp?.mode, feedback]);
+  }, [timerStart, targetSpeedMs, feedback]);
 
   // ─── Auto-scroll on each new book pick ────────────────────────────
   // Mirrors QuizGrid's behavior: when a new book is asked, scroll the
@@ -369,11 +357,16 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     if (!s || s.currentBookId == null) return;
     // Wrong-answer flow uses tap-to-continue (mirrors QuizGrid's
     // pattern, agreed upon as pedagogically stronger than auto-advance).
-    // While in 'wrong' feedback state, the only meaningful action is
-    // tapping the highlighted correct book to acknowledge it and move
-    // on. Taps elsewhere are ignored — no new answer is applied,
-    // since one was already applied at the moment of the wrong tap.
-    if (feedback === 'wrong') {
+    // While in 'wrong' or 'time-up' feedback state, the only meaningful
+    // action is tapping the highlighted correct book to acknowledge it
+    // and move on. Taps elsewhere are ignored — no new answer is
+    // applied, since one was already applied at the moment of the
+    // wrong tap (or the timer's expiry, for time-up).
+    //
+    // v6.3: 'time-up' is the new feedback state for Box Mode timer
+    // expiry — same blue-cell-tap flow as 'wrong', just different
+    // labeling and tint to be honest about the cause.
+    if (feedback === 'wrong' || feedback === 'time-up') {
       if (book.id !== s.currentBookId) return;
       setFeedback(null);
       setCorrectBookId(null);
@@ -721,26 +714,40 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     const isCorrectReveal = book.id === correctBookId;
     const showCorrect = feedback === 'correct' && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
+    // v6.3: time-up gets its own visual treatment — the reveal cell
+    // tints amber (#F59E0B) instead of the wrong-answer orange so the
+    // user sees a different color for "you ran out of time" vs "you
+    // clicked the wrong book." Non-target cells don't get a colored
+    // overlay for time-up (no one to "blame" — the user didn't even
+    // pick), just the reveal in amber.
+    const showTimeUp = feedback === 'time-up' && (isTarget || isCorrectReveal);
     const inTopBox = state.bookBoxes[book.id] === TOP_BOX;
     const displayName = getBookDisplayName(book, displayMode, lang);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
     if (showCorrect) bgColor = '#3b82f6';
+    else if (isCorrectReveal && feedback === 'time-up') bgColor = '#F59E0B'; // amber for time-up reveal
     else if (isCorrectReveal) bgColor = '#3b82f6';
     else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
+    else if (feedback === 'time-up' && isTarget) bgColor = '#F59E0B';
     else if (showWrong) bgColor = '#f97316';
+
+    // v6.3: 'time-up' shares wrong's tap-the-blue-cell flow, so the
+    // disabled-rule mirrors it: only the correct (revealed) cell is
+    // tappable while either feedback is active.
+    const inAcknowledgeMode = feedback === 'wrong' || feedback === 'time-up';
 
     return (
       <button
         key={book.id}
-        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
+        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}${showTimeUp ? ' time-up' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}
         onClick={() => isInScope && handleBookClick(book)}
-        disabled={feedback === 'wrong' && book.id !== correctBookId}
-        aria-disabled={!isInScope || (feedback === 'wrong' && book.id !== correctBookId)}
+        disabled={inAcknowledgeMode && book.id !== correctBookId}
+        aria-disabled={!isInScope || (inAcknowledgeMode && book.id !== correctBookId)}
       >
         <span className="book-name">{displayName}</span>
       </button>
@@ -754,40 +761,42 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
           flex-direction: row layout (which would compete with the back
           button and pill for horizontal space). Above the row in both
           orientations.
-          Always rendered when tp is on (time pressure enabled) so the
-          4px space stays reserved — the inner fill scales to 0 during
-          feedback or after expiry, leaving the empty container in
-          place. This prevents the book-grid from jumping up by 4px
-          every time the bar appears/disappears. */}
-      {tp && (
+          Always rendered (v6.3: was conditionally rendered on tp; the
+          timer is now always on in Box Mode). The 4px space stays
+          reserved — the inner fill scales to 0 during feedback or
+          after expiry, leaving the empty container in place. This
+          prevents the book-grid from jumping up by 4px every time the
+          bar appears/disappears. */}
+      <div
+        className="boxmode-timer-bar"
+        role="progressbar"
+        aria-label={t.boxModeTimePressureLabel || 'Time pressure'}
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={(!feedback && timerStart != null) ? timerProgress : 0}
+      >
         <div
-          className={`boxmode-timer-bar boxmode-timer-${tp.mode}`}
-          role="progressbar"
-          aria-label={t.boxModeTimePressureLabel || 'Time pressure'}
-          aria-valuemin={0}
-          aria-valuemax={1}
-          aria-valuenow={(!feedback && timerStart != null) ? timerProgress : 0}
-        >
-          <div
-            className="boxmode-timer-bar-fill"
-            style={{
-              // During feedback or before/after a timer cycle, fill
-              // is at 0 (invisible). Container still occupies its 4px.
-              transform: `scaleX(${(!feedback && timerStart != null) ? timerProgress : 0})`,
-            }}
-          />
-        </div>
-      )}
+          className="boxmode-timer-bar-fill"
+          style={{
+            // During feedback or before/after a timer cycle, fill
+            // is at 0 (invisible). Container still occupies its 4px.
+            transform: `scaleX(${(!feedback && timerStart != null) ? timerProgress : 0})`,
+          }}
+        />
+      </div>
 
       <div className="quiz-top" ref={quizTopRef}>
         <div className="quiz-prompt-row" ref={promptRowRef}>
           <button className="back-btn" onClick={handleBack}>← {t.back}</button>
           <div className={`quiz-prompt ${
             feedback === 'correct' ? 'prompt-correct' :
+            feedback === 'time-up' ? 'prompt-time-up' :
             feedback === 'wrong'   ? 'prompt-wrong'   : ''
           }`}>
             {feedback === 'correct'
               ? <span className="prompt-book">✓ {t.correct}</span>
+              : feedback === 'time-up'
+              ? <span className="prompt-book">⏱ {t.boxModeTimeUp || "Time's up — look for the blue cell!"}</span>
               : feedback === 'wrong'
               ? <span className="prompt-book">✗ {t.wrongShowCorrect || t.wrong}</span>
               : <span className="prompt-book">{lang === 'nl' ? targetBook.nl : targetBook.en}</span>
@@ -812,11 +821,14 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
             "📦 Pentateuch · Gospels". Keeps the user oriented when
             mid-session and useful as a sanity check for multi-scope
             selections (especially before the picker UX is fully
-            muscle-memorized). */}
+            muscle-memorized).
+
+            v6.3: the "too slow" marker that used to appear here when
+            the soft timer expired is gone — soft timer mode itself is
+            gone. Hint marker stays. */}
         <div className="trainahead-pill boxmode-pill" aria-live="polite">
           📦 {scopeDisplayName(state.scope, lang, t)}
           {state.hintUsedOnCurrent && <span className="boxmode-hint-marker"> · 💡 {t.boxModeHintMarker}</span>}
-          {state.slowOnCurrent && <span className="boxmode-slow-marker"> · ⏱ {t.boxModeTimePressureSlowMarker || 'too slow'}</span>}
         </div>
 
         {/* The 5-box display */}

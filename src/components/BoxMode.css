@@ -496,15 +496,35 @@
   border-radius: 2px;
 }
 
-/* Hard mode visual: same amber, but slightly thicker bar to subtly
-   convey "this matters more." Not relying on color difference for
-   semantic distinction — the user knows the mode from the setting. */
-.boxmode-timer-hard {
-  height: 6px;
+/* v6.3: .boxmode-timer-soft / .boxmode-timer-hard removed. The single
+   class .boxmode-timer-bar covers both modes now (Box always uses
+   "hard" expiry; Quiz uses the same bar with informational-only expiry
+   styled via .quiz-timer-bar in QuizGrid.css). The pre-6.3 6px height
+   variant for "this matters more" is gone — bar is always 4px. */
+
+/* Time-up prompt styling — analogous to .prompt-wrong but amber
+   (#F59E0B) instead of orange (#F97316). Distinct color signals
+   "you ran out of time" vs "you clicked the wrong cell" — different
+   reason, same consequence (demotion + tap-blue-cell to acknowledge). */
+.quiz-prompt.prompt-time-up {
+  background: #F59E0B;
+  color: #fff;
 }
 
-/* Slow marker styled like the hint marker — uses the same warm accent
-   so it reads as "you got a soft penalty." */
+/* Time-up cell flash — uses the same animation as wrong but amber.
+   Applied to the revealed (correct) cell on timer expiry. */
+.book-cell.time-up {
+  animation: flashTimeUp 0.5s ease-in-out;
+}
+@keyframes flashTimeUp {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+/* Slow-marker pill style — kept for backward compatibility on any
+   stale references but no longer used (the soft-timer marker that
+   would set state.slowOnCurrent is gone in v6.3). Safe to delete in
+   a later cleanup commit. */
 .boxmode-slow-marker {
   color: var(--accent-warm, #F97316);
   font-weight: 600;

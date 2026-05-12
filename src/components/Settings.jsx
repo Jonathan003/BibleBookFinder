@@ -16,9 +16,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
     quiz: config.quiz,
     display: config.display,
     study: config.study || {},
-    boxMode: config.boxMode || { failMode: 'soft', timePressure: 'soft-10s' },
+    // v6.3: boxMode.timePressure removed (replaced by top-level
+    // targetSpeedMs). The fallback no longer references it.
+    boxMode: config.boxMode || { failMode: 'soft' },
+    // v6.3: top-level unified speed target (drives both modes). Falls
+    // back to the previous default if a stale config doesn't have it.
+    targetSpeedMs: typeof config.targetSpeedMs === 'number' ? config.targetSpeedMs : 10000,
   });
-  const { grid, quiz, display, boxMode } = settings;
+  const { grid, quiz, display, boxMode, targetSpeedMs } = settings;
 
   const [activeTab, setActiveTab] = useState('grid');
   const [feedback, setFeedback] = useState('');
@@ -72,6 +77,16 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       ...prev,
       [section]: { ...prev[section], [field]: value },
     }));
+  };
+
+  // v6.3: same shape as updateField but for top-level keys (currently
+  // just targetSpeedMs). Added rather than nesting targetSpeedMs into a
+  // sub-section because the field is genuinely shared across both Quiz
+  // and Box Mode — neither namespace is a good fit, and forcing it into
+  // either would invite future readers to assume a single-mode meaning.
+  const updateTopField = (field, value) => {
+    shouldSaveRef.current = true;
+    setSettings(prev => ({ ...prev, [field]: value }));
   };
 
   const handleExport = async () => {
@@ -369,12 +384,38 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           {/* Settings that genuinely apply across both modes (Quiz and
               Box). auto-scroll is universal; mastered-books toggle
               affects the gold-line cell decoration which both modes
-              show; theme is app-wide. Mastery Speed previously lived
-              here as "Shared" but in practice only Quiz Mode reads
-              config.quiz.masteryMs — Box Mode has its own Time
-              Pressure setting. Moved to the Quiz Mode subsection below
-              so the label stops lying. */}
+              show; theme is app-wide.
+
+              v6.3: targetSpeedMs joins the Shared section as a
+              first-class member. Was previously two separate settings
+              (quiz.masteryMs in the Quiz subsection + boxMode.time-
+              Pressure in the Box subsection); they're unified now
+              because they were always measuring the same concept —
+              "how fast you expect to recall a book." The two modes
+              still treat expiry differently (Box demotes, Quiz silently
+              rates Hard) but the THRESHOLD is one setting. */}
           <h4 className="settings-subsection">{t.settingsSubsectionShared || 'Shared'}</h4>
+          <SettingRow label={t.targetSpeedLabel || 'Target time per book'} desc={t.targetSpeedDesc || '(the time within which you want to find a book)'} fullWidth>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <span>{t.fast || 'Snel'}</span>
+                <span>{t.slow || 'Relaxed'}</span>
+              </div>
+              <input
+                type="range"
+                min={2000}
+                max={30000}
+                step={250}
+                value={targetSpeedMs}
+                onChange={e => updateTopField('targetSpeedMs', Number(e.target.value))}
+                style={{ width: '100%', accentColor: 'var(--accent)' }}
+                aria-label={t.targetSpeedLabel || 'Target time per book'}
+              />
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
+                {targetSpeedMs} ms
+              </div>
+            </div>
+          </SettingRow>
           <SettingRow label={t.autoScroll || 'Auto-scroll'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
             <Toggle value={display.autoScroll !== false} onChange={v => updateField('display', 'autoScroll', v)} />
           </SettingRow>
@@ -392,33 +433,12 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           </SettingRow>
 
           {/* ─── Quiz ────────────────────────────────────────────── */}
+          {/* v6.3: the Mastery Speed slider that used to live here is
+              gone — replaced by the unified Target time per book
+              slider in the Shared section above. The Quiz subsection
+              still hosts the (Advanced-folded) FSRS learning pace
+              control, which IS quiz-only. */}
           <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>
-          {/* Mastery Speed (moved here from Shared in commit 4.1). Controls
-              the "fast enough" threshold that decides whether a correct
-              answer counts toward the confident gold-line buffer (drives
-              the gold line on book cells) AND the FSRS Rating.Good vs
-              Rating.Hard distinction. Quiz-Mode-only — Box Mode has its
-              own separate Time Pressure mechanism. */}
-          <SettingRow label={t.masterySpeed || 'Meesterschapssnelheid'} desc={t.masterySpeedDesc || '(antwoord binnen deze tijd = beheerst)'} fullWidth>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <span>{t.fast || 'Snel'}</span>
-                <span>{t.slow || 'Relaxed'}</span>
-              </div>
-              <input
-                type="range"
-                min={1000}
-                max={10000}
-                step={250}
-                value={quiz.masteryMs}
-                onChange={e => updateField('quiz', 'masteryMs', Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--accent)' }}
-              />
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
-                {quiz.masteryMs} ms
-              </div>
-            </div>
-          </SettingRow>
           {/* Learning pace controls FSRS request_retention. In the new
               schedule-free model the user no longer sees a calendar, so
               this lever is rarely needed — Intensive is the sensible
@@ -449,19 +469,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           {/* ─── Box Mode ─────────────────────────────────────────── */}
           {/* failMode = behavior on wrong answer.
                 'soft' (default) drops one box; 'strict' resets to box 1.
-              timePressure = whether (and how strictly) to enforce a
-                per-question time budget.
-                'off'      = no timer; user can take as long as they want
-                'soft-Xs'  = X-second soft threshold; if it expires before
-                             a correct answer, the book counts correct
-                             but does NOT advance to the next box (same
-                             pattern as a hint). Default 'soft-10s'.
-                'hard-Xs'  = X-second hard deadline; if it expires, treat
-                             as a wrong answer (auto-reveal correct +
-                             demote box).
-              The two-mode design follows what RemNote users requested
-              and Crammfly ships, with Quiz-Mode-style "soft threshold"
-              as the default for consistency with mastery scoring. */}
+
+              v6.3: Box Mode time pressure picker removed. The shared
+              Target time per book slider in the Shared section now
+              drives Box Mode's timer (always-on, expiry fires the
+              auto-wrong flow with amber "Time's up!" tint). The
+              pre-6.3 'off' / 'soft' / 'hard' three-way mode is gone:
+              users who want no pressure set the shared slider near
+              30s; users who want speed practice set it lower. */}
           <h4 className="settings-subsection">{t.settingsSubsectionBoxMode || 'Box Mode'}</h4>
           <SettingRow label={t.boxModeFailModeLabel || 'On wrong answer'} desc={t.boxModeFailModeDesc || ''}>
             <select value={boxMode.failMode || 'soft'} onChange={e => updateField('boxMode', 'failMode', e.target.value)} className="setting-select">
@@ -469,28 +484,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               <option value="strict">{t.boxModeFailModeStrict || 'Back to box 1'}</option>
             </select>
           </SettingRow>
-          <SettingRow label={t.boxModeTimePressureLabel || 'Time pressure'} desc={t.boxModeTimePressureDesc || ''}>
-            <select value={boxMode.timePressure || 'soft-10s'} onChange={e => updateField('boxMode', 'timePressure', e.target.value)} className="setting-select">
-              <option value="off">{t.boxModeTimePressureOff || 'Off'}</option>
-              <option value="soft-5s">{t.boxModeTimePressureSoft5  || 'Soft, 5s'}</option>
-              <option value="soft-8s">{t.boxModeTimePressureSoft8  || 'Soft, 8s'}</option>
-              <option value="soft-10s">{t.boxModeTimePressureSoft10 || 'Soft, 10s (default)'}</option>
-              <option value="soft-15s">{t.boxModeTimePressureSoft15 || 'Soft, 15s'}</option>
-              <option value="soft-20s">{t.boxModeTimePressureSoft20 || 'Soft, 20s'}</option>
-              <option value="hard-5s">{t.boxModeTimePressureHard5  || 'Hard, 5s'}</option>
-              <option value="hard-8s">{t.boxModeTimePressureHard8  || 'Hard, 8s'}</option>
-              <option value="hard-10s">{t.boxModeTimePressureHard10 || 'Hard, 10s'}</option>
-              <option value="hard-15s">{t.boxModeTimePressureHard15 || 'Hard, 15s'}</option>
-              <option value="hard-20s">{t.boxModeTimePressureHard20 || 'Hard, 20s'}</option>
-            </select>
-          </SettingRow>
-          {boxMode.timePressure && boxMode.timePressure !== 'off' && (
-            <div className="pace-hint">
-              {boxMode.timePressure.startsWith('soft-')
-                ? (t.boxModeTimePressureSoftHint || 'Slow correct answer = no advancement')
-                : (t.boxModeTimePressureHardHint || 'Slow answer = wrong (auto-reveal + demote)')}
-            </div>
-          )}
         </>
       );
     }

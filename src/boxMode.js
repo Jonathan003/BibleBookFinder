@@ -75,12 +75,9 @@ export function createInitialState({ books, scope, failMode = 'soft', now = Date
     // Hint flag: cleared on each new pick. If true when answer commits,
     // the book's box is NOT advanced (hint = no progress on this turn).
     hintUsedOnCurrent: false,
-    // Slow flag: set when the soft timer expires before the user
-    // answers. Like hintUsedOnCurrent, blocks advancement on a correct
-    // answer but doesn't trigger demotion. Cleared on each new pick.
-    // Hard-timer mode never sets this — it triggers an auto-wrong
-    // answer instead, which is handled at the UI layer.
-    slowOnCurrent: false,
+    // v6.3: slowOnCurrent removed along with soft timer mode. Timer
+    // expiry now always fires the auto-wrong flow (handled at the UI
+    // layer), so this state flag has no remaining consumers.
     // Timing
     startedAt: now,
     endedAt: null,
@@ -165,8 +162,11 @@ export function applyAnswer(state, { bookId, correct, now = Date.now() }) {
   let nextBox = currentBox;
 
   if (correct) {
-    // Hint OR slow-answer flag blocks advancement. Box stays where it is.
-    if (!state.hintUsedOnCurrent && !state.slowOnCurrent) {
+    // Hint flag blocks advancement. Box stays where it is.
+    // v6.3: slow-answer flag removed; Box Mode no longer has a "soft
+    // timer = no advancement on correct" mode. Timer expiry always
+    // fires the auto-wrong flow at the UI layer instead.
+    if (!state.hintUsedOnCurrent) {
       nextBox = Math.min(TOP_BOX, currentBox + 1);
     }
   } else {
@@ -214,7 +214,6 @@ export function applyAnswer(state, { bookId, correct, now = Date.now() }) {
     // Re-click protection is handled at the click-handler layer via
     // the `feedback` state guard.
     hintUsedOnCurrent: false,            // reset for next turn
-    slowOnCurrent: false,                 // reset for next turn
     consecutiveWrong,
     recoveryTurnsRemaining,
     currentStreak,
@@ -233,22 +232,16 @@ export function markHintUsed(state) {
   return { ...state, hintUsedOnCurrent: true };
 }
 
-/**
- * Mark that the soft timer expired on the current turn. Same effect as
- * markHintUsed for the advancement-suppression rule, but tracked
- * separately so the UI can distinguish "hint" vs "too slow" feedback to
- * the user. Hard-timer mode does NOT call this — it triggers an
- * applyAnswer({ correct: false }) directly to mimic a wrong answer.
- */
-export function markSlow(state) {
-  return { ...state, slowOnCurrent: true };
-}
+// v6.3: markSlow() removed along with soft timer mode. Timer expiry now
+// always triggers an auto-wrong applyAnswer at the UI layer (parallel
+// to the user tapping a wrong book), so there's no longer a need for a
+// separate "got past the time, no demotion" code path.
 
 /**
  * Set the next book to ask. Called after pickNextBookId returns a value.
  */
 export function setCurrentBook(state, bookId) {
-  return { ...state, currentBookId: bookId, hintUsedOnCurrent: false, slowOnCurrent: false };
+  return { ...state, currentBookId: bookId, hintUsedOnCurrent: false };
 }
 
 /**

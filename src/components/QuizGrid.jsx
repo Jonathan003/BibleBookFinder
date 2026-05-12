@@ -33,25 +33,32 @@ import './QuizGrid.css';
 const MAX_ANSWER_MS = 30000;
 
 // How long to pause between a correct answer and picking the next book.
-// Scales with the user's masteryMs setting because that's their declared
-// expected pace: someone with masteryMs=1000 (1s target) wants a snappy
-// flow, someone with masteryMs=10000 (10s target) is more contemplative
-// and benefits from a longer pause to register the green feedback.
+// Scales with the user's targetSpeedMs setting because that's their
+// declared expected pace: a user with targetSpeedMs=2000 (2s target)
+// wants a snappy flow, a user with targetSpeedMs=30000 (30s "relaxed")
+// is more contemplative and benefits from a longer pause to register
+// the green feedback.
 //
-// Formula: 50% of masteryMs, clamped between 250ms and 800ms.
+// Formula: 50% of targetSpeedMs, clamped between 250ms and 800ms.
 //   - 250ms minimum: below this, the green "correct" feedback is barely
 //     perceived (Nielsen Norman Group: ~230ms is human visual perception
 //     threshold). Below this users wouldn't see their own success.
+//     v6.3 note: the slider's 2000ms floor means we never actually hit
+//     this floor — autoPickDelay(2000) = 800ms (capped). The floor is
+//     kept as a defensive guard against unmigrated stale localStorage.
 //   - 800ms maximum: above this, the pause feels like a delay (Material
 //     Design pegs 500ms as the upper bound for "responsive" feedback;
 //     800ms is our pre-existing value, kept as ceiling for compatibility).
 //
-// Examples:
-//   masteryMs=10000 → 800ms (capped — same as before)
-//   masteryMs=1000  → 500ms (responsive but visible)
-//   masteryMs=500   → 250ms (capped — minimum perceptible)
-function autoPickDelayMs(masteryMs) {
-  return Math.min(800, Math.max(250, Math.round(masteryMs * 0.5)));
+// Examples (v6.3 slider range only spans 2000–30000ms):
+//   targetSpeedMs=30000 → 800ms (capped)
+//   targetSpeedMs=10000 → 800ms (capped — same as old default)
+//   targetSpeedMs=2000  → 800ms (capped — same as cap)
+// All slider values now hit the 800ms ceiling, so the pause is uniformly
+// 800ms in practice. The formula is preserved (rather than hardcoded
+// to 800) for any future expansion of the slider range.
+function autoPickDelayMs(targetSpeedMs) {
+  return Math.min(800, Math.max(250, Math.round(targetSpeedMs * 0.5)));
 }
 
 export default function QuizGrid({
@@ -82,6 +89,26 @@ export default function QuizGrid({
   const [responseTimes, setResponseTimes] = useState([]);
 
   const [hintVisible, setHintVisible] = useState(false);
+
+  // v6.3: visible-but-informational timer for Quiz Mode. Mirrors Box
+  // Mode's countdown bar visually (same look, same place — above the
+  // prompt row), but with NO expiry consequence — the bar reaches zero
+  // and just stays there. The user keeps full control of when to
+  // answer; whatever they eventually do gets rated by speed in the
+  // normal way (FSRS Easy/Good/Hard + confident-buffer credit), exactly
+  // as it did before 6.3. The bar's only purpose is transparency:
+  // surfacing the previously-invisible speed threshold so users SEE the
+  // FSRS rating boundary they were already being measured against.
+  //
+  // Why no expiry consequence in Quiz Mode (unlike Box): Quiz Mode is
+  // the "long-term spaced review" experience; Box Mode is the "speed-
+  // sort against the clock" experience. Adding an auto-fire-wrong on
+  // timer expiry would collapse the distinction. Keeping Quiz's timer
+  // informational preserves mode differentiation while still giving the
+  // user the transparency benefit.
+  const [timerStart, setTimerStart] = useState(null);
+  const [timerProgress, setTimerProgress] = useState(1);
+
   const [sessionMasteredBooks, setSessionMasteredBooks] = useState(new Set());
   // One-shot: id of the book that just transitioned to confident, used
   // to apply the .just-confident class on that cell for the gold-line
@@ -246,6 +273,48 @@ export default function QuizGrid({
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [targetBook]);
+
+  // ─── v6.3 Quiz Mode timer effects ─────────────────────────────────
+  // Mirror of Box Mode's timer structure, with two key differences:
+  //   1. No expiry handler. The interval just keeps ticking until the
+  //      user answers (which clears timerStart by setting feedback).
+  //      No setFeedback('time-up') call, no applyAnswer flow.
+  //   2. On expiry, the bar fill goes to 0 and stays there — the user
+  //      can see they're "in slow territory" without being interrupted.
+  //
+  // Effect 1: reset on each new targetBook.
+  //
+  // v6.3: read the unified speed setting. Clamped defensively to the
+  // slider's [2000, 30000] range in case a stale localStorage value
+  // sneaks through unmigrated.
+  const quizTargetSpeedMs = Math.max(2000, Math.min(30000, config?.targetSpeedMs ?? 10000));
+  useEffect(() => {
+    if (!targetBook) {
+      setTimerStart(null);
+      return;
+    }
+    setTimerStart(Date.now());
+    setTimerProgress(1);
+  }, [targetBook, quizTargetSpeedMs]);
+
+  // Effect 2: tick interval. Updates timerProgress every 100ms. Unlike
+  // Box Mode, there's no expiry side-effect — when remaining hits 0,
+  // we just stop scaling the fill (it stays at 0). The user can take
+  // however long they want; whatever they eventually answer is rated
+  // by actual speed in handleBookClick.
+  useEffect(() => {
+    if (timerStart == null) return;
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - timerStart;
+      const remaining = Math.max(0, quizTargetSpeedMs - elapsed);
+      setTimerProgress(remaining / quizTargetSpeedMs);
+      // Stop ticking once we've reached zero — no further state changes
+      // are needed (the bar visual already sits at 0) and we save a
+      // tiny bit of work on long thinking sessions.
+      if (remaining <= 0) clearInterval(interval);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [timerStart, quizTargetSpeedMs]);
 
   // FSRS scheduler based on learning pace
   const scheduler = useMemo(() => {
@@ -590,8 +659,8 @@ export default function QuizGrid({
         addTrainingTime(cappedMs);
       }
 
-      const isWithinTime = timeTaken <= config.quiz.masteryMs;
-      const rating = ratingFromSpeed(timeTaken, config.quiz.masteryMs);
+      const isWithinTime = timeTaken <= config.targetSpeedMs;
+      const rating = ratingFromSpeed(timeTaken, config.targetSpeedMs);
       setFeedback(isWithinTime ? 'correct' : 'slow');
 
       // Update FSRS card with the new rating.
@@ -689,7 +758,7 @@ export default function QuizGrid({
         setStreak(0);
       }
 
-      schedule(() => pickNextBook(), autoPickDelayMs(config.quiz.masteryMs));
+      schedule(() => pickNextBook(), autoPickDelayMs(config.targetSpeedMs));
       return;
     }
 
@@ -920,6 +989,30 @@ export default function QuizGrid({
 
   return (
     <div className="quiz-grid">
+      {/* v6.3: visible speed-target countdown bar — same place and
+          same visual structure as Box Mode's bar (above .quiz-top).
+          Bar fills with the warm accent and ticks down over
+          targetSpeedMs. On expiry the fill scales to 0 and stays;
+          there is no flow change (the user just sees they're now
+          past the FSRS Easy/Good threshold). Container stays
+          rendered with its 4px height so the grid below doesn't
+          jump when feedback states cycle. */}
+      <div
+        className="quiz-timer-bar"
+        role="progressbar"
+        aria-label={t.boxModeTimePressureLabel || 'Time pressure'}
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={(!feedback && timerStart != null) ? timerProgress : 0}
+      >
+        <div
+          className="quiz-timer-bar-fill"
+          style={{
+            transform: `scaleX(${(!feedback && timerStart != null) ? timerProgress : 0})`,
+          }}
+        />
+      </div>
+
       <div className="quiz-top" ref={quizTopRef}>
         <div className="quiz-prompt-row" ref={promptRowRef}>
           <button className="back-btn" onClick={handleBack}>← {t.back}</button>

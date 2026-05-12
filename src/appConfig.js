@@ -14,7 +14,35 @@
 // Auto-detect language: Dutch for nl-speaking browsers, English for everyone else
 const detectedLang = typeof navigator !== 'undefined' && navigator.language?.startsWith('nl') ? 'nl' : 'en';
 
+// v6.3: schema version. Bump whenever the saved config shape changes in
+// a way that requires migration. mergeConfig() reads the saved.version
+// (or its absence) and runs the right migration chain to bring it up
+// to CURRENT_CONFIG_VERSION. The version field itself isn't user-facing
+// — it's purely for migration bookkeeping.
+//
+// Current migrations:
+//   (no version)  → v2: unify quiz.masteryMs + boxMode.timePressure
+//                       into top-level targetSpeedMs; drop both old
+//                       fields. Floor 2000ms (animation-safe), ceiling
+//                       30000ms (effectively "no pressure"). See the
+//                       v6.3 design discussion in CHANGES.md for the
+//                       full rationale.
+export const CURRENT_CONFIG_VERSION = 2;
+
 export const defaultConfig = {
+  // v6.3: schema version — see CURRENT_CONFIG_VERSION above.
+  version: CURRENT_CONFIG_VERSION,
+  // v6.3: unified speed target. Used by BOTH Quiz Mode and Box Mode as
+  // the "fluency threshold" — answers within this time count as fast
+  // (Easy/Good FSRS rating + confident-buffer credit in Quiz, no
+  // demotion + visible timer-bar in Box). Default 10s matches the
+  // pre-6.3 quiz.masteryMs default. Range enforced by the Settings
+  // slider: [2000, 30000]ms.
+  //
+  // The old config.quiz.masteryMs and config.boxMode.timePressure are
+  // dropped from new saves; migrateToV2() in mergeConfig() handles
+  // existing users.
+  targetSpeedMs: 10000,
   grid: {
     portrait: 6,
     landscape: 5,
@@ -26,18 +54,19 @@ export const defaultConfig = {
   },
   // quiz.autoScroll is read-only legacy — see mergeConfig() for migration
   // to display.autoScroll. New writes always go to display.autoScroll.
-  quiz: { masteryMs: 10000, learningPace: 'intensive' },
+  //
+  // v6.3: quiz.masteryMs removed — superseded by top-level targetSpeedMs.
+  // The 'quiz' namespace still hosts learningPace (FSRS request_retention).
+  quiz: { learningPace: 'intensive' },
   // Box Mode (Doos Modus) settings — single-session Leitner cram.
-  //   failMode:     'soft' (drop one box) | 'strict' (back to box 1)
-  //   timePressure: 'off' | 'soft-Xs' | 'hard-Xs' where X is seconds
-  //     'soft' = if timer expires, correct answer counts but doesn't
-  //               advance the book (parallel to hint behavior)
-  //     'hard' = if timer expires, treat as a wrong answer (auto-reveal
-  //               correct + demote book)
-  //   The default 'soft-10s' matches Quiz Mode's masteryMs threshold
-  //   so users feel a consistent "fast = good" expectation across modes
-  //   without the harshest punishment for slow correct answers.
-  boxMode: { failMode: 'soft', timePressure: 'soft-10s' },
+  //   failMode: 'soft' (drop one box) | 'strict' (back to box 1)
+  //
+  // v6.3: boxMode.timePressure removed — superseded by top-level
+  // targetSpeedMs. The pre-6.3 'off' | 'soft-Xs' | 'hard-Xs' modes
+  // collapsed into a single "always-on timer with informational expiry
+  // in Quiz / consequence-bearing expiry in Box" model. See migration
+  // in mergeConfig().
+  boxMode: { failMode: 'soft' },
   display: {
     lang: detectedLang,
     // v4 theme: 'auto' follows the OS/browser prefers-color-scheme,
@@ -75,6 +104,46 @@ export function mergeConfig(saved) {
       display: { ...defaultConfig.display, lang: saved.lang },
     };
   }
+  // v6.3 (config schema v2): unify the old quiz.masteryMs and
+  // boxMode.timePressure into a single top-level targetSpeedMs.
+  //
+  // Migration rules (per the v6.3 design conversation):
+  //   - If saved.targetSpeedMs is already set, trust it (the user has
+  //     already migrated or arrived on a fresh install).
+  //   - Otherwise compute candidates from the two old fields:
+  //       quiz.masteryMs   → straight ms value (default if absent: 10000)
+  //       boxMode.timePressure:
+  //         'off'           → 30000ms (treat as "no effective pressure")
+  //         'soft-Xs'/      → X * 1000ms (extract the configured time;
+  //         'hard-Xs'         the soft/hard distinction is dropped in v6.3
+  //                           — Box Mode now always uses the hard flow)
+  //   - Take the HIGHER candidate (more conservative — preserves the
+  //     more lenient of the user's two prior settings rather than
+  //     surprising them with a tighter target).
+  //   - Clamp into [2000, 30000] (the new picker range).
+  //
+  // The old fields are intentionally NOT preserved in the merged result
+  // — keeping them around would let stale code paths accidentally read
+  // them. The schema-v2 result has only targetSpeedMs.
+  const migratedTargetSpeedMs = (() => {
+    if (typeof saved.targetSpeedMs === 'number') {
+      return Math.max(2000, Math.min(30000, saved.targetSpeedMs));
+    }
+    const candidates = [];
+    if (typeof saved.quiz?.masteryMs === 'number') {
+      candidates.push(saved.quiz.masteryMs);
+    }
+    if (typeof saved.boxMode?.timePressure === 'string') {
+      if (saved.boxMode.timePressure === 'off') {
+        candidates.push(30000);
+      } else {
+        const m = /^(?:soft|hard)-(\d+)s$/.exec(saved.boxMode.timePressure);
+        if (m) candidates.push(Number(m[1]) * 1000);
+      }
+    }
+    if (candidates.length === 0) return defaultConfig.targetSpeedMs;
+    return Math.max(2000, Math.min(30000, Math.max(...candidates)));
+  })();
   // Migrate: old single `abbreviations` field → two orientation-specific
   // fields. If user had the old field set, apply it to both new fields
   // so their preference carries over without surprise.
@@ -116,10 +185,20 @@ export function mergeConfig(saved) {
   if (saved.display?.autoScroll === undefined) {
     display.autoScroll = saved.quiz?.autoScroll ?? true;
   }
+  // v6.3: build the merged quiz/boxMode namespaces explicitly so we
+  // drop the now-superseded masteryMs and timePressure fields. Spreading
+  // defaultConfig.quiz first means we get learningPace; spreading saved
+  // values second lets a user keep their non-default learningPace.
+  // masteryMs (if present in saved) is silently discarded — its value
+  // already contributed to migratedTargetSpeedMs above.
+  const { masteryMs: _droppedMasteryMs, ...savedQuizRest } = saved.quiz || {};
+  const { timePressure: _droppedTimePressure, ...savedBoxModeRest } = saved.boxMode || {};
   return {
+    version: CURRENT_CONFIG_VERSION,
+    targetSpeedMs: migratedTargetSpeedMs,
     grid: { ...defaultConfig.grid, ...(saved.grid || {}) },
-    quiz: { ...defaultConfig.quiz, ...(saved.quiz || {}) },
-    boxMode: { ...defaultConfig.boxMode, ...(saved.boxMode || {}) },
+    quiz: { ...defaultConfig.quiz, ...savedQuizRest },
+    boxMode: { ...defaultConfig.boxMode, ...savedBoxModeRest },
     display,
     study: { ...defaultConfig.study, ...(saved.study || {}) },
   };

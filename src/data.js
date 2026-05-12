@@ -203,6 +203,12 @@ export const translations = {
     landscapeMode: 'Liggend',
     masterySpeed: 'Meesterschapssnelheid',
     masterySpeedDesc: '(antwoord binnen deze tijd = beheerst)',
+    // v6.3: unified speed setting replacing both masterySpeed (Quiz Mode)
+    // and Box Mode time pressure. One slider, 2000–30000ms range, used
+    // identically by both modes — only the consequence on timer expiry
+    // differs (Box demotes, Quiz silently rates Hard for FSRS).
+    targetSpeedLabel: 'Doeltijd per boek',
+    targetSpeedDesc: '(de tijd waarbinnen je een boek wilt vinden)',
     fast: 'Snel',
     slow: 'Rustig',
     highlightFound: 'Beheerste boeken',
@@ -462,6 +468,12 @@ export const translations = {
     boxModeTimePressureSoftHint: 'Te traag = correct, maar geen vooruitgang',
     boxModeTimePressureHardHint: 'Te traag = fout (toon antwoord + zak één doos)',
     boxModeTimePressureSlowMarker: 'te traag',
+    // v6.3: shown on Box Mode timer expiry (replaces the generic "Wrong"
+    // label that fired before — semantically wrong since the user
+    // didn't click incorrectly, they just ran out of time). The blue-
+    // cell-tap-to-acknowledge flow remains identical; only the label
+    // and the cell tint change (amber #F59E0B instead of orange).
+    boxModeTimeUp: 'Tijd voorbij — zoek het blauwe vakje!',
   },
   en: {
     title: 'Bible Book Finder',
@@ -529,6 +541,9 @@ export const translations = {
     landscapeMode: 'Landscape',
     masterySpeed: 'Mastery Speed',
     masterySpeedDesc: '(answer within this time = mastered)',
+    // v6.3: see Dutch version above for rationale.
+    targetSpeedLabel: 'Target time per book',
+    targetSpeedDesc: '(the time within which you want to find a book)',
     fast: 'Fast',
     slow: 'Relaxed',
     highlightFound: 'Mastered books',
@@ -735,5 +750,7 @@ export const translations = {
     boxModeTimePressureSoftHint: 'Slow correct = no advancement',
     boxModeTimePressureHardHint: 'Slow = wrong (auto-reveal + demote)',
     boxModeTimePressureSlowMarker: 'too slow',
+    // v6.3: see Dutch version above for rationale.
+    boxModeTimeUp: "Time's up — look for the blue cell!",
   }
 };

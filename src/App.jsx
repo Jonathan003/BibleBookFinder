@@ -189,10 +189,15 @@ function App() {
     }
     setConfig(userConfig);
 
-    // Set masteryMsAtStart for fresh users (no FSRS data yet)
+    // Set masteryMsAtStart for fresh users (no FSRS data yet).
+    // v6.3: the source value is now userConfig.targetSpeedMs (the
+    // unified speed setting) rather than the dropped quiz.masteryMs.
+    // The user-level field name `masteryMsAtStart` is kept as-is —
+    // it's a historical record of "the speed at the user's first FSRS
+    // interaction" that doesn't materially benefit from renaming.
     if (user.masteryMsAtStart == null && (!user.fsrsCards || Object.keys(user.fsrsCards).length === 0)) {
-      updateUser(user.id, { masteryMsAtStart: userConfig.quiz.masteryMs });
-      user.masteryMsAtStart = userConfig.quiz.masteryMs;
+      updateUser(user.id, { masteryMsAtStart: userConfig.targetSpeedMs });
+      user.masteryMsAtStart = userConfig.targetSpeedMs;
     }
 
     // Legacy migration: users created before the totalQuizMs field
@@ -385,7 +390,8 @@ function App() {
       confidentBuffers: {},
       pausedQuizSession: null,
       bestTimes: {},
-      masteryMsAtStart: config.quiz.masteryMs,
+      // v6.3: re-snapshot from the unified speed setting.
+      masteryMsAtStart: config.targetSpeedMs,
       totalQuizMs: 0,
     });
   };
@@ -457,7 +463,10 @@ function App() {
     } else {
       // Quiz Mode (default). Existing message: mastered count + cumulative
       // training time + speed setting if unchanged from start.
-      const speedMs = config.quiz.masteryMs;
+      // v6.3: reads targetSpeedMs instead of quiz.masteryMs. The
+      // masteryMsAtStart field name stays — it's a historical record
+      // on the user object, not refactored as part of 6.3.
+      const speedMs = config.targetSpeedMs;
       const speedUnchanged = currentUser.masteryMsAtStart != null && currentUser.masteryMsAtStart === speedMs;
       const speedStr = speedUnchanged ? ` (${(speedMs / 1000).toFixed(speedMs % 1000 ? 1 : 0)}s)` : '';
       const totalMs = currentUser.totalQuizMs || 0;
@@ -548,9 +557,10 @@ function App() {
       lastActive: userData.lastActive || 0,
       // Legacy backups (pre-masteryMsAtStart) would otherwise restore as
       // null and the Share suffix would stay hidden. Fall back to the
-      // current masteryMs so a restored user immediately behaves like a
-      // freshly-reset user.
-      masteryMsAtStart: userData.masteryMsAtStart ?? config.quiz.masteryMs,
+      // current speed setting so a restored user immediately behaves
+      // like a freshly-reset user. v6.3: pulls from config.targetSpeedMs
+      // instead of the dropped config.quiz.masteryMs.
+      masteryMsAtStart: userData.masteryMsAtStart ?? config.targetSpeedMs,
       // Legacy (pre-_schemaVersion 2) backups have no totalQuizMs field.
       // `?? 0` means: if the field exists in backup, use it; otherwise
       // start at zero rather than carrying over the current device's
