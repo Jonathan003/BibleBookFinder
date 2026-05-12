@@ -17,7 +17,7 @@ const helpContent = {
       },
       {
         icon: '🪜',
-        text: 'Boeken klimmen door zes niveaus: Onbekend → Geleerd → Vertrouwd → Beheerst → Verankerd → Permanent. Een boek "Beheerst" krijgen duurt enkele weken; alle 66 boeken op Verankerd ~2-3 maanden; alle 66 op Permanent een half jaar. Dat is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen blijft hangen zonder te vergeten, hoe sterker het in je geheugen zit.',
+        text: 'Boeken klimmen door zes niveaus: Onbekend → Geleerd → Vertrouwd → Geworteld → Verankerd → Permanent. Een boek "Geworteld" krijgen duurt enkele weken; alle 66 boeken op Verankerd ~2-3 maanden; alle 66 op Permanent een half jaar. Dat is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen blijft hangen zonder te vergeten, hoe sterker het in je geheugen zit.',
       },
       {
         icon: '⏸️',
@@ -26,6 +26,72 @@ const helpContent = {
       {
         icon: '⚙️',
         text: 'Experimenteer met de instellingen en ontdek wat het best voor jou werkt. Sommige mensen zijn al snel zonder training — zij kunnen meteen met een lagere snelheidslimiet beginnen.',
+      },
+    ],
+    howItWorksTitle: 'Hoe werkt het',
+    howItWorks: [
+      {
+        heading: 'Twee signalen die samen werken',
+        body: `De app houdt je voortgang bij met twee signalen die los van elkaar werken.
+
+De gouden lijn onder een boek (in zowel Quiz als Doos Modus) verschijnt zodra je laatste drie antwoorden op dat boek correct én binnen je doeltijd waren. Dit is je "ik ken dit boek nu zeker"-markering. Eén fout of één te traag antwoord en de lijn is weg; drie nieuwe goede antwoorden brengen hem terug. Het gaat hier om je huidige vorm.
+
+Het niveau (zichtbaar in de gekleurde balk op het startscherm) is gebaseerd op de FSRS-stabiliteit van een boek — een schatting van hoe lang je het in je geheugen vasthoudt zonder te oefenen. Niveaus veranderen langzaam: je werkt ze in dagen, weken en maanden op. Het niveau verandert niet binnen één sessie.
+
+Beide zijn nuttig. De gouden lijn geeft directe feedback; het niveau toont je voortgang op de lange termijn.`,
+      },
+      {
+        heading: 'De zes niveaus',
+        body: `Elk boek doorloopt zes niveaus:
+
+• Onbekend — nog niet beantwoord
+• Geleerd — minstens één keer beantwoord, maar nog niet stabiel volgens FSRS
+• Vertrouwd — in het FSRS-systeem, maar stabiliteit < 7 dagen
+• Geworteld — stabiliteit > 7 dagen plus genoeg herhalingen. Het "ik ken dit echt"-punt.
+• Verankerd — stabiliteit > 30 dagen, typisch 1-2 maanden bezig
+• Permanent — stabiliteit > 180 dagen, het lange-termijn doel
+
+Globale tijdlijn op de standaard "Intensief"-leerpace: een paar weken om één boek tot Geworteld te krijgen, 2-3 maanden om alle 66 op Verankerd te krijgen, ongeveer een half jaar voor alle 66 op Permanent.
+
+Dit is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen in je geheugen blijft zonder te vergeten, hoe sterker het wortelt.`,
+      },
+      {
+        heading: 'Hoe je antwoorden het schema sturen',
+        body: `FSRS schedulet elk boek apart, gebaseerd op je geschiedenis met dat boek. Het principe: hoe langer je geheugen voor een boek heeft vastgehouden zonder te vergeten, hoe langer het kan wachten voor de volgende test.
+
+Concreet in Quiz Modus:
+
+• Snel correct — telt voor je score en streak. FSRS-waardering: Good. Boek komt later terug.
+• Traag correct — telt voor het totaal maar niet voor "goed". Streak reset. FSRS: Hard. Boek komt sneller terug.
+• Fout — telt voor het totaal, niet voor "goed". Streak reset. FSRS: Again. Boek komt heel snel terug.
+• Tijd voorbij — hetzelfde als traag correct (je hebt geen verkeerd boek gekozen, de tijd liep gewoon op). FSRS: Hard.
+
+In Doos Modus is het simpeler: correct verhoogt het dozennummer, fout verlaagt het. Doos Modus heeft geen invloed op FSRS — het is een aparte oefensessie zonder schema-effect.
+
+Je hoeft hier zelf niet over na te denken; antwoord gewoon eerlijk. Het schema corrigeert zichzelf.`,
+      },
+      {
+        heading: 'De snelheidsbalk',
+        body: `Boven elke vraag tikt een dunne oranje balk af. Hij telt af van de doeltijd die je in Instellingen → Gedeeld hebt ingesteld (standaard 10 seconden).
+
+Loopt de balk leeg vóór je antwoordt? Dan:
+
+• Het gevraagde boek licht blauw op
+• De prompt verandert in "Tijd voorbij — zoek het blauwe vakje!"
+• Andere boeken zijn niet meer aantikbaar
+• Tik op het blauwe boek om verder te gaan
+
+In Quiz Modus krijgt het boek een Hard-waardering en komt sneller terug. In Doos Modus zakt het één doos.
+
+Wil je geen tijdsdruk? Zet de doeltijd op 30 seconden — in de praktijk voel je de timer dan niet meer. Wil je het uitdagender? Zet hem op 2-5 seconden.`,
+      },
+      {
+        heading: 'Waarom pauzes prima zijn',
+        body: `Spaced repetition werkt juist door de wachttijd tussen herhalingen. Tijdens de pauze doet je geheugen onzichtbaar werk — dat is wat het sterker maakt. Een boek dat je al kent opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer.
+
+Lange pauzes voegen een achterstand toe (meer boeken staan op "Te doen" als je terugkomt) maar geen straf. Het schema corrigeert zichzelf: boeken die je echt vergeten bent vragen meer aandacht; boeken die je nog kent passen gewoon terug in het ritme.
+
+Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
     ],
     faqTitle: 'Veelgestelde vragen',
@@ -179,7 +245,7 @@ const helpContent = {
       },
       {
         icon: '🪜',
-        text: 'Books climb through six tiers: Unseen → Learning → Familiar → Mastered → Anchored → Permanent. Getting a book to "Mastered" takes a few weeks; all 66 books to Anchored ~2-3 months; all 66 to Permanent about half a year. That\'s not slowness — that *is* the learning. The longer a book stays in memory between reviews without being forgotten, the deeper it\'s rooted.',
+        text: 'Books climb through six tiers: Unseen → Learning → Familiar → Rooted → Anchored → Permanent. Getting a book to "Rooted" takes a few weeks; all 66 books to Anchored ~2-3 months; all 66 to Permanent about half a year. That\'s not slowness — that *is* the learning. The longer a book stays in memory between reviews without being forgotten, the deeper it\'s rooted.',
       },
       {
         icon: '⏸️',
@@ -188,6 +254,72 @@ const helpContent = {
       {
         icon: '⚙️',
         text: 'Experiment with the settings and find what works best for you. Some people are already fast without any training — they can start with a lower mastery speed right away.',
+      },
+    ],
+    howItWorksTitle: 'How it works',
+    howItWorks: [
+      {
+        heading: 'Two signals working together',
+        body: `The app tracks your progress with two signals that work independently.
+
+The gold line under a book (in both Quiz Mode and Box Mode) appears once your last three attempts on that book were all correct AND within your target time. This is your "I know this book right now" marker. One mistake or one too-slow answer and the line disappears; three more good answers bring it back. It's about your current form.
+
+The tier (visible in the colored bar on the home screen) is based on a book's FSRS stability — an estimate of how long you'll keep it in memory without practicing. Tiers change slowly: you build them up over days, weeks and months. Tier doesn't change inside a single session.
+
+Both are useful. The gold line gives immediate feedback; the tier shows your long-term progress.`,
+      },
+      {
+        heading: 'The six tiers',
+        body: `Each book moves through six tiers:
+
+• Unseen — not yet answered
+• Learning — answered at least once, but FSRS hasn't promoted it to stable yet
+• Familiar — in the FSRS system, but stability < 7 days
+• Rooted — stability > 7 days plus enough repetitions. The "I really know this" point.
+• Anchored — stability > 30 days, typically 1-2 months in
+• Permanent — stability > 180 days, the long-term goal
+
+Rough timeline on the default "Intensive" learning pace: a few weeks to get one book to Rooted, 2-3 months to get all 66 to Anchored, about half a year for all 66 to Permanent.
+
+This isn't slowness — it is the learning. The longer a book stays in memory between reviews without being forgotten, the more deeply it roots.`,
+      },
+      {
+        heading: 'How your answers drive the schedule',
+        body: `FSRS schedules each book individually based on your history with it. The principle: the longer your memory of a book has held up without forgetting, the longer it can wait before the next test.
+
+Concretely in Quiz Mode:
+
+• Fast correct — counts toward your score and streak. FSRS rating: Good. Book comes back later.
+• Slow correct — counts toward the total but not toward "correct". Streak resets. FSRS: Hard. Book comes back sooner.
+• Wrong — counts toward the total, not toward "correct". Streak resets. FSRS: Again. Book comes back very soon.
+• Time-up — same as slow correct (you didn't pick a wrong book, the timer just ran out). FSRS: Hard.
+
+Box Mode is simpler: correct increases the box number, wrong decreases it. Box Mode has no FSRS impact — it's a separate practice session with no schedule effect.
+
+You don't have to think about this; just answer honestly. The schedule self-corrects.`,
+      },
+      {
+        heading: 'The speed bar',
+        body: `A thin orange bar ticks down above each question. It counts from the target time you've set in Settings → Shared (default 10 seconds).
+
+If the bar empties before you answer:
+
+• The asked book lights up blue
+• The prompt changes to "Time's up — look for the blue cell!"
+• Other books are no longer tappable
+• Tap the blue book to continue
+
+In Quiz Mode the book gets a Hard rating and comes back sooner. In Box Mode it drops one box.
+
+Don't want time pressure? Set the target speed to 30 seconds — in practice the timer is then no longer felt. Want it tougher? Set it to 2-5 seconds.`,
+      },
+      {
+        heading: 'Why breaks are fine',
+        body: `Spaced repetition works precisely because of the wait between reviews. During the pause, your memory does invisible work — that's what makes it stronger. Practicing a book you already know adds no new strength; it just resets the timer.
+
+Long breaks add a backlog (more books show as "Due" when you come back) but no penalty. The schedule self-corrects: books you've truly forgotten will ask for more attention; books you still know just slot back into the rhythm.
+
+No pressure to practice daily. Train when you have the time.`,
       },
     ],
     faqTitle: 'Frequently asked questions',
@@ -365,6 +497,38 @@ export default function Help({ onBack }) {
             <div key={i} className="approach-item">
               <span className="approach-icon">{item.icon}</span>
               <p className="approach-text">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* v6 commit 8: "How it works" section. Explainer copy for the
+          algorithm/UI concepts users were having to figure out on their
+          own — gold line vs tier, the six tiers, what each answer does
+          to FSRS scheduling, what the speed bar means, why breaks
+          don't hurt. Five short sections, each with a heading and a
+          body. Body strings use \\n\\n to separate paragraphs and lines
+          starting with "• " are rendered as <ul> bullets. No accordion
+          — the whole point is that users SEE this content rather than
+          have it hidden behind a tap. */}
+      <section className="help-section">
+        <h3>{content.howItWorksTitle}</h3>
+        <div className="how-it-works">
+          {content.howItWorks.map((item, i) => (
+            <div key={i} className="how-it-works-item">
+              <h4 className="how-it-works-heading">{item.heading}</h4>
+              {item.body.split('\n\n').map((chunk, j) => {
+                if (chunk.trim().startsWith('• ')) {
+                  return (
+                    <ul key={j} className="how-it-works-list">
+                      {chunk.split('\n').map((line, k) => (
+                        <li key={k}>{line.replace(/^•\s*/, '')}</li>
+                      ))}
+                    </ul>
+                  );
+                }
+                return <p key={j} className="how-it-works-body">{chunk}</p>;
+              })}
             </div>
           ))}
         </div>
