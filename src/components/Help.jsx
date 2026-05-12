@@ -21,7 +21,7 @@ const helpContent = {
       },
       {
         icon: '⏸️',
-        text: 'Wanneer "Klaar om te oefenen" op het startscherm — of "Te doen" in de quiz — op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. Kom terug wanneer je tijd hebt; het is geen probleem als dat niet elke dag is.',
+        text: 'Wanneer "Te doen" in de quiz op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. Kom terug wanneer je tijd hebt; het is geen probleem als dat niet elke dag is.',
       },
       {
         icon: '⚙️',
@@ -30,11 +30,6 @@ const helpContent = {
     ],
     faqTitle: 'Veelgestelde vragen',
     faq: [
-      // ─── 1. NEW: labels ─────────────────────────────────────────────
-      {
-        q: 'Wat betekent "Klaar om te oefenen" op het startscherm versus "Te doen" in de quiz?',
-        a: 'Hetzelfde getal, twee namen. "Klaar om te oefenen" staat op het startscherm en is een uitnodiging: zoveel boeken wachten op je als je een sessie start. "Te doen" verschijnt in de quiz zelf en is een aftelteller: zoveel boeken nog te beantwoorden in deze sessie. Beide getallen tonen het aantal boeken dat het FSRS-algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. De andere naam in de quiz is bewust gekozen omdat "Klaar om te oefenen" daar gek leest — je bent al aan het oefenen.',
-      },
       // ─── 4. Doos Modus introduction ────────────────────────────────
       {
         q: 'Wat is Doos Modus en waarvoor dient het?',
@@ -83,17 +78,18 @@ const helpContent = {
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Kan ik een quiz pauzeren?',
-        a: 'Eigenlijk niet — maar dat is geen probleem. Tik op "← Terug" en je gaat direct naar het startscherm. Je gedane antwoorden zijn al opgeslagen (FSRS commit per antwoord), dus geen voortgang verloren. Wel wordt je sessie officieel afgesloten zodra je weggaat. Wil je later doorgaan, dan kies je opnieuw Snel/Normaal/Volledig op het startscherm. De boeken die je nog niet had gedaan, staan dan vanzelf weer "Klaar om te oefenen".',
+        a: 'Eigenlijk niet — maar dat is geen probleem. Tik op "← Terug" en je gaat direct naar het startscherm. Je gedane antwoorden zijn al opgeslagen (FSRS commit per antwoord), dus geen voortgang verloren. Wel wordt je sessie officieel afgesloten zodra je weggaat. Wil je later doorgaan, dan tik je opnieuw op "Start Quiz Mode" — de boeken die je nog niet had gedaan, komen vanzelf weer aan de beurt.',
       },
 
       // ─── Voortgang begrijpen — vervolg ──────────────────────────────
+      // v6 commit 7: vragen over "Klaar om te oefenen" verwijderd —
+      // dat label staat niet meer op het startscherm. De achterliggende
+      // adviezen (waarom niet doortrainen als FSRS niets meer voor je
+      // heeft, wachten als training) zitten nu in één samengevoegde
+      // vraag hieronder.
       {
-        q: 'Wat betekent "Klaar om te oefenen" op het startscherm?',
-        a: 'Het toont hoeveel boeken het algoritme nu wil herhalen — boeken die je nog niet hebt gezien plus boeken waarvan het herhaalinterval is verlopen. Wanneer dit getal op 0 staat verschijnt in plaats daarvan een rust-kaart met de boodschap "Klaar voor nu — kom terug wanneer je tijd hebt". Eén dag uitstellen is geen probleem; meerdere dagen achter elkaar overslaan loopt op.',
-      },
-      {
-        q: 'Waarom kan ik niet doortrainen als "Klaar om te oefenen" op 0 staat?',
-        a: 'Je kunt wel — maar je voordeel ervan is bijna nul, en je kunt zelfs licht slechter af zijn. Het idee achter spaced repetition is dat je geheugen sterker wordt door de pauze tussen herhalingen, niet door extra herhalingen op iets dat al zit. Een boek dat al "Beheerst" is opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer. Voor de uren of dagen waarin een boek "rust" doet je brein onbewust werk — daarom voelt het de volgende keer makkelijker. Wil je toch verder oefenen, gebruik dan Doos Modus.',
+        q: 'Moet ik elke dag trainen?',
+        a: 'Nee. Spaced repetition werkt juist door de wachttijd tussen herhalingen — je geheugen wordt sterker tijdens de pauze, niet door extra herhalingen op iets dat al zit. Eén dag overslaan is geen probleem. Meerdere dagen achter elkaar overslaan loopt op — wanneer je terugkomt zal "Te doen" in de quiz hoger staan, maar er is geen straf, je werkt het gewoon weer weg in je eigen tempo. Wanneer "Te doen" in de quiz op 0 staat heb je voor nu klaar; doortrainen helpt je geheugen niet meer (re-drillen van een beheerst boek voegt geen nieuwe sterkte toe, het reset alleen de timer). Wil je toch verder oefenen, gebruik dan Doos Modus — die heeft geen invloed op je FSRS-schema.',
       },
       {
         q: 'Hoe wordt mijn trainingstijd bijgehouden?',
@@ -127,7 +123,7 @@ const helpContent = {
       },
       {
         q: 'Wat als ik de app lang niet gebruik?',
-        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt staan er meer boeken als "Klaar om te oefenen". Pak gewoon op waar je gebleven was. Je streak resetset wel, maar je tier-vooruitgang en je beste-streak blijven bewaard.',
+        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt zal "Te doen" in de quiz hoger staan dan voorheen — een achterstand, geen schuld. Pak gewoon op waar je gebleven was, in je eigen tempo. Je streak resetset wel, maar je tier-vooruitgang en je beste-streak blijven bewaard.',
       },
 
       // ─── Instellingen / Aanpassingen ────────────────────────────────
@@ -187,7 +183,7 @@ const helpContent = {
       },
       {
         icon: '⏸️',
-        text: 'When "Ready to practice" on the home screen — or "Due" inside the quiz — reads 0: stop. Drilling stable books does not strengthen memory — waiting does. At the end of a session you\'ll get two choices: end the session, or use "Train ahead" to do a little extra. Train ahead is a bonus, not a routine.',
+        text: 'When "Due" inside the quiz reads 0: stop. Drilling stable books does not strengthen memory — waiting does. At the end of a session you\'ll get two choices: end the session, or use "Train ahead" to do a little extra. Train ahead is a bonus, not a routine.',
       },
       {
         icon: '⚙️',
@@ -196,11 +192,6 @@ const helpContent = {
     ],
     faqTitle: 'Frequently asked questions',
     faq: [
-      // ─── 1. Labels ──────────────────────────────────────────────────
-      {
-        q: 'What\'s the difference between "Ready to practice" on the home screen and "Due" during the quiz?',
-        a: 'Same number, two names. "Ready to practice" appears on the home screen and frames the count as an invitation: this many books are waiting when you start a session. "Due" appears in the quiz itself and frames the same count as a session countdown: this many books still to answer in this run. Both numbers show the books FSRS wants to review now — unseen books plus books whose review interval has passed. The different name in the quiz is deliberate because "Ready to practice" reads oddly mid-session — you\'re already practicing.',
-      },
       // ─── 2. Box Mode introduction ───────────────────────────────────
       {
         q: 'What is Box Mode and what is it for?',
@@ -249,17 +240,17 @@ const helpContent = {
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Can I pause a quiz session?',
-        a: 'Not really — but that\'s fine. Tap "← Back" and you\'ll go straight to the home screen. Your answered questions are already saved (FSRS commits per answer), so no progress is lost. The session is officially closed when you leave, though. To continue later, pick Quick/Standard/Full again on the home screen — books you hadn\'t done yet show up as "Ready to practice" automatically.',
+        a: 'Not really — but that\'s fine. Tap "← Back" and you\'ll go straight to the home screen. Your answered questions are already saved (FSRS commits per answer), so no progress is lost. The session is officially closed when you leave, though. To continue later, tap "Start Quiz Mode" again — books you hadn\'t done yet will naturally come up again.',
       },
 
       // ─── Understanding progress — continued ─────────────────────────
+      // v6 commit 7: questions about "Ready to practice" removed — that
+      // label is no longer on the home screen. The underlying advice
+      // (don't drill when FSRS has nothing scheduled; waiting *is* the
+      // training) is now combined into the merged question below.
       {
-        q: 'What does "Ready to practice" mean on the home screen?',
-        a: 'It shows how many books the algorithm wants to review now — unseen books plus books whose review interval has passed. When this number reaches 0, a rest card appears in its place with the message "Done for now — come back when you have time". Postponing one day is fine; skipping multiple days in a row piles up.',
-      },
-      {
-        q: 'Why can\'t I keep training when "Ready to practice" reads 0?',
-        a: 'You can — but the benefit is near zero, and you may even be slightly worse off. Spaced repetition works because your memory strengthens *during* the wait between reviews, not from extra reps on something already stable. Re-drilling a Mastered book adds no new strength; it just resets the timer. During the hours or days a book "rests", your brain quietly does work — that\'s why the next time feels easier. If you want to keep practicing, use Box Mode.',
+        q: 'Do I need to train every day?',
+        a: 'No. Spaced repetition works *because* of the wait between reviews — your memory strengthens during the pause, not from extra reps on things already stable. Skipping a day is fine. Skipping multiple days in a row piles up — when you come back the in-quiz "Due" counter will be higher, but there\'s no penalty, you just work it off at your own pace. When "Due" inside the quiz reads 0 you\'re done for now; extra reps don\'t help (re-drilling a Mastered book adds no new strength; it just resets the timer). If you want to keep practicing anyway, use Box Mode — it has no effect on your FSRS schedule.',
       },
       {
         q: 'How is my training time tracked?',
@@ -293,7 +284,7 @@ const helpContent = {
       },
       {
         q: "What happens if I don't use the app for a while?",
-        a: 'Nothing bad. There is no penalty for taking a break. When you come back, more books will show as "Ready to practice". Just pick up where you left off. Your streak will reset, but your tier progress and best-streak record stay intact.',
+        a: 'Nothing bad. There is no penalty for taking a break. When you come back the in-quiz "Due" counter will be higher than before — a backlog, not a debt. Just pick up where you left off, at your own pace. Your streak will reset, but your tier progress and best-streak record stay intact.',
       },
 
       // ─── Settings & adjustments ─────────────────────────────────────

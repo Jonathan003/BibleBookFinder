@@ -700,12 +700,26 @@ function App() {
               {confidentCount !== 66 && (
                 <h2 className="dashboard-panel-title">🎯 {t.quizMode}</h2>
               )}
-              {/* Hero card. Three states:
+              {/* Hero card. Two states:
                     - confidentCount === 66 → all-66 celebration screen
                       (v4 finish line); replaces the dashboard with a
                       persistent trophy + total time + share + reset.
-                    - dueNow > 0 → standard stats row.
-                    - dueNow === 0 → "Done for now" rest message. */}
+                    - else → single centered "Confident X of 66" card.
+
+                  v6 commit 7: the dueNow > 0 / dueNow === 0 split is
+                  gone. Both branches used to show a second stat card
+                  ("Ready to practice X" / "X to gold") that framed
+                  progress as an obligation/quota — "here's your daily
+                  to-do count." That framing fights the "train when you
+                  have time" model the rest of the app encourages, and
+                  it inflated stress for users (especially after long
+                  breaks, when the number would balloon). Single big
+                  "Confident X of 66" is enough: the user sees their
+                  current standing against the 66-book goal, the tier
+                  bar below breaks down where they are inside that
+                  count, and the launcher button still works the same
+                  whether dueNow is 0, 5, or 66 — so the count was
+                  never actually actionable. */}
               {confidentCount === 66 ? (
                 <div className="celebration-66">
                   <span className="celebration-trophy" aria-hidden="true">🏆</span>
@@ -742,35 +756,11 @@ function App() {
                     </button>
                   </div>
                 </div>
-              ) : stats.dueNow > 0 ? (
-                <div className="stats">
-                  <div className="stat-card">
-                    <span className="stat-number">{confidentCount}</span>
-                    <span className="stat-label">{t.confident} {t.of} 66</span>
-                  </div>
-                  <div className="stat-card">
-                    <span className="stat-number">{stats.dueNow}</span>
-                    <span className="stat-label">{t.readyToPractice}</span>
-                  </div>
-                </div>
               ) : (
-                // v4: when FSRS has nothing due but the gold-line goal
-                // isn't met, show the headline number ("X confident")
-                // alongside a remaining-to-gold counter. The previous
-                // "Done for now" rest message was schedule-shaped (it
-                // told the user to stop), which contradicts the v4
-                // "train when you have time" model and was generating
-                // confusion when launchers showed "Full · 0 books"
-                // underneath. Now the dashboard makes the user's goal
-                // visible at all times.
-                <div className="stats">
-                  <div className="stat-card">
-                    <span className="stat-number">{confidentCount}</span>
-                    <span className="stat-label">{t.confident} {t.of} 66</span>
-                  </div>
-                  <div className="stat-card">
-                    <span className="stat-number">{66 - confidentCount}</span>
-                    <span className="stat-label">{t.toGold || 'to gold'}</span>
+                <div className="stats stats-single">
+                  <div className="stat-card stat-card-hero">
+                    <span className="stat-number">{confidentCount}<span className="stat-denom"> / 66</span></span>
+                    <span className="stat-label">{t.confident}</span>
                   </div>
                 </div>
               )}
