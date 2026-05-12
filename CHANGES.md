@@ -1,3 +1,94 @@
+# v6 commit 6 — Quiz panel title (balance the share icon)
+
+After v5.1, Jonathan reviewed the home dashboard on mobile and
+flagged that the share icon looked strange in the Quiz Mode tab.
+Compared the two screenshots:
+
+- **Box Mode tab:** "📦 Box Mode" header on the left, share icon
+  on the right. Header row balanced.
+- **Quiz Mode tab:** no header at all. Share icon floats in the
+  top-right with nothing to anchor it. It visually attaches to
+  the right-hand stat card ("66 Ready to practice") and the
+  panel looks unbalanced.
+
+We considered moving the share button to the global header bar
+(next to ? ⚙ EN). Jonathan reminded me that placement had been
+tried in an earlier iteration and rejected — so that option's
+off the table.
+
+**Change:** add a section header to the Quiz panel matching the
+Box panel pattern. `<h2 className="dashboard-panel-title">🎯 {t.quizMode}</h2>`
+in the same position the Box panel uses. Both panels now have
+the same structural shape:
+
+```
+[icon mode-name]         [share-icon]
+[panel content]
+```
+
+No new translation key — reused the existing `t.quizMode`
+("Quiz Mode" / "Quiz Modus") that's already in data.js for
+other surfaces (Settings, Help).
+
+**Hidden in the all-66 celebration state.** When the user has all
+66 books confident, the Quiz panel renders the celebration card
+(trophy + title + total time + Share/Start-new buttons). A
+section header above the celebration would compete with the
+trophy and the orange "All 66 books confident!" title for
+visual hierarchy, so we suppress the header in that state:
+
+```jsx
+{confidentCount !== 66 && (
+  <h2 className="dashboard-panel-title">🎯 {t.quizMode}</h2>
+)}
+```
+
+The share icon stays where it was (top-right of the panel) and
+keeps working identically.
+
+## CSS class rename
+
+The Box dashboard title's CSS rule was previously named
+`.boxmode-dashboard-title`. Since both panels now use the same
+visual treatment, renamed it to `.dashboard-panel-title` and
+applied to both. The Box panel JSX was updated to use the new
+class name. Old class name is gone — no remaining references.
+
+The rule also gained `padding-right: 44px` to reserve clearance
+for the absolutely-positioned share icon button (36px wide + 8px
+gap). Without this, longer translated titles ("Quiz Modus") could
+overlap the icon on narrow viewports.
+
+## Files touched
+
+- `src/App.jsx` — added Quiz panel title, switched Box panel
+  title class name.
+- `src/App.css` — renamed `.boxmode-dashboard-title` to
+  `.dashboard-panel-title`, added `padding-right`.
+
+No data.js, no other files.
+
+## Smoke test
+
+1. **Mobile (412px) Quiz Mode tab:** "🎯 Quiz Mode" header on
+   the left, share icon on the right. Balanced. Stat cards (0/66)
+   sit below the header, not above.
+2. **Mobile Box Mode tab:** "📦 Box Mode" header still there
+   (unchanged), share icon balanced. Identical to before.
+3. **Mobile Quiz Mode + all-66 confident:** celebration card
+   renders without the section header — trophy stays the
+   dominant focal point.
+4. **Desktop (≥1024px) both tabs:** headers render at the wider
+   width without visual issues.
+5. **Switch between Quiz and Box tabs quickly:** mode-cards row
+   stays anchored vertically (grid overlay still doing its job).
+6. **Dutch language toggle:** "🎯 Quiz Modus" / "📦 Doos Modus"
+   both render correctly, share icon doesn't overlap title.
+7. **Tap share icon in either tab:** opens share flow as
+   before. No behavior change.
+
+---
+
 # v5 commit 5.1 — Scope picker: long-press → filter-chip tap-to-toggle
 
 After v5 shipped, Jonathan asked how multi-select is handled in

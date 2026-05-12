@@ -678,6 +678,18 @@ function App() {
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               </button>
+              {/* v6: dashboard panel title. Mirrors the Box Mode panel's
+                  "📦 Box Mode" header so the share icon in the top-right
+                  has something to balance against. Without this header,
+                  the share icon visually attaches to the right-hand
+                  stat card and looks orphaned (per Jonathan's mobile
+                  screenshot review). Hidden in the all-66 celebration
+                  state since the celebration card has its own dominant
+                  trophy + title and a section header above would
+                  compete with it. */}
+              {confidentCount !== 66 && (
+                <h2 className="dashboard-panel-title">🎯 {t.quizMode}</h2>
+              )}
               {/* Hero card. Three states:
                     - confidentCount === 66 → all-66 celebration screen
                       (v4 finish line); replaces the dashboard with a
@@ -862,7 +874,7 @@ function App() {
                       .filter(Boolean);
                     return (
                       <>
-                        <h2 className="boxmode-dashboard-title">📦 {t.boxModeBtnLabel}</h2>
+                        <h2 className="dashboard-panel-title">📦 {t.boxModeBtnLabel}</h2>
 
                         {allCleared && (
                           <div className="celebration-66 celebration-66-inline">

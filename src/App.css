@@ -922,8 +922,17 @@
   flex-direction: column;
 }
 
-.boxmode-dashboard-title {
+/* v6: shared header style for both dashboard panels (Quiz + Box).
+   Originally `.boxmode-dashboard-title`, renamed when the same
+   styling was applied to the Quiz panel as part of Commit 6's
+   share-icon-balance fix. Same visual treatment fits both.
+   padding-right reserves space for the absolutely-positioned share
+   icon button (36px wide + 8px gap = 44px). Without this, long
+   titles ("Quiz Mode" in Dutch = "Quiz Modus") would run under the
+   share icon on narrow viewports. */
+.dashboard-panel-title {
   margin: 0 0 0.75rem;
+  padding-right: 44px;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary, #1a1a2e);
