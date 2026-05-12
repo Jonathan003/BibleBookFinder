@@ -13,7 +13,7 @@ const helpContent = {
       },
       {
         icon: '🚀',
-        text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime snelheidslimiet (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
+        text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime doeltijd (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
       },
       {
         icon: '🪜',
@@ -25,7 +25,7 @@ const helpContent = {
       },
       {
         icon: '⚙️',
-        text: 'Experimenteer met de instellingen en ontdek wat het best voor jou werkt. Sommige mensen zijn al snel zonder training — zij kunnen meteen met een lagere snelheidslimiet beginnen.',
+        text: 'Experimenteer met de instellingen en ontdek wat het best voor jou werkt. Sommige mensen zijn al snel zonder training — zij kunnen meteen met een kortere doeltijd beginnen.',
       },
     ],
     howItWorksTitle: 'Hoe werkt het',
@@ -139,7 +139,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── 8. Gold line — confident signal (v4) ────────────────────────
       {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
-        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
+        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je doeltijd waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -165,7 +165,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── Tijdens een sessie ─────────────────────────────────────────
       {
         q: 'Maakt het uit hoe snel ik tik?',
-        a: 'In Quiz Modus wel. Antwoorden binnen de snelheidslimiet tellen mee voor je score en streak. Snellere antwoorden zorgen dat het boek minder snel terugkomt. Langzamere of foute antwoorden brengen het boek sneller terug.',
+        a: 'In Quiz Modus wel. Antwoorden binnen de doeltijd tellen mee voor je score en streak. Snellere antwoorden zorgen dat het boek minder snel terugkomt. Langzamere of foute antwoorden brengen het boek sneller terug.',
       },
       {
         q: 'Wat gebeurt er als ik op het verkeerde boek tik?',
@@ -221,7 +221,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         q: 'Wat doet de Delen-knop?',
-        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik ben vertrouwd met 33 van 66 bijbelboeken (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de snelheidslimiet niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere snelheid, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je vertrouwde boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je Quiz-voortgang resetten via Instellingen → Data → "🗑️ Quiz-voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige snelheid, dus alles wat je daarna leert telt voor die snelheid.',
+        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik ben vertrouwd met 33 van 66 bijbelboeken (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de doeltijd niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere doeltijd, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je vertrouwde boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je Quiz-voortgang resetten via Instellingen → Data → "🗑️ Quiz-voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige doeltijd, dus alles wat je daarna leert telt voor die doeltijd.',
       },
 
       // ─── Update banner — moved to bottom ────────────────────────────
@@ -241,7 +241,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         icon: '🚀',
-        text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous mastery speed (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
+        text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous target time (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
       },
       {
         icon: '🪜',
@@ -253,7 +253,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         icon: '⚙️',
-        text: 'Experiment with the settings and find what works best for you. Some people are already fast without any training — they can start with a lower mastery speed right away.',
+        text: 'Experiment with the settings and find what works best for you. Some people are already fast without any training — they can start with a shorter target time right away.',
       },
     ],
     howItWorksTitle: 'How it works',
@@ -367,7 +367,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── 8. Gold line — confident signal (v4) ───────────────────────
       {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
-        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
+        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your target time. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -392,7 +392,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── During a session ───────────────────────────────────────────
       {
         q: 'Does it matter how fast I tap?',
-        a: 'In Quiz Mode, yes. Answers within the mastery speed threshold count toward your score and streak. Faster answers make the book come back less often. Slower or wrong answers bring it back sooner.',
+        a: 'In Quiz Mode, yes. Answers within the target time count toward your score and streak. Faster answers make the book come back less often. Slower or wrong answers bring it back sooner.',
       },
       {
         q: 'What happens when I tap the wrong book?',
