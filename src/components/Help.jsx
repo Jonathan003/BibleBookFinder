@@ -17,7 +17,7 @@ const helpContent = {
       },
       {
         icon: '🪜',
-        text: 'Boeken klimmen door zes niveaus: Onbekend → Geleerd → Vertrouwd → Geworteld → Verankerd → Permanent. Een boek "Geworteld" krijgen duurt enkele weken; alle 66 boeken op Verankerd ~2-3 maanden; alle 66 op Permanent een half jaar. Dat is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen blijft hangen zonder te vergeten, hoe sterker het in je geheugen zit.',
+        text: 'Boeken klimmen door zes niveaus: Onbekend → Geleerd → Bekend → Geworteld → Verankerd → Permanent. Een boek "Geworteld" krijgen duurt enkele weken; alle 66 boeken op Verankerd ~2-3 maanden; alle 66 op Permanent een half jaar. Dat is geen vertraging — dat ís het leren. Hoe langer een boek tussen herhalingen blijft hangen zonder te vergeten, hoe sterker het in je geheugen zit.',
       },
       {
         icon: '⏸️',
@@ -34,7 +34,7 @@ const helpContent = {
         heading: 'Twee signalen die samen werken',
         body: `De app houdt je voortgang bij met twee signalen die los van elkaar werken.
 
-De gouden lijn onder een boek (in zowel Quiz als Doos Modus) verschijnt zodra je laatste drie antwoorden op dat boek correct én binnen je doeltijd waren. Dit is je "ik ken dit boek nu zeker"-markering. Eén fout of één te traag antwoord en de lijn is weg; drie nieuwe goede antwoorden brengen hem terug. Het gaat hier om je huidige vorm.
+De gouden lijn onder een boek (in zowel Quiz als Doos Modus) verschijnt zodra je laatste drie antwoorden op dat boek correct én binnen je doeltijd waren. Dit is je "ik ben vertrouwd met dit boek"-markering. Eén fout of één te traag antwoord en de lijn is weg; drie nieuwe goede antwoorden brengen hem terug. Het gaat hier om je huidige vorm.
 
 Het niveau (zichtbaar in de gekleurde balk op het startscherm) is gebaseerd op de FSRS-stabiliteit van een boek — een schatting van hoe lang je het in je geheugen vasthoudt zonder te oefenen. Niveaus veranderen langzaam: je werkt ze in dagen, weken en maanden op. Het niveau verandert niet binnen één sessie.
 
@@ -46,7 +46,7 @@ Beide zijn nuttig. De gouden lijn geeft directe feedback; het niveau toont je vo
 
 • Onbekend — nog niet beantwoord
 • Geleerd — minstens één keer beantwoord, maar nog niet stabiel volgens FSRS
-• Vertrouwd — in het FSRS-systeem, maar stabiliteit < 7 dagen
+• Bekend — in het FSRS-systeem, maar stabiliteit < 7 dagen
 • Geworteld — stabiliteit > 7 dagen plus genoeg herhalingen. Het "ik ken dit echt"-punt.
 • Verankerd — stabiliteit > 30 dagen, typisch 1-2 maanden bezig
 • Permanent — stabiliteit > 180 dagen, het lange-termijn doel
@@ -133,13 +133,13 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       // ─── 7. Six tiers ───────────────────────────────────────────────
       {
-        q: 'Wat zijn de zes niveaus (Onbekend, Geleerd, Vertrouwd, Geworteld, Verankerd, Permanent)?',
-        a: 'De zes niveaus zijn de lange-termijn voortgangsmaat van het FSRS-algoritme. Onbekend = nog nooit gezien. Geleerd = voor het eerst geantwoord, maar nog onstabiel (uren tot een dag). Vertrouwd = enkele keren correct, het algoritme begint je intervallen op te schalen. Geworteld = stabiel voor minstens een week. Verankerd = stabiel voor een maand of meer. Permanent = stabiel voor een half jaar of meer — verankerd in lange-termijngeheugen. Het halen van alle 66 boeken op Permanent duurt natuurlijk maanden. Dit niveau-systeem is afgekoppeld van de gouden lijn: gouden lijntjes verschijnen veel sneller (zie de volgende vraag).',
+        q: 'Wat zijn de zes niveaus (Onbekend, Geleerd, Bekend, Geworteld, Verankerd, Permanent)?',
+        a: 'De zes niveaus zijn de lange-termijn voortgangsmaat van het FSRS-algoritme. Onbekend = nog nooit gezien. Geleerd = voor het eerst geantwoord, maar nog onstabiel (uren tot een dag). Bekend = enkele keren correct, het algoritme begint je intervallen op te schalen. Geworteld = stabiel voor minstens een week. Verankerd = stabiel voor een maand of meer. Permanent = stabiel voor een half jaar of meer — verankerd in lange-termijngeheugen. Het halen van alle 66 boeken op Permanent duurt natuurlijk maanden. Dit niveau-systeem is afgekoppeld van de gouden lijn: gouden lijntjes verschijnen veel sneller (zie de volgende vraag).',
       },
       // ─── 8. Gold line — confident signal (v4) ────────────────────────
       {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
-        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ken dit boek zeker" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
+        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Markeer beheerste boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {

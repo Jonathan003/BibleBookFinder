@@ -472,7 +472,7 @@ function App() {
       const totalMs = currentUser.totalQuizMs || 0;
       const timeStr = totalMs > 0 ? ` in ${formatDuration(totalMs)}` : '';
       text = (lang === 'nl'
-        ? `Ik ben zeker van ${confidentCount} van 66 bijbelboeken${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
+        ? `Ik ben vertrouwd met ${confidentCount} van 66 bijbelboeken${timeStr}${speedStr} in de Bijbelboek Zoeker quiz!`
         : `I'm confident on ${confidentCount} out of 66 Bible books${timeStr}${speedStr} in the Bible Book Finder quiz!`);
     }
     const fullText = text + ' ' + window.location.href;

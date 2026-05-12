@@ -230,11 +230,18 @@ export const translations = {
     importError: 'Ongeldig bestand.',
     importWarning: '⚠️ Herstellen overschrijft jouw voortgang en voorkeuren. Apparaat-specifieke instellingen (kolommen, afkortingen, OT/NT layout) blijven van dit toestel.',
     hintReveal: 'Hint:',
-    // Dashboard stat label. v4 renamed from "Beheerst" (FSRS-mastery) to
-    // "Zeker" (the in-session confident gold-line signal). `mastered` is
-    // kept as a backward-compat alias for any remaining call sites and
-    // for backup imports that still reference the old word.
-    confident: 'Zeker',
+    // Dashboard stat label. v4 renamed from "Beheerst" (FSRS-mastery)
+    // to "Zeker" (the in-session confident gold-line signal). v6 commit
+    // 8.1 renamed again from "Zeker" to "Vertrouwd" — the previous
+    // word read awkwardly as a stat label ("12 zeker van 66" feels
+    // adverb-shaped rather than noun-shaped), and "Vertrouwd" is the
+    // natural Dutch translation of confident-with-a-thing. Freeing up
+    // "Vertrouwd" required renaming the FSRS Familiar tier (which
+    // previously held that word) to "Bekend" — see tierFamiliar below.
+    // `mastered` is kept as a backward-compat alias for any remaining
+    // call sites and for backup imports that still reference the old
+    // word.
+    confident: 'Vertrouwd',
     mastered: 'Beheerst',
     abbreviationsPortrait: 'Afkortingen (portret)',
     abbreviationsPortraitDesc: '(rechtop)',
@@ -292,7 +299,7 @@ export const translations = {
     // Shown on the home screen when confidentCount === 66 — the
     // race-to-all-gold goal of the v4 model. Replaces the 2.5s overlay
     // banner with a persistent finishing screen.
-    celebration66Title: 'Alle 66 boeken zeker! 🎉',
+    celebration66Title: 'Alle 66 boeken vertrouwd! 🎉',
     celebration66Body: 'Je kent alle bijbelboeken vlot uit het hoofd. Top resultaat!',
     celebrationTimeLabel: 'Totale tijd:',
     celebration66Reset: 'Start een nieuwe ronde',
@@ -337,14 +344,22 @@ export const translations = {
     newBest: 'Nieuw record!',
     // Tiers — discrete progression labels derived from FSRS card state
     // (see src/fsrs.js getTier). Names chosen to read as a natural
-    // ladder for Dutch speakers. v4 renamed the old 'beheerst' tier to
-    // 'geworteld' so the word 'beheerst' could be retired in favor of
-    // 'zeker' (the new in-session confident signal that drives the gold
-    // line). The FSRS-based long-term tier still exists; it's just no
-    // longer the gold-line trigger.
+    // ladder for Dutch speakers.
+    //   v4: renamed the old 'beheerst' tier to 'geworteld' to free the
+    //       word 'beheerst' for the new in-session confident signal
+    //       (which was then called 'zeker').
+    //   v6 commit 8.1: renamed the Familiar tier from 'Vertrouwd' to
+    //       'Bekend' to free 'Vertrouwd' for the gold-line / confident
+    //       label (previously 'Zeker'). 'Bekend' reads as the natural
+    //       next step after 'Onbekend' (unknown → known) and avoids
+    //       the collision with the confident concept that 'Vertrouwd'
+    //       had on the home screen ("12 Vertrouwd" stat-card stacked
+    //       against a "Vertrouwd: 8" tier legend right below it).
+    // The FSRS-based long-term tier system stays unchanged in behavior
+    // — only the display label moved.
     tierUnseen: 'Onbekend',
     tierLearned: 'Geleerd',
-    tierFamiliar: 'Vertrouwd',
+    tierFamiliar: 'Bekend',
     tierRooted: 'Geworteld',
     tierAnchored: 'Verankerd',
     tierPermanent: 'Permanent',
