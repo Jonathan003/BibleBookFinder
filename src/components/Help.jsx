@@ -72,7 +72,7 @@ Je hoeft hier zelf niet over na te denken; antwoord gewoon eerlijk. Het schema c
       },
       {
         heading: 'De snelheidsbalk',
-        body: `Boven elke vraag tikt een dunne oranje balk af. Hij telt af van de doeltijd die je in Instellingen → Gedeeld hebt ingesteld (standaard 10 seconden).
+        body: `Boven elke vraag tikt een dunne oranje balk af. Hij telt af van de doeltijd die je in Instellingen → Training → Algemeen hebt ingesteld (standaard 10 seconden).
 
 Loopt de balk leeg vóór je antwoordt? Dan:
 
@@ -111,10 +111,10 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
         a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status blijft hetzelfde. Je dagelijkse streak telt alleen Quiz Modus-sessies, dus een Doos Modus-sessie alleen verdedigt je streak niet. De enige data die overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
       },
-      // ─── 7. Doos Modus time pressure ───────────────────────────────
+      // ─── 7. Doos Modus tijd ────────────────────────────────────────
       {
-        q: 'Wat is "Tijdsdruk" in Doos Modus?',
-        a: 'Standaard heb je 10 seconden per vraag in Doos Modus, met een aftellende balk bovenaan het scherm. De standaard staat op "Zacht": als de tijd op is voordat je antwoordt, telt een correct antwoord nog steeds als correct — maar het boek gaat NIET een doos hoger. Hetzelfde gedrag als bij hint-gebruik. Dit lost het probleem op dat "iedereen elk boek wel kan vinden als ze maar lang genoeg zoeken." Snelheid telt mee voor vooruitgang, maar te traag wordt niet bestraft met demotie. Je kunt dit aanpassen in Instellingen → Training → Doos Modus: de tijd verlengen of verkorten (5-20s), naar "Streng" zetten (te traag = fout antwoord met automatische demotie), of helemaal uitzetten. Geen modus is "juist" — kies wat past bij hoe je wilt trainen.',
+        q: 'Hoe werkt de tijd in Doos Modus?',
+        a: 'Standaard heb je 10 seconden per vraag in Doos Modus, met een aftellende balk bovenaan het scherm. Als de tijd op is voordat je antwoordt, licht het gevraagde boek blauw op en moet je daarop tikken om verder te gaan — hetzelfde gedrag als bij een fout antwoord. Het boek zakt dan ook één doos. Je kunt de doeltijd aanpassen via Instellingen → Training → Algemeen → "Doeltijd per boek" (instelbaar tussen 2 en 30 seconden). Zet hem op 30 seconden als je liever zonder tijdsdruk oefent; zet hem op 2-5 seconden voor een echte uitdaging. Dezelfde instelling stuurt ook de timer in Quiz Modus.',
       },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
@@ -139,7 +139,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── 8. Gold line — confident signal (v4) ────────────────────────
       {
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
-        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Grid → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
+        a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je snelheidslimiet waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -203,7 +203,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         q: 'Ik ben sneller/langzamer dan gemiddeld. Moet ik iets aanpassen?',
-        a: 'Ja. Pas de snelheidslimiet aan via Instellingen → Training. Verlaag het als het te makkelijk is, verhoog het als je vaak correct bent maar als "te traag" wordt gemarkeerd.',
+        a: 'Ja. Pas de doeltijd aan via Instellingen → Training → Algemeen → "Doeltijd per boek". Verlaag het als het te makkelijk is, verhoog het als je vaak correct bent maar als "te traag" wordt gemarkeerd.',
       },
 
       // ─── Data, opslag en delen ──────────────────────────────────────
@@ -300,7 +300,7 @@ You don't have to think about this; just answer honestly. The schedule self-corr
       },
       {
         heading: 'The speed bar',
-        body: `A thin orange bar ticks down above each question. It counts from the target time you've set in Settings → Shared (default 10 seconds).
+        body: `A thin orange bar ticks down above each question. It counts from the target time you've set in Settings → Training → Shared (default 10 seconds).
 
 If the bar empties before you answer:
 
@@ -339,10 +339,10 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'Does Box Mode affect my FSRS schedule or my streak?',
         a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status stays the same. Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won\'t defend your streak. The only data that persists is your personal best per selection (fastest time, fewest mistakes, longest streak).',
       },
-      // ─── 7. Box Mode time pressure ──────────────────────────────────
+      // ─── 7. Box Mode timer ──────────────────────────────────────────
       {
-        q: 'What is "Time pressure" in Box Mode?',
-        a: 'By default you have 10 seconds per question in Box Mode, with a depleting bar at the top of the screen. The default is "Soft": if the timer expires before you answer, a correct answer still counts as correct — but the book does NOT advance to the next box. Same behavior as using a hint. This addresses the issue that "anyone can find any book given enough time." Speed actually matters for progress, but slow correct answers don\'t punish you with demotion. You can change this in Settings → Training → Box Mode: lengthen or shorten the timer (5-20s), switch to "Hard" mode (slow = wrong with auto-demotion), or turn it off entirely. No mode is "right" — pick what fits how you want to train.',
+        q: 'How does the timer in Box Mode work?',
+        a: 'By default you have 10 seconds per question in Box Mode, with a depleting bar at the top of the screen. If the timer expires before you answer, the asked book lights up blue and you must tap it to continue — same behavior as a wrong answer. The book also drops one box. You can adjust the target time via Settings → Training → Shared → "Target time per book" (settable between 2 and 30 seconds). Set it to 30 seconds if you prefer no time pressure; set it to 2-5 seconds for a real challenge. The same setting also drives the timer in Quiz Mode.',
       },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
@@ -367,7 +367,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── 8. Gold line — confident signal (v4) ───────────────────────
       {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
-        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Grid → "Confident books" if you prefer practicing without the visual progress aid.',
+        a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your speed limit. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
       },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
@@ -430,7 +430,7 @@ No pressure to practice daily. Train when you have the time.`,
       },
       {
         q: "I'm faster/slower than average. Should I change any settings?",
-        a: 'Yes. Adjust the mastery speed in Settings → Training. Lower it if too easy, raise it if you are often correct but marked as "too slow".',
+        a: 'Yes. Adjust the target time via Settings → Training → Shared → "Target time per book". Lower it if too easy, raise it if you are often correct but marked as "too slow".',
       },
 
       // ─── Data, storage, sharing ─────────────────────────────────────
