@@ -1,3 +1,293 @@
+# v6 commit 10 — README — bring outdated sections in line with current app state
+
+## What changed
+
+Seven specific text edits in `README.md` to bring the documentation in sync with the current app state. No structural rewrite; only the parts that contradicted reality.
+
+## Edits
+
+- **Quiz Mode description** — removed mention of three session-size launchers ("Quick (5 books) / Standard (10 books) / Full"), which were dropped in v4.11. Replaced with current single "Start Quiz Mode" button + tier-breakdown-bar wording.
+- **Confident gold line** — "speed limit" → "target time" (terminology renamed in v6.3).
+- **Session-complete screen** — "One action: end the session" → "Two actions: Continue training or End session" (Continue training was added in v6.2).
+- **Learning pace path** — `Settings → Advanced` → `Settings → Training → Quiz Mode → Advanced` (the actual nested location).
+- **Training-time tracking section** — share-message example "X books mastered in Y time" → "I'm confident on X out of 66 Bible books in Y time" (concept renamed in 8.1; wording updated in app in 8.2). Also `_schemaVersion: 3` → `4` after commit 9.
+- **Design-philosophy paragraph** — removed mention of "a flat 'Done for now' appears when nothing is currently due" (removed in commit 7); added current "single 'X / 66 Confident' stat shows where you stand toward the goal" wording. Also removed the false "three-tier rest celebration" claim.
+- **Box Mode / Continue training paragraph** — rewrote to mention the v6.2 Continue training button. Deleted the standalone paragraph about Quick/Standard launchers (removed in v4.11).
+
+## Why this matters
+
+README is the entry point for anyone landing on the GitHub repo from search or shared link. A README that promises features that no longer exist (or describes a UX that's been replaced) is worse than a sparse README — it actively misleads. This commit removes the misleading parts without expanding the doc.
+
+# v6 commit 9 — Fix data loss in backup/restore: preserve confidentBuffers (schema v4)
+
+## The bug
+
+The export shape in `src/components/Settings.jsx` (`handleExport`) and the restore shape in `src/App.jsx` (`handleRestore`) silently omitted `confidentBuffers` — the per-book ring buffers that drive the gold-line / confident signal. After a backup/restore round-trip the user's exact gold-line state was lost; only books that happened to be FSRS-Rooted got their gold lines back via the existing `migrateConfidentBuffers()` fallback. Books that were confident-but-not-yet-Rooted lost their status on every round-trip, which made the "X / 66 Vertrouwd" home hero stat drop after each restore.
+
+The migration useEffect at `App.jsx` ~line 330 had been silently masking the severity — it ran on every user-id change and filled gold lines for FSRS-Rooted books, so legacy users still saw _some_ gold lines after a restore. But the v4-and-later normal case (gold lines earned via the 3-correct-fast confident path, not via FSRS-Rooted) lost progress every restore.
+
+## The fix
+
+**`src/components/Settings.jsx`** — added `confidentBuffers: currentUser.confidentBuffers || {}` to the exported user object. Bumped `_schemaVersion` from 3 to 4. Documented the omission in the schema-version comment block so future maintainers see the rationale.
+
+**`src/App.jsx`** — added `confidentBuffers: userData.confidentBuffers ?? migrateConfidentBuffers(userData.fsrsCards || {}, bibleBooks, {})` to the `updateUserData` call inside `handleRestore`. Critical subtlety: the standalone migration `useEffect` only fires when `currentUser?.id` changes — which doesn't happen on restore — so the migration fallback had to be inlined here. Without inline migration, a pre-v4 backup would restore with empty buffers and zero gold lines until the user trained something new.
+
+## Compatibility matrix
+
+- v4+ backup with populated buffers → exact buffer state preserved
+- v4+ backup with empty buffers (fresh profile) → empty buffers; migration produces nothing because FSRS is also empty
+- v3 (pre-fix) or older → migration fills gold lines for FSRS-Rooted books (same behavior as the previous code path; no regression)
+- Unknown future versions → graceful via `?? fallback` on all fields
+
+## Why this matters
+
+The home hero card (`X / 66 Vertrouwd`), the milestone celebration banners (10/20/33/50/66 confident, OT/NT-complete), the share message (`Ik ben vertrouwd met X...`), and the all-66 celebration screen all derive from `confidentCount`, which is computed from `confidentBuffers`. Losing the buffer state on restore directly degraded the user's main progress metric without any visible error.
+
+# v6 commit 8.3 — Help settings paths + outdated Box Mode FAQ rewrite
+
+## What changed
+
+Two categories of error in the Help screen text, caught by Jonathan after deploying 8.2:
+
+1. **Wrong settings paths.** The toggle "Vertrouwde boeken" lives in Settings → **Training → Algemeen** (three levels deep), not "Grid" or "Gedeeld" alone or just "Training". Four references corrected (NL + EN, in the "How it works" speed-bar section and the FAQ about the gold line).
+
+2. **FAQ entry about Doos Mode time pressure described removed functionality.** The "Soft/Hard/Off" three-way toggle was collapsed into one unified timer in v6.3, but the FAQ still described all three modes and pointed at a non-existent "Settings → Training → Doos Modus" section. Rewrote both NL and EN versions to describe the current flow (timer expiry → blue reveal → tap-to-continue, demotion in Box, FSRS-Hard rating in Quiz) and the actual setting at Settings → Training → Algemeen → "Doeltijd per boek" (2-30s slider).
+
+Plus one terminology fix: EN FAQ at line 433 mentioned "mastery speed", which was renamed to "target time" in v6.3. Updated to use the current term plus the specific full path.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — six text edits:
+  - NL: "Hoe werkt het" → De snelheidsbalk path: `Gedeeld` → `Training → Algemeen`
+  - EN: "How it works" → The speed bar path: `Shared` → `Training → Shared`
+  - NL FAQ "Wat is de gouden lijn..." full path now `Training → Algemeen → "Vertrouwde boeken"`
+  - EN FAQ equivalent now `Training → Shared → "Confident books"`
+  - NL/EN "Hoe werkt de tijd in Doos Modus" — full rewrite reflecting unified timer
+  - NL/EN "Ik ben sneller/trager" — points to specific "Doeltijd per boek" / "Target time per book"
+
+## Why this matters
+
+A Help text that names a setting at the wrong path is worse than no Help — the user goes hunting and concludes either the setting was removed or they're misreading the docs. Same with describing features that don't exist anymore: the user toggles around looking for "Soft/Hard mode" and finds nothing, which erodes trust in the docs. Both of these were latent inconsistencies from v6.3's refactor that hadn't been swept up.
+
+# v6 commit 8.2 — Settings label + milestones + restore dialog: align with Confident/Vertrouwd
+
+## What changed
+
+Three groups of user-facing strings still used the old "Mastered/Beheerst" terminology after 8.1 renamed the home stat label. This commit finishes the rename across the remaining surfaces:
+
+1. **Settings toggle label** in the Training → Algemeen subsection. Old: "Mastered books" / "Beheerste boeken". New: **"Confident books" / "Vertrouwde boeken"**. Description got more informative too: "(show gold line under confident books)" / "(toon gouden lijn onder vertrouwde boeken)" — tells the user what the toggle visually does instead of just repeating the label.
+
+2. **Milestone celebration banners** that fire when the user crosses 10, 20, 33, 50, OT-complete, NT-complete, or 66 confident books. The old wording was a double error: wrong word ("mastered/beheerst") AND wrong concept (milestones fire on `getConfidentCount`, not on the FSRS-Mastered count). All seven banners × two languages now say "books confident! 🎉" / "boeken vertrouwd! 🎉".
+
+3. **Restore-dialog comparison label** ("X/66 mastered" / "X/66 beheerst"). The accompanying number is `getBookStats(...).mastered`, which counts the FSRS-Rooted tier (stability > 7d + reps), not Confident. Renamed the displayed value from "mastered/beheerst" to **"rooted/geworteld"** to match what it actually counts. The translation key name `restoreMastered` is kept to avoid cascading code changes; only the value moved.
+
+Also updated four FAQ entries in Help.jsx that referenced the renamed strings (gold-line setting reference, share-button example message, backup-restore "mastered-book highlight", re-drilling paragraph).
+
+## Files changed
+
+- **`src/data.js`** — `highlightFound` (NL + EN), `highlightFoundDesc` (NL + EN), seven milestone keys × 2 languages, `restoreMastered` (NL + EN). Added comment blocks documenting the rename rationale.
+- **`src/components/Settings.jsx`** — `SettingRow` fallback strings for `highlightFound` / `highlightFoundDesc`.
+- **`src/components/Help.jsx`** — gold-line FAQ setting reference (NL + EN), share-FAQ example text (NL + EN), backup FAQ "mastered-book highlight" → "confident-book highlight" (NL + EN), re-drilling FAQ "beheerst boek" → "stabiel boek" / "Mastered book" → "stable book" (NL + EN).
+
+## Dead translation keys noted (no action taken)
+
+After this commit, three translation keys in `data.js` are no longer used in active code: `mastered` (superseded by `confident` and `restoreMastered`), `masterySpeed`/`masterySpeedDesc` (replaced by `targetSpeedLabel`/`targetSpeedDesc` in v6.3). Kept as dead code rather than deleted — translation-key deletion risks breaking obscure references and is a separate future cleanup.
+
+# v6 commit 8.1 — NL terminology rename: Zeker → Vertrouwd, Familiar → Bekend
+
+## What changed
+
+Two coupled NL-only renames triggered by user feedback that "Zeker" reads awkwardly as a stat label ("12 zeker van 66" feels adverb-shaped rather than noun-shaped). EN unchanged — "Confident" / "Familiar" both still read fine.
+
+1. **Gold-line / confident concept label**: NL `confident: 'Zeker'` → **`confident: 'Vertrouwd'`**. "Vertrouwd" is the natural Dutch translation of *confident-with-a-thing* and reads cleanly as a stat label ("12 Vertrouwd van 66") and in flowing prose ("ik ben vertrouwd met dit boek").
+
+2. **FSRS Familiar tier name**: NL `tierFamiliar: 'Vertrouwd'` → **`tierFamiliar: 'Bekend'`**. Required because "Vertrouwd" was previously the Familiar-tier label; using it for the new confident concept would create a same-word collision on the home screen ("12 Vertrouwd" hero stat right above a "Vertrouwd: 8" tier-chip in the legend — two different numbers under the same word). "Bekend" forms a clean "Onbekend → Bekend" early-stage progression and avoids any clash.
+
+New NL ladder: **Onbekend → Geleerd → Bekend → Geworteld → Verankerd → Permanent**.
+
+## Files changed
+
+- **`src/data.js`** — `confident`, `tierFamiliar`, `celebration66Title` ("Alle 66 boeken zeker!" → "Alle 66 boeken vertrouwd!"). Comment blocks updated to document the rename chain (v4: beheerst→geworteld; 8.1: zeker→vertrouwd plus vertrouwd→bekend).
+- **`src/App.jsx`** — NL share message "Ik ben zeker van X..." → "Ik ben vertrouwd met X..."
+- **`src/components/Help.jsx`** — 5 places: Approach item 3 tier-ladder, "How it works" section 1 (gold-line marker phrasing), "How it works" section 2 (tier bullet), FAQ "Wat zijn de zes niveaus" question + answer, FAQ "Wat is de gouden lijn" answer.
+
+## Things deliberately kept
+
+- Normal Dutch "zeker" in confirmation dialogs ("Weet je zeker dat je je voortgang wilt wissen?") — that's not the concept, just regular Dutch usage.
+- EN labels — no equivalent collision in English, no user complaint, no need to change.
+- The translation key `confident` itself — only the displayed value changed, the key stays.
+
+# v6 commit 8 — "How it works" explainer content + stale tier name fixes
+
+## What changed
+
+Added a new **"How it works"** section to the Help screen, sitting between the existing Approach and FAQ sections. Five short subsections covering the algorithm and visual model that users were previously left to figure out from in-context UI alone:
+
+1. **Two signals working together** — the gold line (in-session, last-3 attempts) vs the tier (FSRS stability, long-term). Parallel signals, both useful.
+2. **The six tiers** — the full ladder (Unseen → Learning → Familiar → Rooted → Anchored → Permanent) with concrete stability thresholds (>7d, >30d, >180d) and rough timelines.
+3. **How your answers drive the schedule** — outcomes table (fast correct → Good, slow correct → Hard, wrong → Again, time-up → Hard) with what each does to FSRS scheduling and scoring. Box Mode mentioned briefly.
+4. **The speed bar** — what the timer does, what happens on expiry in each mode, how the 2-30s slider feels at each end.
+5. **Why breaks are fine** — the spaced-repetition principle, no daily-quota pressure.
+
+Each subsection is one heading + ~3 short paragraphs (or a paragraph + bullet list). Rendered as plain text, not accordion — the whole point is that it gets read, not hidden behind a tap. Total reading time ~2-3 minutes.
+
+Also fixed two stale tier names in the existing Approach item 3:
+- EN: "Mastered" → "Rooted"
+- NL: "Beheerst" → "Geworteld"
+
+The Rooted tier was renamed from "Mastered" back in v4 (to free the word "Mastered" for the new gold-line / Confident signal), but the Approach text had never been updated.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — added `howItWorksTitle` + `howItWorks: [...]` to both `nl` and `en` content blocks, plus a render block between `<section>{content.approachTitle}</section>` and `<section>{content.faqTitle}</section>`. Body strings use `\n\n` as paragraph separator and lines starting with `• ` get rendered as `<ul>` bullets.
+- **`src/components/Help.css`** — new `.how-it-works` style group following the existing `.approach` rhythm (heading, body paragraph, bullet list). No new colors or layout patterns.
+
+## Scope: Layer 1 only
+
+Originally sketched three layers of transparency:
+- Layer 1: static explainer content (this commit)
+- Layer 2: per-book stats modal (tap a cell on home → see tier, last seen, attempts-to-next-tier)
+- Layer 3: inline milestone hints under grid cells ("3 more to Rooted")
+
+After discussion: Layer 3 dropped (visual noise on every cell forever, marginal value). Layer 2 deferred (high value, low frequency — and the case for it weakens once Layer 1 is in, since the explainer answers most of the curiosity it would address). This commit ships Layer 1 only.
+
+# v6 commit 7 — Drop home "Ready to practice" stat (obligation → confidence framing)
+
+## What changed
+
+The home Quiz panel previously showed a two-card stats grid:
+- Left: `[Confident X of 66]`
+- Right (when `dueNow > 0`): `[Ready to practice X]` (the FSRS-due count)
+- Right (when `dueNow == 0`): `[X to gold]` (66 − confident)
+
+Replaced both branches with a single centered hero card: `[X / 66 Confident]` with the count as a large hero number and the denominator in reduced visual weight. Tier bar (with chip legend) stays below.
+
+## Why
+
+The "Ready to practice" framing presented progress as a to-do count — "here's your obligation today" — which fights the rest-of-the-app message that breaks are fine and the schedule is self-driving. Even when the number was small, it felt like pressure. And the number wasn't actionable: the launcher button works the same whether `dueNow` is 0, 5, or 66, so the user doesn't need to know the count to start a session.
+
+The "to gold" alternative (shown when `dueNow == 0`) was less obligation-shaped but still represented "work remaining" — also slightly nag-shaped.
+
+Removing both leaves the home screen as pure "here's where you stand toward the all-66-confident goal." The tier bar underneath provides the same kind of breakdown a power user would want, without the daily-quota framing.
+
+## Files changed
+
+- **`src/App.jsx`** — collapsed the three-branch ternary (`confidentCount === 66 ? celebration : stats.dueNow > 0 ? statsWithDue : statsWithToGold`) into a two-branch (`confidentCount === 66 ? celebration : singleConfidentCard`). Old `<div className="stats">` with two children replaced by `<div className="stats stats-single">` with one `<div className="stat-card stat-card-hero">`.
+- **`src/App.css`** — new `.stats.stats-single` rule (1-column grid, 320px max-width, centered) and `.stat-card.stat-card-hero` variant (larger padding, 3rem hero number, uppercase letter-spaced label, smaller-weight `.stat-denom` for the "/66" suffix). Plain `.stat-card` sizing untouched so any other multi-card layouts are unaffected.
+- **`src/components/Help.jsx`** — updated FAQ entries that referenced the now-removed home-screen label: deleted 2 entries entirely ("What's the difference between Ready to practice and Due?" and "What does Ready to practice mean on the home screen?"); merged the "Why can't I keep training when Ready to practice reads 0?" entry into a new "Do I need to train every day?" entry (same advice, no obligation framing); updated incidental references in 3 other entries (approach item 4, pause FAQ, "what if I don't use the app for a while"). Also incidentally fixed an outdated mention of the v4.11-removed Quick/Standard/Full launchers in the pause FAQ.
+
+## What does NOT change
+
+- In-quiz "DUE" stat in `QuizGrid.jsx` — still shows `stats.dueNow`. Inside a session that number is a real session countdown, not an obligation. Stays.
+- All FSRS engine behavior — no scheduling changes.
+- The launcher button on home (already simplified to single "Start Quiz Mode" in v4.11).
+- All-66 celebration screen.
+- Translation keys `readyToPractice` and `toGold` — left in `data.js` as harmless dead code; deletion is a future cleanup.
+
+# v6 commit 6.3.4 — Quiz Mode time-up = Box Mode time-up; slow-correct cell → blue
+
+## What changed
+
+Final convergence step in the Quiz-vs-Box uniformity arc (started in v6.3, continued through 6.3.1+6.3.2 and 6.3.3). On Quiz Mode timer expiry the behavior used to be:
+- Bar fills with amber tint
+- Prompt label changes to "Too slow!"
+- All cells stay tappable; the user must still find the right one
+- FSRS rating defers until the user taps
+
+After this commit, Quiz Mode timer expiry mirrors Box Mode's expiry exactly:
+- The asked book cell lights up **blue** (was: amber)
+- Prompt changes to "Time's up — look for the blue cell!"
+- All other cells become non-tappable
+- The user must tap the blue cell to continue
+- FSRS rating commits at expiry as Hard (no longer waits for tap)
+
+And the slow-but-correct cell color changes from amber to blue too, eliminating the last amber/orange cell-color ambiguity for deutans. "Slow" as a state now lives only in the prompt label ("⏱ Too slow — Xs") and the post-answer feedback message, not in cell decoration.
+
+## Why
+
+The earlier model had three distinct cell-reveal colors (blue = wrong-tap reveal in Quiz, amber = time-up reveal in Quiz, blue = both in Box) — which is two too many for a deutan-friendly design and three too many for a user who just wants consistency between modes. The new model has one cell-reveal color (blue) used uniformly for any "the right answer is here" hint, in either mode, regardless of cause.
+
+Also fixes a subtle behavior asymmetry: previously Quiz Mode users could "outwait" the timer (let it expire, then keep searching as if nothing happened); Box Mode users couldn't. Mode-uniform behavior matches the design intent that the timer is meaningful in both modes.
+
+## Files changed
+
+- **`src/components/QuizGrid.jsx`** — added `targetBookRef` and `expiryFiredRef` for the new expiry flow. On timer expiry: reveal `targetBook` in blue, lock other cells, force tap-blue to continue, commit FSRS Hard rating immediately. Retired the `isOvertime` flag and the deferred-rating path. Slow-but-correct cell color in `renderBookCell` changed from `.slow` (amber-toned) to use the same blue feedback styling as `correct`.
+
+# v6 commit 6.3.3 — Visible overtime + paused-session resume auto-scroll
+
+## What changed
+
+Two small followups to 6.3.1+6.3.2:
+
+1. **Quiz Mode bar expiry was invisible.** At 0% the orange bar collapses to `width: 0`, which means a user staring at the screen could miss the moment the timer ran out — until they tried tapping a cell and got "too slow" feedback. Added explicit visible state: bar gets an amber `.prompt-slow` tint when at 0%, with a small ⏱ icon prepended to the prompt. The cell is still tappable at this stage (the harder time-up flow lands in 6.3.4).
+
+2. **Paused-session resume didn't auto-scroll.** When a user paused a Quiz session mid-OT and resumed it, the grid would stay at whatever scroll position it was at on resume — even though `pickNextBook` always auto-scrolls. Bug: the auto-scroll only happened in `pickNextBook`, not in the paused-restore code path. Added an explicit auto-scroll call to the paused-restore handler so resume feels identical to a fresh session start.
+
+## Files changed
+
+- **`src/components/QuizGrid.jsx`** — visible-overtime state additions to the bar render (three places), auto-scroll trigger added to paused-restore path.
+
+# v6 commit 6.3.1+6.3.2 — Uniform blue reveal + batch timer reset
+
+## What changed (two related fixes shipped together)
+
+1. **Wrong-tap reveal color unified to blue (across both modes).** Previously time-up cell reveals used amber in Quiz Mode and blue in Box Mode — same cell semantics, two colors. The deutan-friendly palette also avoids amber/orange adjacency where possible, and amber for a "look here" hint is too close to the orange used for wrong-tap cells. Switched both modes to use blue for the reveal, leaving orange exclusively for wrong-tap. One purpose per color.
+
+2. **Eliminated a one-frame bar fill-up race.** Setting `setTimerStart(Date.now())` and `setTimerProgress(1)` in sequence (the timer reset on each new book) used to update `timerProgress` via a `useEffect`, which meant for one frame the user would see the OLD progress bar before the new one rendered. Batched the two state updates into the same call site as `advanceToNextBook` / `pickNextBook` / session-start / paused-restore, so the bar visibly fills from 100% on each new book with no jitter.
+
+## Files changed
+
+- **`src/components/QuizGrid.jsx`** — color class swaps in the reveal feedback paths (Quiz and Box modes), `setTimerStart` / `setTimerProgress` batched at four call sites.
+- **`src/components/QuizGrid.css`** — `.book-cell.slow` no longer needed the amber color path (moved to the same blue styling as `.correct`).
+- **`src/components/BoxMode.css`** — equivalent cleanup.
+
+# v6 commit 6.3 — Time pressure unification: single targetSpeedMs across both modes
+
+## What changed
+
+Quiz Mode and Box Mode previously had separate time-pressure settings:
+- Quiz Mode: `config.quiz.masteryMs` (2-10s slider, the gold-line speed threshold)
+- Box Mode: `config.boxMode.timePressure` (3-position toggle: "off" / "soft-Xs" / "hard-Xs")
+
+Conceptually these measured the same thing — "how fast you expect to recall a book" — but split into two unrelated settings with different ranges and shapes. Users had to discover this and tune both for a consistent feel, and the Box Mode three-way toggle was an extra knob that didn't deliver value commensurate with its surface area.
+
+Unified them into one top-level **`config.targetSpeedMs`** (slider, 2000-30000 ms, step 250 ms) shown in Settings → Training → Algemeen/Shared. Both modes read this value:
+- **Box Mode**: timer always-on; expiry triggers an auto-wrong flow (demotes the book one box, reveals the asked book in blue, requires tap-to-continue). The "soft mode" of the old setting (slow-correct still counts as correct) was removed entirely — it added complexity without clear value, and the "Hard" semantics are now universal.
+- **Quiz Mode**: timer is now visibly displayed (parallels Box Mode's bar). The legacy "speed limit threshold for gold-line credit" semantics are preserved — slow-correct still loses a streak point, FSRS gets a Hard rating. Time-up behavior (full reveal + tap-to-continue) lands in 6.3.4.
+
+Setting `targetSpeedMs` to 30000 (max) makes the timer effectively invisible in practice. Setting it to 2000 makes it a serious challenge. The full slider lets the user dial in their personal feel.
+
+## Schema migration
+
+The config shape changed, so `mergeConfig` got a new migration step. Bumped `CURRENT_CONFIG_VERSION` from 1 to 2. The migration in `mergeConfig`:
+1. Reads the old `quiz.masteryMs` and old `boxMode.timePressure` from the incoming config.
+2. Converts `timePressure: 'off'` → 30000 ms; `'soft-Xs'` or `'hard-Xs'` → X * 1000 ms.
+3. Takes the **higher** of the two values (a user with a 10s Quiz limit and a 6s Box limit gets unified to 10s, on the principle that the gentler setting is the safer migration choice).
+4. Clamps to the slider range [2000, 30000].
+5. Sets `config.targetSpeedMs` to the result.
+6. Leaves the old fields in place but unused (gracefully ignored by all current code paths).
+
+Backup imports go through the same `mergeConfig`, so pre-6.3 backups migrate transparently.
+
+## Files changed (9 files, +459 −211)
+
+- **`src/appConfig.js`** — schema definition: added `targetSpeedMs` to top level of config, bumped `CURRENT_CONFIG_VERSION` to 2, added migration logic to `mergeConfig`.
+- **`src/boxMode.js`** — removed `slowOnCurrent` state and `markSlow()` function; timer expiry now fires the auto-wrong flow unconditionally.
+- **`src/components/BoxMode.jsx`** — refactored to read `targetSpeedMs` instead of `boxMode.timePressure`. Always-on timer.
+- **`src/components/BoxMode.css`** — removed soft-mode classes.
+- **`src/components/QuizGrid.jsx`** — added the visible timer bar in Quiz Mode (parallels Box Mode visual). Reads `targetSpeedMs`. Slow-detection unchanged in this commit (still applies the existing "lost streak, FSRS Hard" semantics).
+- **`src/components/QuizGrid.css`** — added Quiz-side timer bar styles.
+- **`src/components/Settings.jsx`** — new `targetSpeedMs` slider in the Algemeen/Shared subsection; removed the old Quiz speed dropdown and the Box time-pressure 3-way toggle.
+- **`src/App.jsx`** — share message and various derived computations now read `config.targetSpeedMs`. The user-level `masteryMsAtStart` field name is preserved (it's a historical record on the user object, not refactored as part of 6.3).
+- **`src/data.js`** — new translation keys: `targetSpeedLabel`, `targetSpeedDesc`. Several prompt and celebration strings touched to match the new setting name.
+
+## What does NOT change
+
+- FSRS engine — no scheduling changes.
+- The gold-line confident-buffer logic — still records "fast" attempts based on the threshold (just reading from a different field).
+- The user-level `masteryMsAtStart` field — kept as a historical marker for the share-message "speed unchanged since start" check. Internal name not refactored to avoid unnecessary churn.
+- Confidence semantics — gold line still requires 3 in-time-correct in a row, where "in time" means within `targetSpeedMs`.
+
 # v6 commit 6.2 — "Continue training" button on session-complete
 
 ## What changed
