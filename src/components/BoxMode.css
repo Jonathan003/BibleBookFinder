@@ -502,24 +502,15 @@
    styled via .quiz-timer-bar in QuizGrid.css). The pre-6.3 6px height
    variant for "this matters more" is gone — bar is always 4px. */
 
-/* Time-up prompt styling — analogous to .prompt-wrong but amber
-   (#F59E0B) instead of orange (#F97316). Distinct color signals
-   "you ran out of time" vs "you clicked the wrong cell" — different
-   reason, same consequence (demotion + tap-blue-cell to acknowledge). */
-.quiz-prompt.prompt-time-up {
-  background: #F59E0B;
-  color: #fff;
-}
-
-/* Time-up cell flash — uses the same animation as wrong but amber.
-   Applied to the revealed (correct) cell on timer expiry. */
-.book-cell.time-up {
-  animation: flashTimeUp 0.5s ease-in-out;
-}
-@keyframes flashTimeUp {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.06); }
-}
+/* v6.3: amber time-up styling (.prompt-time-up, .book-cell.time-up,
+   @keyframes flashTimeUp) was removed in favor of uniformity with
+   Quiz Mode and Box Mode wrong-tap. Timer expiry now uses identical
+   visual treatment to a wrong tap — orange prompt bar, blue reveal
+   cell — with the SEMANTIC distinction carried entirely by the label
+   text ("Time's up — look for the blue cell!" vs "Wrong"). This is
+   also safer for deutan colorblindness, which fuses amber and orange.
+   The renderBookCell logic in BoxMode.jsx no longer applies a
+   .time-up class to any cell. */
 
 /* Slow-marker pill style — kept for backward compatibility on any
    stale references but no longer used (the soft-timer marker that

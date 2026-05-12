@@ -184,18 +184,23 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // sneaks through unmigrated.
   const targetSpeedMs = Math.max(2000, Math.min(30000, config?.targetSpeedMs ?? 10000));
 
-  // Effect 1: reset on each new currentBookId.
-  // Triggered when entering 'playing' (first book) and on every
-  // advanceToNextBook (either after a correct or wrong answer).
+  // Effect 1: cleanup only. Clears timerStart when the session
+  // leaves the playing phase (paused, ended, returned to home).
+  //
+  // v6.3.2: the "reset on each new currentBookId" path that used to
+  // live here is gone — it caused a one-frame race where the new
+  // currentBookId rendered with the OLD timerProgress value still in
+  // state, producing a CSS-transition "fill-up" the moment the new
+  // book appeared. The reset is now batched into advanceToNextBook
+  // and the session-start function so the timer state is synchronized
+  // with currentBookId in a single render. This effect's job is
+  // narrower: just clear the timer on phase exit.
   const currentBookId = state?.currentBookId;
   useEffect(() => {
     if (phase !== 'playing' || currentBookId == null) {
       setTimerStart(null);
-      return;
     }
-    setTimerStart(Date.now());
-    setTimerProgress(1);
-  }, [currentBookId, phase, targetSpeedMs]);
+  }, [currentBookId, phase]);
 
   // Effect 2: tick interval. Updates timerProgress every 100ms
   // and fires the expiry handler exactly once when the budget hits
@@ -347,6 +352,11 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     setCorrectBookId(null);
     setHintVisible(false);
     setHighlightedBox(null);
+    // v6.3.2: see advanceToNextBook above for the rationale — set
+    // timer state in the same batch as currentBookId so the bar
+    // renders at full from the first frame.
+    setTimerStart(Date.now());
+    setTimerProgress(1);
     setPhase('playing');
   }, [config.boxMode?.failMode, selectedScopes]);
 
@@ -444,6 +454,19 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     setFeedback(null);
     setCorrectBookId(null);
     setHintVisible(false);
+    // v6.3.2: batch the timer reset into the same render as the book
+    // change so the bar appears at full ON THE FIRST FRAME the new
+    // book is visible. Previously the timer-reset lived in a useEffect
+    // that fires AFTER the render commit — meaning Render N would show
+    // the new book with the OLD timerProgress value (often 0.0 if the
+    // previous question had expired), and Render N+1 would then
+    // transition the bar from that old value to 1.0 over 100ms,
+    // producing a visible "fill-up" animation that contradicted what
+    // the timer is actually doing. Setting these in the same batch
+    // means React renders ONCE with currentBookId=new AND
+    // timerStart=now AND timerProgress=1.
+    setTimerStart(Date.now());
+    setTimerProgress(1);
   }, []);
 
   const finishToEndScreen = useCallback((endedState) => {
@@ -714,23 +737,29 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     const isCorrectReveal = book.id === correctBookId;
     const showCorrect = feedback === 'correct' && isTarget;
     const showWrong = feedback === 'wrong' && !isTarget && !isCorrectReveal;
-    // v6.3: time-up gets its own visual treatment — the reveal cell
-    // tints amber (#F59E0B) instead of the wrong-answer orange so the
-    // user sees a different color for "you ran out of time" vs "you
-    // clicked the wrong book." Non-target cells don't get a colored
-    // overlay for time-up (no one to "blame" — the user didn't even
-    // pick), just the reveal in amber.
-    const showTimeUp = feedback === 'time-up' && (isTarget || isCorrectReveal);
+    // v6.3 (revised): 'time-up' is a distinct feedback STATE (different
+    // label, different cause) but the visual treatment of the revealed
+    // cell is identical to every other "here's where the book actually
+    // is" cue in the app — solid blue (#3B82F6). Three reasons for
+    // dropping the earlier amber treatment:
+    //   1. The prompt literally says "look for the blue cell"; an
+    //      amber cell makes the message contradict itself.
+    //   2. Uniformity between Quiz Mode and Box Mode: both modes show
+    //      the same blue reveal on a wrong answer, time-up should
+    //      match. Adding a third color for one edge case is noise.
+    //   3. Amber (#F59E0B) and orange (#F97316) are exactly the pair
+    //      that deutan colorblindness fuses, so encoding "time-up"
+    //      via amber cell color would fail for the primary user.
+    // The semantic distinction is carried entirely by the label text
+    // ("Time's up — look for the blue cell!" vs "Wrong"). No cell-
+    // level animation either — same uniformity argument.
     const inTopBox = state.bookBoxes[book.id] === TOP_BOX;
     const displayName = getBookDisplayName(book, displayMode, lang);
 
     const colors = groupColors[book.group] || groupColors.law;
     let bgColor = colors.normal;
     if (showCorrect) bgColor = '#3b82f6';
-    else if (isCorrectReveal && feedback === 'time-up') bgColor = '#F59E0B'; // amber for time-up reveal
     else if (isCorrectReveal) bgColor = '#3b82f6';
-    else if (feedback === 'wrong' && isTarget) bgColor = '#3b82f6';
-    else if (feedback === 'time-up' && isTarget) bgColor = '#F59E0B';
     else if (showWrong) bgColor = '#f97316';
 
     // v6.3: 'time-up' shares wrong's tap-the-blue-cell flow, so the
@@ -741,7 +770,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     return (
       <button
         key={book.id}
-        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}${showTimeUp ? ' time-up' : ''}`}
+        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}
@@ -790,8 +819,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
           <button className="back-btn" onClick={handleBack}>← {t.back}</button>
           <div className={`quiz-prompt ${
             feedback === 'correct' ? 'prompt-correct' :
-            feedback === 'time-up' ? 'prompt-time-up' :
-            feedback === 'wrong'   ? 'prompt-wrong'   : ''
+            (feedback === 'wrong' || feedback === 'time-up') ? 'prompt-wrong' : ''
           }`}>
             {feedback === 'correct'
               ? <span className="prompt-book">✓ {t.correct}</span>

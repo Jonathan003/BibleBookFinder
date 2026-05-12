@@ -288,14 +288,23 @@ export default function QuizGrid({
   // slider's [2000, 30000] range in case a stale localStorage value
   // sneaks through unmigrated.
   const quizTargetSpeedMs = Math.max(2000, Math.min(30000, config?.targetSpeedMs ?? 10000));
+
+  // Effect 1: cleanup only. Clears timerStart when there's no
+  // active question (between sessions / pre-first-pick).
+  //
+  // v6.3.2: the "reset on each new targetBook" path that used to
+  // live here is gone — it caused a one-frame race where the new
+  // targetBook rendered with the OLD timerProgress value still in
+  // state, producing a CSS-transition "fill-up" the moment the new
+  // book appeared. The reset is now batched into pickNextBook so
+  // the timer state is synchronized with targetBook in a single
+  // render. This effect's job is narrower: just clear the timer
+  // when no question is active.
   useEffect(() => {
     if (!targetBook) {
       setTimerStart(null);
-      return;
     }
-    setTimerStart(Date.now());
-    setTimerProgress(1);
-  }, [targetBook, quizTargetSpeedMs]);
+  }, [targetBook]);
 
   // Effect 2: tick interval. Updates timerProgress every 100ms. Unlike
   // Box Mode, there's no expiry side-effect — when remaining hits 0,
@@ -475,6 +484,18 @@ export default function QuizGrid({
     setResponseTime(null);
     setFeedback(null);
     setHintVisible(false);
+    // v6.3.2: batch the visible-timer reset into the same render as
+    // setTargetBook so the bar appears at full on the first frame the
+    // new book is shown. Without this batching, the useEffect-driven
+    // timer reset fired AFTER the render commit, producing a visible
+    // "fill-up" CSS transition from the previous question's progress
+    // value to 1.0 over 100ms — making the bar appear to MOVE during
+    // the first frames of a new question, which contradicted what the
+    // timer was actually measuring. Both the visible bar (timerStart/
+    // timerProgress) and the FSRS response-time measurement (startTime
+    // above) now anchor to the same Date.now() in the same batch.
+    setTimerStart(Date.now());
+    setTimerProgress(1);
     // In sideBySide layout both testaments are visible at once on tablets
     // and desktop landscape, so OT-top / NT-bottom auto-scroll would cause
     // a confusing jump with no benefit. Skip it. (On phones in landscape
@@ -534,6 +555,15 @@ export default function QuizGrid({
       if (typeof s.sessionMs === 'number') setSessionMs(s.sessionMs);
       if (typeof s.sessionPickCount === 'number') sessionPickCountRef.current = s.sessionPickCount;
       setStartTime(Date.now());
+      // v6.3.2: re-anchor the visible timer too on resume, alongside
+      // the FSRS response-time anchor (setStartTime above). Same
+      // single-batch rule — pinning these together prevents the bar
+      // from fill-up-animating when the restored question first
+      // renders. The user-shouldn't-be-penalised-for-paused-time
+      // logic that applies to startTime also applies to the visible
+      // timer; both restart fresh.
+      setTimerStart(Date.now());
+      setTimerProgress(1);
       logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
     } else {
       logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
