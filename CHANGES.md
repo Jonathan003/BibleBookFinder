@@ -1,3 +1,421 @@
+# v6 commit 29 — Catch up CHANGES.md (entries for commits 11 through 28)
+
+## What changed
+
+This commit adds CHANGES.md entries for the 18 commits since commit 10. Same pattern as v6 commit 11's earlier catch-up of 6.3 through 10. Entries here are listed newest-first, matching the rest of this file.
+
+## Why this matters
+
+A CHANGES.md that lags behind the actual commit log is worse than a sparse one — it suggests the project froze somewhere it didn't. Future-Jonathan reading this in six months would otherwise have to read 18 git commit messages and guess at the rationale. The entries below capture the *why* behind each change, which is what survives best in long-term documentation.
+
+# v6 commit 28 — Dead code cleanup (streak, CSS, translation keys, README)
+
+## What changed
+
+Five categories of dead code found during the post-commit-25 audit:
+
+1. **`computeStreakInfo()` in `src/streak.js`** — a 60-line implementation of a per-day streak with "yesterday grace" rule (Duolingo style). Implemented but never wired to the UI. The home screen never showed a day-streak; the `streak-card` CSS class on the home screen displays `formatDuration(totalQuizMs)` with a ⏱ icon (total training time), not a flame/days. After commit 22 explicitly documented "BBF deliberately has no daily-streak pressure" via the streak FAQ rewrite, keeping the unused implementation around suggested a phantom feature.
+
+2. **Dead CSS class `boxmode-best-mistakes`** in `App.jsx` — referenced on a `<span>` in the box-mode best-times row but had no matching CSS rule anywhere. Removed the className; the `<span>` itself stays as visual container.
+
+3. **Dead CSS class `prev-best-value`** in `BoxMode.jsx` — referenced on a `<span>` in the previous-best line of the box-mode completion screen but had no matching CSS rule. Same fix.
+
+4. **README line "Replaces the day-streak card"** — referred to a UI element that doesn't exist (and never did in v4+). Rewrote the bullet to describe what total training time actually does without invoking a non-existent predecessor.
+
+5. **Five dead translation keys in `data.js`** (NL + EN = 10 lines total):
+   - `dayStreak`, `dayStreakSingle` — labels for the never-wired day-streak feature
+   - `boxBestTimesHeader`, `boxNotYetPlayed` — leftover from an older Box Mode UI layout
+   - `boxModeInProgress` — same era as above
+
+   Comments were placed where the keys were so future audits know to look in git history rather than wondering whether a feature got dropped.
+
+## Files changed
+
+- **`src/streak.js`** — `computeStreakInfo()` removed, opening comment rewritten to describe what the file actually does now
+- **`src/App.jsx`** — one className removed
+- **`src/components/BoxMode.jsx`** — one className removed
+- **`README.md`** — one bullet rewritten
+- **`src/data.js`** — 10 lines removed across NL and EN sections
+
+## Why this matters
+
+Dead code is worse than missing code on three axes: (a) it bloats files and slows search, (b) it suggests features that don't exist (the `computeStreakInfo` case actively contradicted the streak FAQ — anyone reading the source could reasonably believe a day-streak was about to ship), and (c) it makes legitimate refactors harder because grep yields false positives.
+
+# v6 commit 27 — Include paused sessions in backup (schema v4 → v5)
+
+## The gap
+
+`pausedQuizSession` and `pausedBoxSession` are stored on the user record (per `currentUser.pausedQuizSession`) so they survive a page refresh. But `Settings.jsx handleExport` did not include them in the backup shape, and `App.jsx handleRestore` did not restore them. A backup taken mid-session, restored on another device, would lose the paused session — the gold lines, FSRS data, and other learning progress would round-trip cleanly, but the in-progress session would be silently dropped.
+
+## The design question
+
+Whether paused sessions belong in backup is a real design call, not an obvious bug. After researching how other modern apps treat ephemeral session state (Anki, Netflix Continue Watching, Steam Cloud save-state, Google Play Saves), the conclusion was clear: modern user expectation in 2026 is that session state IS part of save-state — backup/restore should round-trip the "where you left off" position the same way it round-trips the FSRS-Rooted count.
+
+BBF's paused session is "user-invested progress" (5-15 minutes of attention, a score, a streak), not "transient UI state" (which tab is open). Form drafts, game saves, and streaming positions are all in the same category — they belong in save-state. The earlier-omitted behavior was inconsistent with this.
+
+## The fix
+
+**`src/components/Settings.jsx`** — schema version bumped from 4 to 5. Two new fields in the exported user object:
+- `pausedQuizSession: currentUser.pausedQuizSession || null`
+- `pausedBoxSession: currentUser.pausedBoxSession || null`
+
+The schema comment block was extended to document v5's rationale so a future maintainer doesn't have to dig through chat logs to find the design reasoning.
+
+**`src/App.jsx`** — `handleRestore` now reads both paused fields with `?? null` fallback. Pre-v5 backups (no field) restore to `null` (no paused session on the receiving device); v5 backups round-trip cleanly. Inline comment explains why pre-v5 restore wipes any existing paused session on the current device: a backup-restore is an explicit "load this snapshot" signal, so carrying over the current device's mismatched paused session (which doesn't align with the just-restored FSRS state) would be misleading.
+
+## Compatibility
+
+| Backup version | Restore behavior |
+|---|---|
+| v5 (new) | Paused sessions round-trip cleanly. |
+| v4 or earlier | Paused fields absent → `?? null` → no paused session restored. |
+
+## Why this matters
+
+A cross-device restore (e.g., new phone after losing the old one) was the most common scenario where the gap showed up. The user would expect "everything came over" but find their mid-session work gone. The fix aligns BBF with modern user expectations and removes a subtle data-loss path.
+
+# v6 commit 26 — Box Mode FAQ: remove the non-existent daily-streak claim
+
+## What changed
+
+A consistency fix following commit 22's FAQ cleanup batch. That earlier batch correctly rewrote the "vlammetje" streak FAQ to clarify that BBF has **no daily streak** ("BBF heeft bewust geen daily-streak druk"). But the same commit did not touch the Box Mode FAQ, which still claimed:
+
+- NL: "Je dagelijkse streak telt alleen Quiz Modus-sessies, dus een Doos Modus-sessie alleen verdedigt je streak niet."
+- EN: "Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won't defend your streak."
+
+Two FAQ entries contradicted each other: the streak FAQ said no daily streak, the Box Mode FAQ said there was one. A user reading both ended up confused about which is true.
+
+Both NL and EN versions now read essentially: "Your mastery status and Quiz Mode best-streak stay the same" — the *Quiz Mode best-streak* is a real persisted value (longest in-session combo ever in Quiz Mode), so the claim is now both true and meaningful.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — one rewritten sentence in the Box Mode FAQ, NL and EN versions
+
+## Why this matters
+
+Two FAQ entries contradicting each other is worse than one wrong FAQ entry — it forces the user to decide which to trust, which they shouldn't have to do. Same principle as commit 22's batch: outdated/wrong help is actively harmful, not just unhelpful.
+
+# v6 commit 25 — Discard styling: add explicit border/background (global button reset stripped defaults)
+
+## The bug
+
+Commit 24 added a `.home-launcher-discard` CSS rule meant to make the previously-unstyled Discard button compact and visually secondary. But the rule only set min-height, padding, opacity, and font-weight — no background, no border. The global rule `button { background: none; border: none }` in `src/index.css` strips browser-default button styling, so without an explicit background/border the Discard button rendered as plain text on desktop. On mobile, iOS/Chrome native button hints provided a subtle visual container that masked the issue.
+
+## The fix
+
+Added three properties to `.home-launcher-discard`:
+- `background: var(--bg-secondary)` — light fill matching the Resume button's container
+- `border: 1px solid var(--border)` — subtle outline for definition
+- `border-radius: 12px` — matches the rest of the launcher styling
+
+Plus a hover/focus state that schedules opacity → 1 and background → `--bg-tile-hover` for a clear affordance.
+
+## Files changed
+
+- **`src/App.css`** — extended `.home-launcher-discard` rule (~15 lines added, 3 modified)
+
+## Why this matters
+
+A button that doesn't look like a button is a real UX problem — users either don't realize it's clickable, or they treat it as a label and panic when nothing happens on tap. Modern web apps need explicit button containers because every framework strips browser defaults for predictability. This commit closes that gap.
+
+# v6 commit 24 — Home-screen fixes: tier-bar min-width, Discard styling start, soft 0/66 hint
+
+## What changed
+
+Three issues caught from a real-app screenshot:
+
+1. **Tier-bar Learning segment invisible**: `.tier-segment` had `min-width: 0`, so a 1-out-of-66 segment (~1.5%) rendered as ~3px on a typical mobile bar — visually invisible despite showing up in the legend below. The bar and the legend were out of sync. Bumped `min-width` to 6px so every active tier gets at least a thin visible sliver.
+
+2. **Discard button visually weak**: The `home-launcher-discard` className was referenced in App.jsx but had no CSS rule. Added a partial styling (min-height 44px, opacity 0.75, font-weight 500) to make Discard compact and visually subordinate to Resume. *(Note: commit 25 finished this by adding the missing background/border — without those the styling alone still rendered as plain text on desktop.)*
+
+3. **"0 / 66 CONFIDENT" reads alarming during early use**: A user with 9 books in Learning/Familiar tiers but 0 confident sees "0 / 66" in giant purple letters and may think their effort isn't counted. Added a soft on-boarding hint under the hero card that only appears when `confidentCount === 0 && tierStats.unseen < 66` (count is zero but there IS activity): "Beantwoord een boek 3 keer correct binnen je doeltijd om je eerste gouden lijn te verdienen" / "Answer a book 3 times correctly within your target time to earn your first gold line". Disappears as soon as the first gold line is earned.
+
+## Files changed
+
+- **`src/App.css`** — `.tier-segment` min-width changed, two new rules added (`.home-launcher-discard` and `.hero-hint`)
+- **`src/App.jsx`** — conditional hint render under hero card
+- **`src/data.js`** — `confidentHintFirst` translation key in NL + EN
+
+## Why this matters
+
+Each of the three was a real inconsistency between what the legend/page promised and what the user saw. (1) bar didn't match its own legend. (2) UI class existed but did nothing. (3) accurate counter felt like an error message because there was no context. All three were caught by viewing the actual app, not by reading the code — a useful reminder that visual QA catches things code review doesn't.
+
+# v6 commit 23 — Resume CTA shows time-since-pause (Intl.RelativeTimeFormat)
+
+## What changed
+
+The Resume session button on the home screen previously had a static subtitle "Pick up where you left off". A user returning days after pausing had no idea whether their paused session was from 5 minutes ago or 2 weeks ago — relevant context for deciding between Resume and Discard.
+
+Now the subtitle shows the actual time-since-pause: "Onderbroken 3 uur geleden" / "Paused 3 hours ago", "Onderbroken gisteren" / "Paused yesterday", "Onderbroken 5 dagen geleden" / "Paused 5 days ago". Edge case: sub-minute returns "zojuist" / "just now" because Intl's "binnen een minuut" output reads awkwardly with the "Onderbroken" prefix.
+
+## How
+
+New helper `formatTimeAgo(timestampMs, lang)` in `src/timeFormat.js` wrapping `Intl.RelativeTimeFormat` (built-in since 2018, locale-aware out of the box — no per-tier translation strings needed). Returns `null` on bad input so the caller can fall back to the static description. Includes a fallback path for ancient browsers that lack Intl.RelativeTimeFormat.
+
+Two new translation keys (`resumePausedAt`) with `{when}` placeholder: NL "Onderbroken {when}", EN "Paused {when}". Both Resume CTAs (Quiz Mode + Box Mode) updated; fall back to old "Pick up where you left off" when `pausedAt` is missing (pre-v23 paused sessions).
+
+## Files changed
+
+- **`src/timeFormat.js`** — `formatTimeAgo` helper added
+- **`src/data.js`** — `resumePausedAt` translation key NL + EN
+- **`src/App.jsx`** — both Resume CTA buttons updated, `formatTimeAgo` imported
+
+## Why this matters
+
+Time-since context shifts the decision: a session paused 5 minutes ago is worth resuming; one paused 2 weeks ago probably isn't. Without the timestamp, the user had to guess (or open the session, realize it was stale, and back out). Modern UX in 2026 expects relative-time labels everywhere.
+
+# v6 commit 22 — FAQ cleanup batch: remove 3 outdated entries, add 3 new entries
+
+## What changed
+
+Three categories of FAQ work in one batch:
+
+### Deleted (was misinformation)
+
+1. **"Wat zijn Snel, Normaal en Volledig op het startscherm?" / "What are Quick, Standard, and Full…"** — described the three session-size launchers that were dropped in v4.11. The FAQ entry described UI that hadn't existed in months.
+
+### Rewritten (was misinformation)
+
+2. **"Wat is de 'dagen op rij' met het vlammetje?" / "What is the 'day streak' with the flame?"** — described a Duolingo-style consecutive-days counter with a flame icon. BBF has neither: the home `streak-card` CSS class displays `formatDuration(totalQuizMs)` with a ⏱ stopwatch icon. The FAQ described a phantom feature. Rewrote both as **"Wat is de Streak in de Quiz?" / "What is the Streak in the Quiz?"**, correctly describing the per-session combo counter and explicitly noting "BBF deliberately has no daily-streak pressure".
+
+3. **"Kan ik een quiz pauzeren?" / "Can I pause a quiz session?"** — started with "Eigenlijk niet — maar dat is geen probleem" / "Not really — but that's fine". But pause/resume IS fully implemented since v4 (snapshot, Resume CTA, Discard button). Rewrote to describe the actual behavior, and combined with the Discard semantics (only session bookkeeping lost, not learning progress) into one comprehensive entry.
+
+### Added (real new entries)
+
+4. **"Wat gebeurt er als alle 66 boeken een gouden lijn hebben?"** — prevents users from resetting via Settings → Data thinking it's needed to "do the race again". Explains FSRS continues scheduling behind the scenes; gold lines can drop and be re-earned naturally.
+
+5. **"Werken mijn records nog als ik de doeltijd wijzig?"** — clarifies records are historical (measured against the target time at the moment they were set), but the "within target time" check uses the CURRENTLY configured target.
+
+6. **"Begint Doos Modus elke keer opnieuw?"** — clarifies Box Mode fresh-start behavior (all books start in box 1 every session), in contrast to Quiz Mode where learning progress persists. Notes the only persistent Box data is per-scope personal bests.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — 12 string edits total (3 deletes/rewrites/adds × 2 languages)
+
+## Why this matters
+
+Outdated FAQ is **actively harmful** — worse than missing FAQ. A user who reads an entry that promises a feature that doesn't exist (or doesn't promise a feature that does) loses trust in the docs and starts second-guessing the rest. This batch swept up the three known-stale entries and added three that addressed real recurring questions (the all-66 reset trap, the records-after-target-change confusion, the Box-Mode-doesn't-persist surprise).
+
+# v6 commit 21 — Friendly first-time hint when all books still unseen (new user / post-reset)
+
+## What changed
+
+Commit 20 added a soft FSRS guidance line under the Start Quiz Mode launcher: "X boeken kunnen vandaag aandacht gebruiken" / "X books could use attention today". For a brand-new user (or one who just reset) with `stats.unseen === stats.total`, this read as "66 books could use attention today" — accurate but cold for someone who hasn't started yet.
+
+Added a friendly first-time variant: "Start je eerste sessie wanneer je wil — de app leert vanzelf wat lastig is" / "Start your first session whenever you like — the app will learn what's tricky for you". Triggers only when `stats.unseen === stats.total` (everything still unseen). The dynamic `stats.total` makes this future-proof — if BBF ever adds new books, no hardcoded 66 to update.
+
+## Files changed
+
+- **`src/App.jsx`** — extended the hint logic with the first-time branch
+- **`src/data.js`** — new `quizHintFirstTime` translation key (NL + EN)
+
+## Why this matters
+
+The first impression for a new user is loaded. "66 books could use attention today" sounds like a homework load; "Start your first session whenever you like" sounds like an invitation. Same data underneath, very different emotional read.
+
+# v6 commit 20 — Soft FSRS guidance line under Start Quiz Mode launcher
+
+## What changed
+
+The Quiz Mode launcher button had no contextual hint — users opening the app on a given day had no signal about what FSRS thought was "due". Added a small text line below the button (`.home-launcher-hint` CSS class, secondary color, smaller font) showing how many books are currently due-or-unseen:
+
+- 0 due: "Geen boeken hebben vandaag aandacht nodig" / "No books need attention today"
+- 1 due: "1 boek kan vandaag aandacht gebruiken" / "1 book could use attention today"
+- N due: "X boeken kunnen vandaag aandacht gebruiken" / "X books could use attention today"
+
+Soft language ("kan/could", "aandacht gebruiken/could use attention") deliberately matches BBF's no-pressure philosophy. Box Mode launcher intentionally bare — Box Mode is score-attack, not FSRS-driven, so a leidraad would mislead.
+
+## Files changed
+
+- **`src/App.jsx`** — conditional hint render under Quiz launcher
+- **`src/App.css`** — new `.home-launcher-hint` class
+- **`src/data.js`** — three translation keys per language (`quizHintNone`, `quizHintOne`, `quizHintMany`)
+
+## Why this matters
+
+Without context, the launcher is a leap of faith: tap and see what happens. With the hint, the user knows whether opening the app today is worth their 5 minutes. Particularly useful for the "should I bother today?" decision — if the hint says 0, they know they can skip without losing learning.
+
+# v6 commit 19 — Refresh Reset Quiz Progress confirm: drop 'Mastery' term, add advisory
+
+## What changed
+
+The confirmation dialog text for Reset Quiz Progress (Settings → Data) had two problems:
+
+1. **Outdated terminology**: still said "Mastery" / "Beheersing" — that term was renamed to "Confident / Vertrouwd" back in commit 8.1, but the confirm copy hadn't been swept up.
+2. **No advisory against the common misuse**: users hitting "all 66 gold" sometimes assume they need to reset to "do the race again". They don't — FSRS continues scheduling and gold lines naturally drop and re-appear. The original confirm text didn't warn against this.
+
+Rewrote the confirmation to:
+- Use current "Vertrouwd / Confident" terminology
+- List explicitly what gets deleted: gouden lijnen, niveaus, persoonlijke records, streak, sessie-geschiedenis
+- Add advisory: "Doe dit alleen als je echt vanaf nul wilt beginnen, niet om opnieuw de race naar 66 gouden lijnen te kunnen doen."
+
+## Files changed
+
+- **`src/data.js`** — `resetQuizConfirm` / `resetQuizConfirmTitle` rewritten in NL + EN
+
+## Why this matters
+
+A reset confirmation is the last line of defense against accidental data loss. A confirm that uses out-of-date terminology and doesn't warn against the common misuse fails twice: it doesn't communicate what's about to happen, and it doesn't redirect users away from the wrong action.
+
+# v6 commit 18 — First-solve shows '✓ Correct', not '⚡ New best' — semantic correctness
+
+## What changed
+
+Previously, the very first correct-and-within-target answer on a book triggered the "⚡ Nieuw record / New best" celebration. Semantically this is wrong: a record requires a previous benchmark to compare against. The first attempt is a baseline, not a record.
+
+Research confirmed this convention (Speedrun.com, Strava, Anki, Duolingo): first attempts establish baselines, only subsequent strictly-better attempts are records. BBF should match.
+
+Split the logic in `App.jsx`:
+
+```js
+const isFirstSolve = !prevBest;
+const isNewBest = !isFirstSolve && timeTaken < prevBest;
+if (isFirstSolve || isNewBest) updateBestTime(...);  // always record baseline
+if (isNewBest) { ... celebration ... }  // only celebrate genuine improvement
+```
+
+Baselines still get persisted (so the *second* correct attempt can be a real record), but the celebration only fires on a legitimate improvement.
+
+## Files changed
+
+- **`src/App.jsx`** — `handleAnswer` correct-branch logic split
+
+## Why this matters
+
+Semantic correctness matters for trust. A user who sees "New best!" on their first attempt to a book may briefly think the celebration is wrong, then ignore future celebrations because they're not sure when "New best" actually means new. Restoring the meaning restores the signal.
+
+# v6 commit 17 — Uniform advance delay for correct + new-best (both use autoPickDelayMs)
+
+## What changed
+
+Pre-fix: after a correct answer, the next book was picked after `autoPickDelayMs` (typically ~800ms). After a new-best, the "⚡ Nieuw record" prompt was dismissed at a separate `1500ms`. Inconsistent — two different durations for what felt like the same action.
+
+Jonathan's request: "Time always the same both for correct or for new record. I want the shortest, so it is this that is for correct."
+
+Changed `setShowNewBest(false)` dismiss timer from a hard-coded 1500ms to `autoPickDelayMs(config.targetSpeedMs)`. `pickNextBook` advance restored to unconditional `autoPickDelayMs`. The `isNewBest` flag refactored back to a const inside the if-block (no longer needs to be hoisted for the dismiss-timer comparison).
+
+Box Mode unchanged — it has no new-best celebration mechanism, no analogous duration mismatch.
+
+## Files changed
+
+- **`src/App.jsx`** — `handleAnswer` correct-branch timer logic
+
+## Why this matters
+
+Inconsistent timing across two visually similar states (correct vs new-best) read as a UI bug even though both were "intentional" — the eye notices the discrepancy. Unifying them makes the celebration feel like a state-change of the correct-flow, not a parallel flow.
+
+# v6 commit 16 — Apply key-remount to Box Mode timer bar (v14 fix gap)
+
+## What changed
+
+Commit 14's fix for the timer-bar fill-up animation was applied to QuizGrid.jsx but not to BoxMode.jsx, despite both modes using the same CSS transition pattern. Box Mode therefore still showed the visible 0→1 scaleX animation at the start of each question.
+
+One-line fix: added `key={timerStart || 'idle'}` to the `.boxmode-timer-bar-fill` div, mirroring exactly what commit 14 did for the Quiz timer bar. The key change forces React to remount the element on each new question, so the transition resets cleanly instead of animating from a stale state.
+
+## Files changed
+
+- **`src/components/BoxMode.jsx`** — one prop added to the timer-bar fill div
+
+## Why this matters
+
+A fix that only addresses half its surface area is a slow-burning regression: users in Box Mode kept seeing the bug while QA testing focused on Quiz Mode. Both modes use the same visual pattern (timer countdown bar at top), so the same fix applies. This commit closes the gap.
+
+# v6 commit 15 — Defer pickNextBook past showNewBest display (timer/prompt/clock align on new-best)
+
+## The bug
+
+After a new-best answer, two independent timers ran:
+- `pickNextBook` fired at ~800ms (autoPickDelayMs)
+- `setShowNewBest(false)` fired at 1500ms
+
+In the window [800, 1500ms]: the feedback was cleared but `showNewBest` was still true. The "⚡ Nieuw record" prompt overlay was still visible while the timer bar for the next book had already started counting down, AND the start-time clock for that next answer had already begun running against the user.
+
+Three things visually misaligned: the new-best celebration was still on screen, the timer was already eating into the user's response window, and any answer in that window was timed against a clock that started before the user could even see the question.
+
+## The fix
+
+Hoisted the `isNewBest` flag out of the if-block so the advance-delay branch could use it. When `isNewBest`, the pickNextBook delay is set to match the showNewBest dismiss timer (1500ms in this commit; commit 17 later unified both to autoPickDelayMs). Result: prompt clears, timer starts, and clock starts all simultaneously.
+
+## Files changed
+
+- **`src/App.jsx`** — `handleAnswer` correct-branch race fix
+
+## Why this matters
+
+The user's perception of "I clicked the right book and got a new best" should be a clean, satisfying micro-moment. Three timing mismatches happening inside that 700ms window broke the feel — the celebration looked weird because everything else was already moving. Synchronizing them restored the moment.
+
+# v6 commit 14 — Fix Settings prop loss (targetSpeedMs/boxMode revert) + timer-bar fill-up on new question
+
+## The bug (Settings prop loss)
+
+`App.jsx` was passing config to Settings via a handpicked spread: `{grid, quiz, display, study, t}`. Two fields missing: `targetSpeedMs` and `boxMode`. When Settings opened it fell back to default values (10000 for targetSpeedMs, defaults for boxMode), and then on **any** subsequent setting change wrote the whole settings object back — silently overwriting the user's saved 4000ms `targetSpeedMs` and any non-default Box Mode config with the fallbacks.
+
+The user saw their target time and Box Mode preferences quietly revert every time they touched Settings for any reason. Silent data loss.
+
+Fix: pass `config={{ ...config, t }}` — spread everything, future-compatible. Any field added to config from this point automatically reaches Settings.
+
+## The bug (timer-bar fill-up)
+
+The Quiz timer-bar `.quiz-timer-bar-fill` div had `transition: transform 0.1s linear`. When a new question started, the element was reused (same DOM node) and the CSS transition animated from the previous scaleX(0) up to scaleX(1) before the new countdown started. Visible 100ms "fill-up" flash at the start of each new question.
+
+Fix: added `key={timerStart || 'idle'}` to the fill div. The key changes per question, so React remounts the element. A fresh element starts at scaleX(1) without animating from anywhere.
+
+## Files changed
+
+- **`src/App.jsx`** — Settings props spread
+- **`src/components/QuizGrid.jsx`** — `key` on timer-bar fill (Box Mode equivalent added in commit 16)
+
+## Why this matters
+
+Both were data-loss / visual-glitch bugs that had been latent for a long time, found through routine use rather than feature work. The Settings prop loss in particular is a subtle one — the cause was a spread that *looked* explicit and complete but wasn't.
+
+# v6 commit 13 — Dead-code cleanup: remove 5 unused translation keys + update internal comments
+
+## What changed
+
+Smaller cleanup pass: five translation keys in `data.js` that were no longer referenced in any JSX (verified via grep across the full codebase). Also tightened a few internal `// v6 commit X` comments that referred to features in their final state rather than their original intent.
+
+The five keys removed (NL + EN = 10 lines):
+- `masterySpeed` / `masterySpeedDesc` — replaced by `targetSpeedLabel` / `targetSpeedDesc` in v6.3
+- `boxModeSlowPenalty` / `boxModeSlowPenaltyDesc` — leftover from the pre-6.3 three-way time-pressure toggle
+- `mastered` — the legacy stat label, replaced by `confident` in 8.1 and `restoreMastered` in 8.2
+
+## Files changed
+
+- **`src/data.js`** — 10 lines removed, comments added explaining what each key used to do
+
+## Why this matters
+
+Same rationale as commit 28's broader cleanup: dead translation keys are silent rot. Future maintainers grep for the key, find it in `data.js` only, and waste time figuring out whether it's still wired up. Removing them cleanly with a tombstone comment makes the grep-then-read-history workflow fast.
+
+# v6 commit 12 — Help: snelheidslimiet → doeltijd / speed limit → target time
+
+## What changed
+
+Terminology sweep through `Help.jsx`. The "speed limit" / "snelheidslimiet" wording had been renamed to "target time" / "doeltijd" in commit 6.3, but the Help screen text wasn't fully updated. Six in-place text edits to match the new term throughout the "How it works" section and FAQ entries.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — six terminology fixes (NL + EN)
+
+## Why this matters
+
+Inconsistent terminology between the Settings UI ("Doeltijd per boek") and the Help text ("snelheidslimiet") forces the user to mentally translate. Same fix-shape as several earlier commits: keep the user-facing vocabulary aligned everywhere.
+
+# v6 commit 11 — Catch up CHANGES.md (entries for 6.3 through 10)
+
+## What changed
+
+Documentation catch-up. Added CHANGES.md entries for commits 6.3 through 10, which had been shipped without changelog updates during a stretch of fast iteration. Same shape as the current commit 29 catch-up: reverse-chronological entries appended to the top, with rationale rather than just diff summaries.
+
+## Files changed
+
+- **`CHANGES.md`** — multiple entries prepended
+
+## Why this matters
+
+A periodic catch-up is acceptable; a permanent gap isn't. This commit established the pattern that any commit-stretch longer than ~10 commits without changelog updates gets caught up before the next batch starts. (Commit 29 follows the same rhythm.)
+
 # v6 commit 10 — README — bring outdated sections in line with current app state
 
 ## What changed
