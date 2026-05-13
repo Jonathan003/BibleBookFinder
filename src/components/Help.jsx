@@ -111,6 +111,11 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
         a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status blijft hetzelfde. Je dagelijkse streak telt alleen Quiz Modus-sessies, dus een Doos Modus-sessie alleen verdedigt je streak niet. De enige data die overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
       },
+      // ─── 6b. Doos Modus persistence — v6 commit 22 ─────────────────
+      {
+        q: 'Begint Doos Modus elke keer opnieuw?',
+        a: 'Ja. In tegenstelling tot Quiz Modus (waar je leervoortgang over sessies heen blijft staan) begint elke Doos Modus sessie met alle gekozen boeken in doos 1. Doos Modus is bewust een "cram-modus": geen schema, geen meerdere-dagen voortgang, alleen één in zichzelf staande sessie waar je alle gekozen boeken naar doos 5 brengt. De ENIGE Doos-data die persisteert tussen sessies: je persoonlijke records per selectie (snelste tijd, minste fouten, langste streak). Dat zijn high scores zoals in een arcade-game — geen leervoortgang. Quiz Modus is je echte langetermijn-leertool.',
+      },
       // ─── 7. Doos Modus tijd ────────────────────────────────────────
       {
         q: 'Hoe werkt de tijd in Doos Modus?',
@@ -121,15 +126,12 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Wat betekenen Flexibel, Ontspannen, Gebalanceerd en Intensief?',
         a: 'Dit bepaalt hoe snel boeken terugkomen voor herhaling — technisch gezegd: bij welk vergetingsrisico FSRS de volgende herhaling plant. Flexibel = lichtste schema (~20% vergetingsrisico bij elke herhaling), bedoeld voor mensen met wisselende vrije tijd; intervallen worden ongeveer dubbel zo lang als bij Gebalanceerd. Ontspannen = wat strakker (~15%). Gebalanceerd = standaard (~10%), de aanbevolen instelling voor de meeste mensen. Intensief = strakste schema (~5%), korte intervallen, snel leren maar dagelijks oefenen vereist. Je kunt het altijd wisselen in Instellingen; bestaande boekvoortgang blijft intact — alleen toekomstige herhalingen gebruiken de nieuwe instelling.',
       },
-      // ─── 5b. Session size launcher ─────────────────────────────────
-      {
-        q: 'Wat zijn Snel, Normaal en Volledig op het startscherm?',
-        a: 'Drie sessielengtes voor Quiz Modus. Snel = 5 boeken (1-2 min, voor korte momenten). Normaal = 10 boeken (3-4 min, een lekkere middenweg). Volledig = alle boeken die nu klaarstaan (alle vandaag te oefenen boeken in één keer). Welke knoppen verschijnen hangt af van hoeveel boeken klaarstaan: bij weinig boeken zie je alleen Volledig (de andere zouden hetzelfde resultaat geven), bij veel boeken alle drie. De algoritme-werking is identiek — Snel pakt gewoon de 5 meest dringende boeken, FSRS update normaal. De rest blijft "klaar" voor de volgende sessie. Bedoeld voor mensen met wisselende vrije tijd: een sessie van 5 boeken is een echte sessie, geen "halve sessie".',
-      },
+      // ─── 5b. Session size launcher — REMOVED in v4.11; FAQ entry
+      //       cleared in v6 commit 22.
       // ─── 6. Streak ──────────────────────────────────────────────────
       {
-        q: 'Wat is de "dagen op rij" met het vlammetje?',
-        a: 'Je streak: het aantal opeenvolgende dagen waarop je minstens één quiz-sessie hebt gedaan. Eén dag overslaan breekt de streak; de dag erna terugkomen begint opnieuw bij 1. Dit is bedoeld als zachte aansporing tot dagelijkse consistentie — wat voor lange-termijngeheugen veel meer doet dan eens per week een uur trainen. De best-streak ernaast toont je langste streak ooit.',
+        q: 'Wat is de Streak in de Quiz?',
+        a: 'De Streak is de teller bovenaan in de Quiz die telt hoeveel correcte antwoorden je achter elkaar binnen je doeltijd geeft tijdens DEZE sessie. Eén fout antwoord of één te traag antwoord zet hem terug op 0. Bij sessie-einde stopt hij — een volgende sessie begint weer op 0. Naast je sessie-streak houdt BBF ook je beste-streak ooit bij. Dit is GEEN "dagen op rij" zoals in sommige andere apps — BBF heeft bewust geen daily-streak druk: spaced repetition werkt door pauzes tussen herhalingen, niet door verplicht elke dag in te loggen.',
       },
       // ─── 7. Six tiers ───────────────────────────────────────────────
       {
@@ -141,10 +143,15 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
         a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je doeltijd waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
+      // ─── 8b. After all 66 gold — v6 commit 22 ────────────────────────
+      {
+        q: 'Wat gebeurt er als alle 66 boeken een gouden lijn hebben?',
+        a: 'Dan heb je de "race naar 66 gouden lijnen" gehaald — een echte mijlpaal. Wat is het volgende? NIET resetten via Instellingen → Data: dat wist je hele FSRS-leervoortgang (alle niveaus, intervallen, records) en is een nuclear option voor wanneer je echt vanaf nul wilt beginnen. Voor "ik wil opnieuw de race ervaren" is dat veel te ingrijpend. Wat WEL werkt: blijf gewoon trainen via Quiz Modus. Het FSRS-algoritme blijft achter de schermen je boeken plannen — soms komen ze terug omdat hun stabiliteit zakt. Als je dan traag of fout antwoordt op een boek, valt zijn gouden lijn af, en kun je hem weer terug verdienen. Zo blijft de "race" subtiel doorgaan, zonder dat je iets weggooit.',
+      },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
-        q: 'Kan ik een quiz pauzeren?',
-        a: 'Eigenlijk niet — maar dat is geen probleem. Tik op "← Terug" en je gaat direct naar het startscherm. Je gedane antwoorden zijn al opgeslagen (FSRS commit per antwoord), dus geen voortgang verloren. Wel wordt je sessie officieel afgesloten zodra je weggaat. Wil je later doorgaan, dan tik je opnieuw op "Start Quiz Mode" — de boeken die je nog niet had gedaan, komen vanzelf weer aan de beurt.',
+        q: 'Kan ik een quiz pauzeren? En wat doet "Onderbroken sessie weggooien"?',
+        a: 'Ja, je kunt pauzeren. Tik op "← Terug" tijdens een sessie en BBF maakt automatisch een snapshot van je huidige sessie (welke vraag je had, sessie-score, sessie-streak, sessie-trainingstijd). Op het startscherm verschijnt dan "▶ Sessie hervatten" — daarmee ga je verder waar je was. Daaronder staat ook "Onderbroken sessie weggooien". Belangrijk om te weten: Weggooien verliest alleen je sessie-administratie (sessie-streak, sessie-tijd, één gecombineerde history-entry). Het verliest GEEN leervoortgang — alle gouden lijnen, FSRS-niveaus en persoonlijke records die je tijdens de gepauzeerde sessie hebt verdiend, staan al permanent op je profiel opgeslagen. Discard is dus veiliger dan het klinkt.',
       },
 
       // ─── Voortgang begrijpen — vervolg ──────────────────────────────
@@ -204,6 +211,11 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       {
         q: 'Ik ben sneller/langzamer dan gemiddeld. Moet ik iets aanpassen?',
         a: 'Ja. Pas de doeltijd aan via Instellingen → Training → Algemeen → "Doeltijd per boek". Verlaag het als het te makkelijk is, verhoog het als je vaak correct bent maar als "te traag" wordt gemarkeerd.',
+      },
+      // ─── Records and target time change — v6 commit 22 ────────────
+      {
+        q: 'Werken mijn records nog als ik de doeltijd wijzig?',
+        a: 'Ja, je bestaande records blijven gewoon staan. Ze zijn historisch — gemeten tegen jouw doeltijd op het moment dat je het record zette. Als je naar een kortere doeltijd schakelt, kun je nog steeds bestaande tijden verbeteren (een nieuw record = strikt sneller dan voorheen). Wel een nuance: een correct antwoord telt alleen mee als "binnen doeltijd" als het inderdaad binnen de NU ingestelde doeltijd valt. Een 5.2s record uit een 10s-doeltijd-tijdperk blijft staan, maar een 4.5s antwoord onder een 4s-doeltijd telt nu als "te traag" en krijgt geen record-credit, ook al was het sneller dan het record. Wil je je records frisser maken bij een nieuwe doeltijd? Train gewoon door — sneller dan je oude record blijft sneller, ongeacht doeltijd.',
       },
 
       // ─── Data, opslag en delen ──────────────────────────────────────
@@ -339,6 +351,11 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'Does Box Mode affect my FSRS schedule or my streak?',
         a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status stays the same. Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won\'t defend your streak. The only data that persists is your personal best per selection (fastest time, fewest mistakes, longest streak).',
       },
+      // ─── 6b. Box Mode persistence — v6 commit 22 ─────────────────────
+      {
+        q: 'Does Box Mode start fresh every time?',
+        a: 'Yes. Unlike Quiz Mode (where your learning progress persists across sessions), every Box Mode session starts with all selected books in box 1. Box Mode is intentionally a "cram mode": no schedule, no multi-day progression, just one self-contained session where you bring all selected books to box 5. The ONLY Box data that persists between sessions: your personal bests per scope (fastest time, fewest mistakes, longest streak). Those are high scores like in an arcade game — not learning progress. Quiz Mode is your real long-term learning tool.',
+      },
       // ─── 7. Box Mode timer ──────────────────────────────────────────
       {
         q: 'How does the timer in Box Mode work?',
@@ -349,15 +366,12 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'What do Flexible, Relaxed, Balanced, and Intensive mean?',
         a: 'This controls how often books come back for review — technically: at what forgetting risk FSRS schedules the next repetition. Flexible = lightest schedule (~20% forgetting risk at each repetition), designed for people with irregular practice time; intervals roughly double compared to Balanced. Relaxed = a bit tighter (~15%). Balanced = the standard (~10%), recommended for most people. Intensive = tightest schedule (~5%), short intervals, fast learning but requires daily practice. You can switch any time in Settings; existing book progress stays intact — only future repetitions use the new setting.',
       },
-      // ─── 5b. Session size launcher ─────────────────────────────────
-      {
-        q: 'What are Quick, Standard, and Full on the home screen?',
-        a: 'Three session lengths for Quiz Mode. Quick = 5 books (1-2 min, for short moments). Standard = 10 books (3-4 min, a comfortable middle ground). Full = all books currently ready (everything due today in one go). Which buttons appear depends on how many books are ready: when few are due you only see Full (the others would produce the same session), when many are due you see all three. The algorithm behaviour is identical — Quick simply picks the 5 most-urgent books, FSRS updates normally. The rest stays "ready" for next time. Designed for people with irregular practice time: a 5-book session is a real session, not a "half session".',
-      },
+      // ─── 5b. Session size launcher — REMOVED in v4.11; FAQ entry
+      //       cleared in v6 commit 22.
       // ─── 6. Streak ──────────────────────────────────────────────────
       {
-        q: 'What is the "day streak" with the flame?',
-        a: 'Your streak: the number of consecutive days on which you\'ve done at least one quiz session. Skipping a day breaks the streak; coming back the day after starts at 1 again. It\'s a gentle nudge toward daily consistency — which does more for long-term memory than a one-hour session once a week. The "Best" next to it shows your longest streak ever.',
+        q: 'What is the Streak in the Quiz?',
+        a: 'The Streak is the counter at the top of the Quiz that tracks how many correct answers within your target time you give in a row during THIS session. One wrong answer or one too-slow answer resets it to 0. When the session ends the streak ends — your next session starts at 0 again. Alongside the session streak BBF also tracks your best-streak ever. This is NOT a "days in a row" counter like some other apps — BBF deliberately has no daily-streak pressure: spaced repetition works through pauses between reviews, not by forcing you to log in every day.',
       },
       // ─── 7. Six tiers ───────────────────────────────────────────────
       {
@@ -369,10 +383,15 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
         a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your target time. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
       },
+      // ─── 8b. After all 66 gold — v6 commit 22 ────────────────────────
+      {
+        q: 'What happens when all 66 books have a gold line?',
+        a: 'You\'ve completed the "race to 66 gold lines" — a real milestone. What\'s next? DO NOT reset via Settings → Data: that wipes your entire FSRS learning progress (all tiers, intervals, records) and is a nuclear option for when you really want to start from scratch. For "I want to do the race again" it\'s way too drastic. What DOES work: just keep training via Quiz Mode. The FSRS algorithm keeps scheduling books behind the scenes — sometimes they come back because their stability has dropped. If you then answer slowly or wrong on a book, its gold line drops off, and you can earn it back. That way the "race" subtly continues, without throwing anything away.',
+      },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
-        q: 'Can I pause a quiz session?',
-        a: 'Not really — but that\'s fine. Tap "← Back" and you\'ll go straight to the home screen. Your answered questions are already saved (FSRS commits per answer), so no progress is lost. The session is officially closed when you leave, though. To continue later, tap "Start Quiz Mode" again — books you hadn\'t done yet will naturally come up again.',
+        q: 'Can I pause a quiz session? And what does "Discard paused session" do?',
+        a: 'Yes, you can pause. Tap "← Back" during a session and BBF automatically snapshots your current session (which question you were on, session score, session streak, session training time). On the home screen you\'ll then see "▶ Resume session" — that picks up where you left off. Below it there\'s also "Discard paused session". Important to know: Discard only loses your session bookkeeping (session streak, session time, one combined history entry). It does NOT lose any learning progress — all gold lines, FSRS tiers, and personal bests you earned during the paused session are already permanently saved on your profile. Discard is safer than it sounds.',
       },
 
       // ─── Understanding progress — continued ─────────────────────────
@@ -431,6 +450,11 @@ No pressure to practice daily. Train when you have the time.`,
       {
         q: "I'm faster/slower than average. Should I change any settings?",
         a: 'Yes. Adjust the target time via Settings → Training → Shared → "Target time per book". Lower it if too easy, raise it if you are often correct but marked as "too slow".',
+      },
+      // ─── Records and target time change — v6 commit 22 ────────────
+      {
+        q: 'Do my records still work if I change the target time?',
+        a: 'Yes, your existing records stay as they are. They\'re historical — measured against your target time at the moment you set the record. If you switch to a shorter target time, you can still beat existing times (a new record = strictly faster than before). One nuance: a correct answer only counts as "within target time" if it indeed falls within the CURRENTLY configured target time. A 5.2s record from a 10s-target era stays, but a 4.5s answer under a 4s target now counts as "too slow" and gets no record credit, even though it was faster than the record. Want fresher records under a new target time? Just keep training — faster than your old record stays faster, regardless of target time.',
       },
 
       // ─── Data, storage, sharing ─────────────────────────────────────
