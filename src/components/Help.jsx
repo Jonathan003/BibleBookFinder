@@ -96,31 +96,6 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
     ],
     faqTitle: 'Veelgestelde vragen',
     faq: [
-      // ─── 4. Doos Modus introduction ────────────────────────────────
-      {
-        q: 'Wat is Doos Modus en waarvoor dient het?',
-        a: 'Doos Modus is een aparte oefenmodus, los van het normale schema. Alle gekozen boeken beginnen in doos 1. Een goed antwoord verplaatst dat boek een doos hoger; een fout antwoord verplaatst het een doos lager. Je sessie is klaar wanneer alle gekozen boeken in doos 5 (de "verankerde" doos) staan. Het is een snelle, op zichzelf staande sessie — typisch 10-20 minuten — bedoeld voor wanneer je gewoon zin hebt om te trainen zonder je voortgang te beïnvloeden. Een persoonlijk record per selectie (alle 66, alleen Pentateuch, alleen Evangeliën, etc.) wordt bijgehouden voor tijd, fouten, en langste reeks. Je kunt zoveel sessies achter elkaar doen als je wilt; alleen je beste tijd telt mee.',
-      },
-      // ─── 5. Doos Modus vs Quiz Modus ───────────────────────────────
-      {
-        q: 'Wat is het verschil tussen Doos Modus en Quiz Modus?',
-        a: 'Quiz Modus volgt het FSRS-schema — je werkt aan boeken die volgens het algoritme nu aan de beurt zijn. Doos Modus negeert het schema volledig: je kiest een selectie (alle 66 of een groep), elk boek begint in doos 1, en je werkt totdat alles in doos 5 staat. Het is een cram-modus zonder schema-impact: je beheersniveaus, gouden lijntjes, streak en herhaalintervallen veranderen er niet door. Gebruik Quiz voor lange-termijngeheugen, Doos Modus voor een korte intensieve sessie wanneer je iets even goed wilt vastzetten — bijvoorbeeld voor een vergadering waarin je snel moet kunnen opzoeken.',
-      },
-      // ─── 6. Doos Modus and the schedule ────────────────────────────
-      {
-        q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
-        a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status en je Quiz Modus best-streak blijven hetzelfde. De enige data die uit een Doos Modus-sessie overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
-      },
-      // ─── 6b. Doos Modus persistence — v6 commit 22 ─────────────────
-      {
-        q: 'Begint Doos Modus elke keer opnieuw?',
-        a: 'Ja. In tegenstelling tot Quiz Modus (waar je leervoortgang over sessies heen blijft staan) begint elke Doos Modus sessie met alle gekozen boeken in doos 1. Doos Modus is bewust een "cram-modus": geen schema, geen meerdere-dagen voortgang, alleen één in zichzelf staande sessie waar je alle gekozen boeken naar doos 5 brengt. De ENIGE Doos-data die persisteert tussen sessies: je persoonlijke records per selectie (snelste tijd, minste fouten, langste streak). Dat zijn high scores zoals in een arcade-game — geen leervoortgang. Quiz Modus is je echte langetermijn-leertool.',
-      },
-      // ─── 7. Doos Modus tijd ────────────────────────────────────────
-      {
-        q: 'Hoe werkt de tijd in Doos Modus?',
-        a: 'Standaard heb je 10 seconden per vraag in Doos Modus, met een aftellende balk bovenaan het scherm. Als de tijd op is voordat je antwoordt, licht het gevraagde boek blauw op en moet je daarop tikken om verder te gaan — hetzelfde gedrag als bij een fout antwoord. Het boek zakt dan ook één doos. Je kunt de doeltijd aanpassen via Instellingen → Training → Algemeen → "Doeltijd per boek" (instelbaar tussen 2 en 30 seconden). Zet hem op 30 seconden als je liever zonder tijdsdruk oefent; zet hem op 2-5 seconden voor een echte uitdaging. Dezelfde instelling stuurt ook de timer in Quiz Modus.',
-      },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
         q: 'Wat betekenen Flexibel, Ontspannen, Gebalanceerd en Intensief?',
@@ -148,10 +123,44 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Wat gebeurt er als alle 66 boeken een gouden lijn hebben?',
         a: 'Dan heb je de "race naar 66 gouden lijnen" gehaald — een echte mijlpaal. Wat is het volgende? NIET resetten via Instellingen → Data: dat wist je hele FSRS-leervoortgang (alle niveaus, intervallen, records) en is een nuclear option voor wanneer je echt vanaf nul wilt beginnen. Voor "ik wil opnieuw de race ervaren" is dat veel te ingrijpend. Wat WEL werkt: blijf gewoon trainen via Quiz Modus. Het FSRS-algoritme blijft achter de schermen je boeken plannen — soms komen ze terug omdat hun stabiliteit zakt. Als je dan traag of fout antwoordt op een boek, valt zijn gouden lijn af, en kun je hem weer terug verdienen. Zo blijft de "race" subtiel doorgaan, zonder dat je iets weggooit.',
       },
+      // ─── 8c. Time decay on gold lines — v6 commit 30 ──────────────────
+      {
+        q: 'Verlies ik mijn gouden lijnen als ik een tijd niet oefen?',
+        a: 'Niet direct door tijdsverloop alleen — een gouden lijn verdwijnt pas als je een review fout of te traag doet. Maar in de praktijk gaan die twee samen: na een lange pauze ga je meestal trager antwoorden, en dat telt als "te traag" tegenover je ingestelde doeltijd. Zo corrigeert het systeem zichzelf via de echte leerinteractie — niet via een passieve klok of tijdteller. Achter de schermen blijft FSRS wel rekenen: boeken die je lang niet hebt gezien komen vanzelf vaker terug in Quiz Modus. Kortom: je verliest niets door even niet te oefenen, maar je vertrouwen wordt natuurlijk opnieuw getoetst zodra je terugkomt.',
+      },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Kan ik een quiz pauzeren? En wat doet "Onderbroken sessie weggooien"?',
         a: 'Ja, je kunt pauzeren. Tik op "← Terug" tijdens een sessie en BBF maakt automatisch een snapshot van je huidige sessie (welke vraag je had, sessie-score, sessie-streak, sessie-trainingstijd). Op het startscherm verschijnt dan "▶ Sessie hervatten" — daarmee ga je verder waar je was. Daaronder staat ook "Onderbroken sessie weggooien". Belangrijk om te weten: Weggooien verliest alleen je sessie-administratie (sessie-streak, sessie-tijd, één gecombineerde history-entry). Het verliest GEEN leervoortgang — alle gouden lijnen, FSRS-niveaus en persoonlijke records die je tijdens de gepauzeerde sessie hebt verdiend, staan al permanent op je profiel opgeslagen. Discard is dus veiliger dan het klinkt.',
+      },
+
+      // ─── Doos Modus — aparte modus (verplaatst hierheen in v6 commit 31) ───
+      // De Doos Modus FAQs staan na de Quiz Modus kernconcepten omdat
+      // Quiz Modus de default training is. Een nieuwe gebruiker leert
+      // eerst Quiz Modus + de centrale signalen kennen (Pace, Streak,
+      // niveaus, gouden lijn, pauze), en pas later "wat is Doos Modus
+      // eigenlijk?". Vóór v6 commit 31 stond dit blok bovenaan, wat
+      // verwarrend was: de antwoorden verwezen al naar Quiz-concepten
+      // die nog niet waren uitgelegd.
+      {
+        q: 'Wat is Doos Modus en waarvoor dient het?',
+        a: 'Doos Modus is een aparte oefenmodus, los van het normale schema. Alle gekozen boeken beginnen in doos 1. Een goed antwoord verplaatst dat boek een doos hoger; een fout antwoord verplaatst het een doos lager. Je sessie is klaar wanneer alle gekozen boeken in doos 5 (de "verankerde" doos) staan. Het is een snelle, op zichzelf staande sessie — typisch 10-20 minuten — bedoeld voor wanneer je gewoon zin hebt om te trainen zonder je voortgang te beïnvloeden. Een persoonlijk record per selectie (alle 66, alleen Pentateuch, alleen Evangeliën, etc.) wordt bijgehouden voor tijd, fouten, en langste reeks. Je kunt zoveel sessies achter elkaar doen als je wilt; alleen je beste tijd telt mee.',
+      },
+      {
+        q: 'Wat is het verschil tussen Doos Modus en Quiz Modus?',
+        a: 'Quiz Modus volgt het FSRS-schema — je werkt aan boeken die volgens het algoritme nu aan de beurt zijn. Doos Modus negeert het schema volledig: je kiest een selectie (alle 66 of een groep), elk boek begint in doos 1, en je werkt totdat alles in doos 5 staat. Het is een cram-modus zonder schema-impact: je beheersniveaus, gouden lijntjes, streak en herhaalintervallen veranderen er niet door. Gebruik Quiz voor lange-termijngeheugen, Doos Modus voor een korte intensieve sessie wanneer je iets even goed wilt vastzetten — bijvoorbeeld voor een vergadering waarin je snel moet kunnen opzoeken.',
+      },
+      {
+        q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
+        a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status en je Quiz Modus best-streak blijven hetzelfde. De enige data die uit een Doos Modus-sessie overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
+      },
+      {
+        q: 'Begint Doos Modus elke keer opnieuw?',
+        a: 'Ja. In tegenstelling tot Quiz Modus (waar je leervoortgang over sessies heen blijft staan) begint elke Doos Modus sessie met alle gekozen boeken in doos 1. Doos Modus is bewust een "cram-modus": geen schema, geen meerdere-dagen voortgang, alleen één in zichzelf staande sessie waar je alle gekozen boeken naar doos 5 brengt. De ENIGE Doos-data die persisteert tussen sessies: je persoonlijke records per selectie (snelste tijd, minste fouten, langste streak). Dat zijn high scores zoals in een arcade-game — geen leervoortgang. Quiz Modus is je echte langetermijn-leertool.',
+      },
+      {
+        q: 'Hoe werkt de tijd in Doos Modus?',
+        a: 'Standaard heb je 10 seconden per vraag in Doos Modus, met een aftellende balk bovenaan het scherm. Als de tijd op is voordat je antwoordt, licht het gevraagde boek blauw op en moet je daarop tikken om verder te gaan — hetzelfde gedrag als bij een fout antwoord. Het boek zakt dan ook één doos. Je kunt de doeltijd aanpassen via Instellingen → Training → Algemeen → "Doeltijd per boek" (instelbaar tussen 2 en 30 seconden). Zet hem op 30 seconden als je liever zonder tijdsdruk oefent; zet hem op 2-5 seconden voor een echte uitdaging. Dezelfde instelling stuurt ook de timer in Quiz Modus.',
       },
 
       // ─── Voortgang begrijpen — vervolg ──────────────────────────────
@@ -196,7 +205,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         q: 'Wat als ik de app lang niet gebruik?',
-        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt zal "Te doen" in de quiz hoger staan dan voorheen — een achterstand, geen schuld. Pak gewoon op waar je gebleven was, in je eigen tempo. Je streak resetset wel, maar je tier-vooruitgang en je beste-streak blijven bewaard.',
+        a: 'Geen probleem. Er is geen straf voor een pauze. Wanneer je terugkomt zal "Te doen" in de quiz hoger staan dan voorheen — een achterstand, geen schuld. Pak gewoon op waar je gebleven was, in je eigen tempo. Je tier-voortgang, beste-streak en gouden lijnen blijven allemaal bewaard. De Streak die je tijdens een Quiz-sessie ziet is een per-sessie combo (zie ook de aparte FAQ daarover), dus die start automatisch fris bij elke nieuwe sessie — er is geen dagelijkse streak om te verliezen door inactiviteit.',
       },
 
       // ─── Instellingen / Aanpassingen ────────────────────────────────
@@ -336,31 +345,6 @@ No pressure to practice daily. Train when you have the time.`,
     ],
     faqTitle: 'Frequently asked questions',
     faq: [
-      // ─── 2. Box Mode introduction ───────────────────────────────────
-      {
-        q: 'What is Box Mode and what is it for?',
-        a: 'Box Mode is a separate practice mode, independent of the regular schedule. Every selected book starts in box 1. A correct answer moves that book up one box; a wrong answer moves it down one box. Your session is finished when every selected book reaches box 5 (the "rooted" box). It\'s a quick, standalone session — typically 10-20 minutes — meant for moments when you simply feel like training without affecting your progress. Personal bests per selection (all 66, just Pentateuch, just Gospels, etc.) are tracked for time, mistakes, and longest streak. You can run as many sessions back-to-back as you want; only your best time counts.',
-      },
-      // ─── 3. Box Mode vs Quiz Mode ──────────────────────────────────
-      {
-        q: 'How is Box Mode different from Quiz Mode?',
-        a: 'Quiz Mode follows the FSRS schedule — you work on books the algorithm decides are due now. Box Mode ignores the schedule entirely: you pick a selection (all 66 or a group), every book starts in box 1, and you work until everything reaches box 5. It\'s a cram mode with no schedule impact: your mastery levels, gold lines, streak, and review intervals don\'t change because of it. Use Quiz for long-term memory, Box Mode for a quick intensive session when you want to nail something down fast — for instance before a meeting where you\'ll need to look up books quickly.',
-      },
-      // ─── 4. Box Mode and the schedule ───────────────────────────────
-      {
-        q: 'Does Box Mode affect my FSRS schedule or my streak?',
-        a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status and Quiz Mode best-streak stay the same. The only data that persists from a Box Mode session is your personal best per scope (fastest time, fewest mistakes, longest streak).',
-      },
-      // ─── 6b. Box Mode persistence — v6 commit 22 ─────────────────────
-      {
-        q: 'Does Box Mode start fresh every time?',
-        a: 'Yes. Unlike Quiz Mode (where your learning progress persists across sessions), every Box Mode session starts with all selected books in box 1. Box Mode is intentionally a "cram mode": no schedule, no multi-day progression, just one self-contained session where you bring all selected books to box 5. The ONLY Box data that persists between sessions: your personal bests per scope (fastest time, fewest mistakes, longest streak). Those are high scores like in an arcade game — not learning progress. Quiz Mode is your real long-term learning tool.',
-      },
-      // ─── 7. Box Mode timer ──────────────────────────────────────────
-      {
-        q: 'How does the timer in Box Mode work?',
-        a: 'By default you have 10 seconds per question in Box Mode, with a depleting bar at the top of the screen. If the timer expires before you answer, the asked book lights up blue and you must tap it to continue — same behavior as a wrong answer. The book also drops one box. You can adjust the target time via Settings → Training → Shared → "Target time per book" (settable between 2 and 30 seconds). Set it to 30 seconds if you prefer no time pressure; set it to 2-5 seconds for a real challenge. The same setting also drives the timer in Quiz Mode.',
-      },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
         q: 'What do Flexible, Relaxed, Balanced, and Intensive mean?',
@@ -388,10 +372,44 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'What happens when all 66 books have a gold line?',
         a: 'You\'ve completed the "race to 66 gold lines" — a real milestone. What\'s next? DO NOT reset via Settings → Data: that wipes your entire FSRS learning progress (all tiers, intervals, records) and is a nuclear option for when you really want to start from scratch. For "I want to do the race again" it\'s way too drastic. What DOES work: just keep training via Quiz Mode. The FSRS algorithm keeps scheduling books behind the scenes — sometimes they come back because their stability has dropped. If you then answer slowly or wrong on a book, its gold line drops off, and you can earn it back. That way the "race" subtly continues, without throwing anything away.',
       },
+      // ─── 8c. Time decay on gold lines — v6 commit 30 ──────────────────
+      {
+        q: 'Will I lose my gold lines if I don\'t practice for a while?',
+        a: 'Not directly from time alone — a gold line only disappears when you answer a review wrong or too slowly. But in practice the two go together: after a long break you tend to answer more slowly, and that counts as "too slow" against your configured target time. So the system corrects itself through the actual learning interaction — not through a passive clock or timer. Behind the scenes FSRS keeps running: books you haven\'t seen for a while come back more often in Quiz Mode on their own. In short: you don\'t lose anything by skipping a few sessions, but your confidence gets naturally retested as soon as you come back.',
+      },
       // ─── 9. Pause ──────────────────────────────────────────────────
       {
         q: 'Can I pause a quiz session? And what does "Discard paused session" do?',
         a: 'Yes, you can pause. Tap "← Back" during a session and BBF automatically snapshots your current session (which question you were on, session score, session streak, session training time). On the home screen you\'ll then see "▶ Resume session" — that picks up where you left off. Below it there\'s also "Discard paused session". Important to know: Discard only loses your session bookkeeping (session streak, session time, one combined history entry). It does NOT lose any learning progress — all gold lines, FSRS tiers, and personal bests you earned during the paused session are already permanently saved on your profile. Discard is safer than it sounds.',
+      },
+
+      // ─── Box Mode — separate practice mode (moved here in v6 commit 31) ────
+      // The Box Mode FAQs sit after the Quiz Mode core concepts because
+      // Quiz Mode is the default training experience. A new user first
+      // learns Quiz Mode and its core signals (Pace, Streak, tiers,
+      // gold line, pause), and only later asks "what is Box Mode
+      // actually?". Before v6 commit 31 this block was at the top,
+      // which was confusing: the answers already referred to Quiz
+      // concepts that hadn't been explained yet.
+      {
+        q: 'What is Box Mode and what is it for?',
+        a: 'Box Mode is a separate practice mode, independent of the regular schedule. Every selected book starts in box 1. A correct answer moves that book up one box; a wrong answer moves it down one box. Your session is finished when every selected book reaches box 5 (the "rooted" box). It\'s a quick, standalone session — typically 10-20 minutes — meant for moments when you simply feel like training without affecting your progress. Personal bests per selection (all 66, just Pentateuch, just Gospels, etc.) are tracked for time, mistakes, and longest streak. You can run as many sessions back-to-back as you want; only your best time counts.',
+      },
+      {
+        q: 'How is Box Mode different from Quiz Mode?',
+        a: 'Quiz Mode follows the FSRS schedule — you work on books the algorithm decides are due now. Box Mode ignores the schedule entirely: you pick a selection (all 66 or a group), every book starts in box 1, and you work until everything reaches box 5. It\'s a cram mode with no schedule impact: your mastery levels, gold lines, streak, and review intervals don\'t change because of it. Use Quiz for long-term memory, Box Mode for a quick intensive session when you want to nail something down fast — for instance before a meeting where you\'ll need to look up books quickly.',
+      },
+      {
+        q: 'Does Box Mode affect my FSRS schedule or my streak?',
+        a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status and Quiz Mode best-streak stay the same. The only data that persists from a Box Mode session is your personal best per scope (fastest time, fewest mistakes, longest streak).',
+      },
+      {
+        q: 'Does Box Mode start fresh every time?',
+        a: 'Yes. Unlike Quiz Mode (where your learning progress persists across sessions), every Box Mode session starts with all selected books in box 1. Box Mode is intentionally a "cram mode": no schedule, no multi-day progression, just one self-contained session where you bring all selected books to box 5. The ONLY Box data that persists between sessions: your personal bests per scope (fastest time, fewest mistakes, longest streak). Those are high scores like in an arcade game — not learning progress. Quiz Mode is your real long-term learning tool.',
+      },
+      {
+        q: 'How does the timer in Box Mode work?',
+        a: 'By default you have 10 seconds per question in Box Mode, with a depleting bar at the top of the screen. If the timer expires before you answer, the asked book lights up blue and you must tap it to continue — same behavior as a wrong answer. The book also drops one box. You can adjust the target time via Settings → Training → Shared → "Target time per book" (settable between 2 and 30 seconds). Set it to 30 seconds if you prefer no time pressure; set it to 2-5 seconds for a real challenge. The same setting also drives the timer in Quiz Mode.',
       },
 
       // ─── Understanding progress — continued ─────────────────────────
@@ -435,7 +453,7 @@ No pressure to practice daily. Train when you have the time.`,
       },
       {
         q: "What happens if I don't use the app for a while?",
-        a: 'Nothing bad. There is no penalty for taking a break. When you come back the in-quiz "Due" counter will be higher than before — a backlog, not a debt. Just pick up where you left off, at your own pace. Your streak will reset, but your tier progress and best-streak record stay intact.',
+        a: 'Nothing bad. There is no penalty for taking a break. When you come back the in-quiz "Due" counter will be higher than before — a backlog, not a debt. Just pick up where you left off, at your own pace. Your tier progress, best-streak record, and gold lines all stay intact. The Streak you see during a Quiz session is a per-session combo (see the separate FAQ on this), so it starts fresh at every new session — there\'s no daily streak to lose from inactivity.',
       },
 
       // ─── Settings & adjustments ─────────────────────────────────────
