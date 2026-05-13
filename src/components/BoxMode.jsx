@@ -805,6 +805,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
         aria-valuenow={(!feedback && timerStart != null) ? timerProgress : 0}
       >
         <div
+          key={timerStart || 'idle'}
           className="boxmode-timer-bar-fill"
           style={{
             // During feedback or before/after a timer cycle, fill
