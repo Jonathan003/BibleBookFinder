@@ -109,7 +109,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // ─── 6. Doos Modus and the schedule ────────────────────────────
       {
         q: 'Beïnvloedt Doos Modus mijn FSRS-schema of mijn streak?',
-        a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status blijft hetzelfde. Je dagelijkse streak telt alleen Quiz Modus-sessies, dus een Doos Modus-sessie alleen verdedigt je streak niet. De enige data die overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
+        a: 'Nee. Doos Modus is volledig apart van het reguliere systeem. Boeken die je in Doos Modus beantwoordt — goed of fout — veranderen niets aan hun FSRS-stabiliteit, retrievability, niveau of plannings-interval. Je beheers-status en je Quiz Modus best-streak blijven hetzelfde. De enige data die uit een Doos Modus-sessie overblijft is je persoonlijk record per selectie (snelste tijd, minste fouten, langste reeks).',
       },
       // ─── 6b. Doos Modus persistence — v6 commit 22 ─────────────────
       {
@@ -349,7 +349,7 @@ No pressure to practice daily. Train when you have the time.`,
       // ─── 4. Box Mode and the schedule ───────────────────────────────
       {
         q: 'Does Box Mode affect my FSRS schedule or my streak?',
-        a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status stays the same. Your daily streak only counts Quiz Mode sessions, so a Box Mode session alone won\'t defend your streak. The only data that persists is your personal best per selection (fastest time, fewest mistakes, longest streak).',
+        a: 'No. Box Mode is fully separate from the regular system. Books you answer in Box Mode — right or wrong — change nothing about their FSRS stability, retrievability, level, or scheduled interval. Your mastery status and Quiz Mode best-streak stay the same. The only data that persists from a Box Mode session is your personal best per scope (fastest time, fewest mistakes, longest streak).',
       },
       // ─── 6b. Box Mode persistence — v6 commit 22 ─────────────────────
       {
