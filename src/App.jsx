@@ -4,7 +4,7 @@ import { bibleBooks, translations, groupNames } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats, getTierStats, TIERS, getConfidentCount, recordConfidentAttempt, migrateConfidentBuffers } from './fsrs';
 import { applyDeviceScoped } from './settingsScope';
-import { formatDuration } from './timeFormat';
+import { formatDuration, formatTimeAgo } from './timeFormat';
 import { getBoxModeBests } from './boxModeStorage';
 import { defaultConfig, mergeConfig } from './appConfig';
 import { InitialAvatar } from './components/Icons';
@@ -997,7 +997,9 @@ function App() {
                       >
                         <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
                         <span className="launcher-count">
-                          {t.resumeSessionDesc || 'Pick up where you left off'}
+                          {pausedBoxSession.pausedAt && formatTimeAgo(pausedBoxSession.pausedAt, lang)
+                            ? (t.resumePausedAt || 'Paused {when}').replace('{when}', formatTimeAgo(pausedBoxSession.pausedAt, lang))
+                            : (t.resumeSessionDesc || 'Pick up where you left off')}
                         </span>
                       </button>
                       <button
@@ -1032,7 +1034,9 @@ function App() {
                       >
                         <span className="launcher-label">▶ {t.resumeSession || 'Resume session'}</span>
                         <span className="launcher-count">
-                          {t.resumeSessionDesc || 'Pick up where you left off'}
+                          {pausedQuizSession.pausedAt && formatTimeAgo(pausedQuizSession.pausedAt, lang)
+                            ? (t.resumePausedAt || 'Paused {when}').replace('{when}', formatTimeAgo(pausedQuizSession.pausedAt, lang))
+                            : (t.resumeSessionDesc || 'Pick up where you left off')}
                         </span>
                       </button>
                       <button

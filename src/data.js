@@ -456,6 +456,10 @@ export const translations = {
 
     // ─── v2 home screen (Up Next panel) ──────────────────────────
     upNextEyebrow: 'Volgende',
+    // v6 commit 23: tijdsverloop in Resume CTA. {when} placeholder
+    // krijgt een Intl.RelativeTimeFormat string ingevuld via formatTimeAgo
+    // — bv. "Onderbroken 3 uur geleden" of "Onderbroken gisteren".
+    resumePausedAt: 'Onderbroken {when}',
     homeStartQuiz: 'Start Quiz Modus',
     homeStartBoxMode: 'Start Doos Modus',
     // v6 commit 20: zachte leidraad onder de Quiz launcher knop. Vervangt
@@ -749,6 +753,8 @@ export const translations = {
 
     // ─── v2 home screen (Up Next panel) ──────────────────────────
     upNextEyebrow: 'Up next',
+    // v6 commit 23: see NL section for rationale.
+    resumePausedAt: 'Paused {when}',
     homeStartQuiz: 'Start Quiz Mode',
     homeStartBoxMode: 'Start Box Mode',
     // v6 commit 20: see NL section above for rationale.
