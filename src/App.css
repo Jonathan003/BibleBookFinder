@@ -1228,18 +1228,30 @@
    too prominently for a secondary action. This makes it compact
    (44px), lighter-weight, and lower-opacity so it visually defers
    to the primary Resume button above. Still clearly a button —
-   keeps the rounded background, padding, and tap target. */
+   keeps the rounded background, padding, and tap target.
+
+   v6 commit 25: added explicit border + background + border-radius.
+   The global `button { background: none; border: none }` reset in
+   index.css strips defaults, and .home-launcher-btn itself sets no
+   background — Resume gets its visible box from .home-launcher-primary's
+   box-shadow. Without an explicit container Discard rendered as plain
+   text on desktop. The light border + bg-secondary fill gives it a
+   clear-but-secondary button shape on every platform. */
 .home-launcher-discard {
   min-height: 44px;
   padding: 0.5rem 1rem;
-  opacity: 0.7;
+  opacity: 0.75;
   font-weight: 500;
-  transition: opacity 0.15s ease;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
 .home-launcher-discard:hover,
 .home-launcher-discard:focus {
   opacity: 1;
+  background: var(--bg-tile-hover);
 }
 
 .home-launcher-discard .launcher-label {
