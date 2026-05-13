@@ -576,6 +576,15 @@ function App() {
       // start at zero rather than carrying over the current device's
       // counter (which would be misleading).
       totalQuizMs: userData.totalQuizMs ?? 0,
+      // Paused session snapshots (schema v5). Pre-v5 backups don't have
+      // these fields — `?? null` means a legacy restore wipes any
+      // paused session on the current device. Rationale: an explicit
+      // restore from an older backup is a "start fresh on this device"
+      // signal, so carrying over the current device's paused session
+      // (which doesn't match the just-restored FSRS/confident state)
+      // would be misleading. Modern v5 backups round-trip cleanly.
+      pausedQuizSession: userData.pausedQuizSession ?? null,
+      pausedBoxSession: userData.pausedBoxSession ?? null,
       settings: restoredConfig,
     });
     setConfig(restoredConfig);

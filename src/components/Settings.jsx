@@ -124,7 +124,16 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       //          Books that were confident-but-not-yet-Rooted lost
       //          their gold line on every backup/restore round-trip,
       //          which made the "X / 66 Vertrouwd" home stat drop.
-      _schemaVersion: 4,
+      // v5 added: pausedQuizSession + pausedBoxSession (mid-session
+      //          snapshot user can resume). Treated as user-invested
+      //          progress (modern best practice for save-state sync —
+      //          aligns with Steam Cloud / Google Play Saves / Netflix
+      //          Continue Watching patterns). Pre-v5 backups had these
+      //          silently dropped, so a cross-device restore lost any
+      //          in-progress session. `?? null` fallback on restore
+      //          means older backups still load cleanly, just with no
+      //          paused session to resume.
+      _schemaVersion: 5,
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -145,6 +154,13 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         lastActive: currentUser.lastActive || 0,
         masteryMsAtStart: currentUser.masteryMsAtStart || null,
         totalQuizMs: currentUser.totalQuizMs || 0,
+        // Paused session snapshots (added in schema v5). Each is either
+        // a full snapshot object (current question, sessionStreak,
+        // sessionScore, sessionMs, pausedAt, ...) or null when no
+        // paused session is active. Setting both to null on a fresh
+        // user keeps the JSON shape stable across backups.
+        pausedQuizSession: currentUser.pausedQuizSession || null,
+        pausedBoxSession: currentUser.pausedBoxSession || null,
       }
     };
     const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;
