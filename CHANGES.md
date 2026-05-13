@@ -1,3 +1,73 @@
+# v6 commit 32 — Catch up CHANGES.md (entries for commits 30 and 31)
+
+## What changed
+
+This commit adds CHANGES.md entries for the 2 commits since commit 29. Same pattern as v6 commits 11 and 29 — periodic documentation catch-up.
+
+## Why this matters
+
+A short catch-up keeps the rationale accurate to what was actually thought at the time, rather than reconstructed weeks later. The pattern from commit 11 onwards is: when a small batch of commits (2-5) ships, catch up CHANGES.md before the next batch starts. Long gaps (like the 18-commit gap caught up by commit 29) work but make individual rationales blurrier.
+
+# v6 commit 31 — FAQ reorder + streak misinformation fix
+
+## What changed
+
+Two categories of work in one commit, both rooted in the same audit pass:
+
+### 1. Box Mode FAQ block moved (NL + EN)
+
+Before: the Box Mode FAQs (introduction, vs Quiz Mode, schedule impact, persistence, timer) sat at the very top of the FAQ array, immediately after the "How it works" section. A new user reading the FAQ top-to-bottom encountered Box Mode references to Quiz Mode concepts (gold lines, streak, mastery levels) BEFORE those concepts had been explained.
+
+After: the Box Mode FAQs now sit AFTER the Quiz Mode core concepts (Pace, Streak, Six tiers, Gold line, All-66 gold, Time decay, Pause). This matches the natural reading order: Quiz Mode is the default training experience; Box Mode is the alternate practice mode that's introduced second.
+
+A new comment block above the moved section documents the reason and the v6 commit 31 marker, so future audits know to look here rather than wondering why the FAQ structure shifts mid-array.
+
+### 2. Streak misinformation fix (NL + EN)
+
+The FAQ "What happens if I don't use the app for a while?" (and NL equivalent) ended with: "Your streak will reset, but your tier progress and best-streak record stay intact." This was outdated: commit 22 documented that BBF has NO daily streak — the Streak shown in-quiz is a per-session combo counter, not a Duolingo-style consecutive-days metric. So nothing "resets" from inactivity; the combo simply starts fresh at each new session.
+
+The replacement explicitly states: tier progress, best-streak, AND gold lines all stay intact. The Streak is a per-session combo, so there's no daily streak to lose. Cross-references the separate Streak FAQ for the full explanation.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — Box Mode block moved (NL+EN), streak FAQ rewritten (NL+EN), section comment added above the moved block
+
+## Why this matters
+
+The reorder fixes a long-standing readability quirk: the FAQ used to forward-reference concepts that hadn't been introduced yet. The streak fix closes the same category of bug we cleaned up in commits 22 and 26 — outdated FAQ text that contradicts current product behavior. Outdated docs are actively harmful (worse than missing docs) because they erode trust in everything else in the same file.
+
+# v6 commit 30 — FAQ entry on gold-line decay through time
+
+## What changed
+
+One new FAQ entry added between "What happens when all 66 books have a gold line?" (8b) and "Can I pause a quiz session?" (9), in both NL and EN:
+
+> "Will I lose my gold lines if I don't practice for a while?"
+>
+> Not directly from time alone — a gold line only disappears when you answer a review wrong or too slowly. But in practice the two go together: after a long break you tend to answer more slowly, and that counts as "too slow" against your configured target time. So the system corrects itself through the actual learning interaction — not through a passive clock or timer...
+
+The full answer explains BBF's implicit decay mechanism: the ring buffer's `isWithinTime` requirement means correct-but-slow answers count as misses, just like wrong answers. After a long pause, the user's first session naturally retests their confidence — slowness is the operational proxy for low retrievability — without any clock-driven UI indicator.
+
+## What didn't ship (and why)
+
+This entry was the small final output of a much broader design discussion. The original question was whether BBF should add a visual "needs refresh" indicator on tiles where FSRS retrievability has dropped below threshold — Duolingo's "cracked skill" pattern as an inspiration, with a small orange ↻ icon in the corner of confident tiles.
+
+Research across Anki, SuperMemo, RemNote, and modern FSRS apps showed: no major SRS app does this. Anki/SuperMemo treat mastery as binary (mature vs not) and let decay live in scheduling, not visuals. Duolingo does crack-skills but users complain it feels punitive and opaque. Mochi's lack of any decay indicator produces the opposite failure mode ("forgetting hell" when cards silently cross some invisible age threshold).
+
+The decisive observation, from Jonathan: BBF's `isWithinTime` rule in `recordConfidentAttempt` already provides natural decay through the actual learning interaction. A user returning from a long pause tends to answer more slowly, which the ring buffer treats as a miss, which demotes the gold line. This is elegant and intrinsic to the learning task, not a separate UI layer with its own threshold and visual design.
+
+So the commit shipped the FAQ entry that documents this existing behavior accurately, and dropped the refresher-indicator proposal entirely. The discussion in commit 30's session is preserved in conversation logs; the rationale is in this entry; the code stays unchanged.
+
+## Files changed
+
+- **`src/components/Help.jsx`** — one FAQ entry inserted, NL + EN
+
+## Why this matters
+
+A user wondering "do I lose my gold lines from inactivity?" now has a direct, accurate answer instead of having to reason about FSRS internals — or risk concluding (wrongly) that gold lines decay invisibly with time. The entry implicitly reinforces BBF's no-pressure ethos: time alone doesn't punish you, but a review will retest you naturally when you return.
+
+The "what didn't ship" section above also serves as a tombstone for the refresher-indicator design proposal, so future-Jonathan reading this in six months doesn't have to re-discover the research or re-litigate the decision.
+
 # v6 commit 29 — Catch up CHANGES.md (entries for commits 11 through 28)
 
 ## What changed
