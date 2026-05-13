@@ -328,8 +328,8 @@ export const translations = {
     scopesToGo: 'nog te doen',
     scopesPlayedOf: 'van {total} gespeeld',
     scopesLeftToPlay: 'nog te spelen',
-    boxBestTimesHeader: 'Beste tijden',
-    boxNotYetPlayed: 'Nog niet gespeeld',
+    // v6 commit 28: boxBestTimesHeader / boxNotYetPlayed removed —
+    // referenced nowhere in code, leftover from an older Box Mode UI.
     boxAllScopesClearedTitle: 'Alle groepen voltooid! 🎉',
     boxAllScopesClearedBody: 'Je hebt elke groep minstens één keer uitgespeeld.',
     // Restore confirmation dialog
@@ -382,11 +382,10 @@ export const translations = {
     // to stop). Replaced by an always-visible "X confident · Y to
     // gold" dashboard. Keys allCaughtUpTitle / allCaughtUpBody /
     // nothingScheduled / extraPracticeHint are intentionally absent.
-    // Streak — consecutive days with at least one quiz session.
-    // "Streak" is also used for in-quiz consecutive-correct count;
-    // dayStreak / dayStreakSingle distinguish them in display.
-    dayStreak: 'dagen op rij',
-    dayStreakSingle: 'dag',
+    // Streak — in-quiz consecutive-correct counter (per-session combo;
+    // see commit 22 FAQ rewrite). v6 commit 28: dayStreak /
+    // dayStreakSingle removed — referenced nowhere in code, leftover
+    // from a removed daily-streak feature that was never wired up.
     streakBest: 'Beste',
     // Milestones — fire on the CONFIDENT (gold-line) count, not the
     // FSRS-mastered count. Wording uses "vertrouwd" to match the
@@ -441,7 +440,6 @@ export const translations = {
     boxModeScopeAll: 'Alle 66 boeken',
     boxModeStart: 'Start sessie',
     boxModeDisclaimer: 'Doos Modus heeft geen invloed op je gewone schema. Het is puur extra oefening.',
-    boxModeInProgress: 'Doos Modus',
     boxModeHintMarker: 'hint gebruikt',
     boxModeHintCost: '(Boek blijft staan op deze beurt)',
     // {count} = aantal boeken, {scope} = scope-naam (bijv. "Pentateuch")
@@ -674,8 +672,7 @@ export const translations = {
     scopesToGo: 'to go',
     scopesPlayedOf: 'of {total} played',
     scopesLeftToPlay: 'left to play',
-    boxBestTimesHeader: 'Best times',
-    boxNotYetPlayed: 'Not yet played',
+    // v6 commit 28: see NL section for rationale.
     boxAllScopesClearedTitle: 'All scopes cleared! 🎉',
     boxAllScopesClearedBody: 'You\'ve completed every grouping at least once.',
     // Restore confirmation dialog
@@ -703,8 +700,7 @@ export const translations = {
     tierLegendTitle: 'Progress by tier',
     // See NL section for v4 commit 4 rationale on the removed
     // allCaughtUp* / nothingScheduled / extraPracticeHint keys.
-    dayStreak: 'day streak',
-    dayStreakSingle: 'day',
+    // v6 commit 28: see NL section for dayStreak / dayStreakSingle.
     streakBest: 'Best',
     // See NL section for the milestone wording rationale (commit 8.2).
     milestone10: 'Nice! 10 books confident! 🎉',
@@ -742,7 +738,6 @@ export const translations = {
     boxModeScopeAll: 'All 66 books',
     boxModeStart: 'Start session',
     boxModeDisclaimer: 'Box Mode does not affect your regular schedule. It\'s pure extra practice.',
-    boxModeInProgress: 'Box Mode',
     boxModeHintMarker: 'hint used',
     boxModeHintCost: '(Book stays put on this turn)',
     boxModeCompleteTitle: 'All {count} in box 5! 🎯',

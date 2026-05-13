@@ -688,7 +688,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
         {prev && !completionResult?.isFirstCompletion && (
           <div className="boxmode-prev-best">
             <span className="prev-best-label">{t.boxModePrevBest}:</span>
-            <span className="prev-best-value">
+            <span>
               {formatDuration(prev.fastestMs)} · {prev.fewestMistakes} {t.boxModeStatMistakes.toLowerCase()} · {prev.longestStreak} {t.boxModeStatStreak.toLowerCase()}
             </span>
           </div>

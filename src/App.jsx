@@ -937,7 +937,7 @@ function App() {
                                   <span className="boxmode-best-stats">
                                     <span className="boxmode-best-time">{time}</span>
                                     <span className="boxmode-best-sep">·</span>
-                                    <span className="boxmode-best-mistakes">
+                                    <span>
                                       {b.fewestMistakes} {b.fewestMistakes === 1
                                         ? (lang === 'nl' ? 'fout' : 'mistake')
                                         : (lang === 'nl' ? 'fouten' : 'mistakes')}

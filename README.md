@@ -13,7 +13,7 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 **Progress tracking**
 - **Confident gold line** — The gold line under a book cell appears when your last 3 answers on that book were all correct AND within your target time. Achievable in a single ~30-minute session if you already know the layout. One miss removes the line; 3 more correct-fast answers earn it back.
 - **Six-tier ladder** — A parallel FSRS-driven long-term measure: Unseen → Learning → Familiar → Rooted → Anchored → Permanent. Independent of the gold line; this is the "stuck in long-term memory" axis (Permanent ≈ 6+ months stability).
-- **Total training time** — Cumulative active-quiz time. Replaces the day-streak card so irregular practice isn't punished.
+- **Total training time** — Cumulative active-quiz time, surfaced on the home screen so irregular practice still shows accumulating effort.
 - **All-66 celebration** — When you hit 66 confident, the home screen swaps to a finishing screen with total time, a share button, and a "Start a new run" reset for chasing a faster time.
 - **Session-complete screen** — When the picker has cycled through every currently-confident book in the maintenance round, the quiz pauses on a stopping point. Two actions: **Continue training** to start a fresh maintenance round, or **End session** to save and return home.
 - **Learning pace** (advanced) — Flexible / Relaxed / Balanced / Intensive control FSRS `request_retention`. Hidden behind Settings → Training → Quiz Mode → Advanced since the schedule-free model rarely needs it; default is Intensive.
