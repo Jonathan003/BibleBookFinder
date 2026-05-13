@@ -1,3 +1,24 @@
+# v6 commit 33 — CHANGES.md correction: clarify commit 30 / commit 31 history
+
+## What changed
+
+Footnote-style clarifications added to the v6 commit 30 and v6 commit 31 entries below. The git log shows commit 32 going directly to commit 31, with no separate commit 30 SHA. The time-decay FAQ work that CHANGES.md labels "commit 30" was actually bundled into commit 31's push because:
+
+- A commit 30 patch was prepared and approved ("akkoord")
+- But the patch zip was never extracted and committed before the next discussion (about FAQ ordering) started
+- The commit 31 patch was built from a working directory that already contained the time-decay FAQ change
+- So commit 31's push (SHA `1381961`) shipped all three workstreams in one go: time-decay FAQ + Box Mode reorder + streak fix
+
+The two CHANGES.md entries below (for "commit 30" and "commit 31") now each carry a short header note pointing this out. No content is lost — the FAQ entry is in main; only the SHA-to-entry mapping needed correction.
+
+## Files changed
+
+- **`CHANGES.md`** — header notes added to commit 30 and commit 31 entries; this commit 33 entry pre-pended
+
+## Why this matters
+
+A future maintainer running `git show <commit-30-sha>` would find no such SHA and wonder whether the time-decay FAQ ever shipped. The clarifying notes prevent that confusion. Also a small honesty-with-history principle: when the docs don't match the log, fix the docs rather than pretend the log is wrong.
+
 # v6 commit 32 — Catch up CHANGES.md (entries for commits 30 and 31)
 
 ## What changed
@@ -9,6 +30,8 @@ This commit adds CHANGES.md entries for the 2 commits since commit 29. Same patt
 A short catch-up keeps the rationale accurate to what was actually thought at the time, rather than reconstructed weeks later. The pattern from commit 11 onwards is: when a small batch of commits (2-5) ships, catch up CHANGES.md before the next batch starts. Long gaps (like the 18-commit gap caught up by commit 29) work but make individual rationales blurrier.
 
 # v6 commit 31 — FAQ reorder + streak misinformation fix
+
+> **Note (added v6 commit 33):** The push for this commit (SHA `1381961`) also contained the time-decay FAQ entry described under "v6 commit 30" below — that work was never committed separately. The commit message and the two work categories described here are accurate to what was explicitly intended for this commit; the time-decay FAQ rode along because of a working-directory sync gap (the workspace already had the change applied from the prepared-but-uncommitted commit 30 patch). See the v6 commit 33 entry above for the full story.
 
 ## What changed
 
@@ -37,6 +60,8 @@ The replacement explicitly states: tier progress, best-streak, AND gold lines al
 The reorder fixes a long-standing readability quirk: the FAQ used to forward-reference concepts that hadn't been introduced yet. The streak fix closes the same category of bug we cleaned up in commits 22 and 26 — outdated FAQ text that contradicts current product behavior. Outdated docs are actively harmful (worse than missing docs) because they erode trust in everything else in the same file.
 
 # v6 commit 30 — FAQ entry on gold-line decay through time
+
+> **Note (added v6 commit 33):** Despite this entry's "v6 commit 30" label, the work shipped under v6 commit 31's SHA (`1381961`), not as a separate commit — the patch zip prepared for commit 30 was approved but never extracted/committed before commit 31 was built. The FAQ entry is in main, just under a different SHA than this entry's label implies. See the v6 commit 33 entry above for the full story.
 
 ## What changed
 
