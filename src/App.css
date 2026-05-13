@@ -257,6 +257,20 @@
   margin-left: 0.1rem;
 }
 
+/* v6 commit 24: hint shown under the 0/66 hero card when the user
+   has activity but no confident books yet. Soft tone — secondary
+   text color, smaller, centered. Sits inside .stats-single's
+   320px width so it wraps naturally without spilling beyond the
+   card it explains. */
+.hero-hint {
+  margin: 0.5rem 0 0 0;
+  padding: 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
 .stat-card.stat-card-hero .stat-label {
   font-size: 0.95rem;
   font-weight: 600;
@@ -377,7 +391,12 @@
   justify-content: center;
   transition: width 0.5s ease;
   position: relative;
-  min-width: 0;
+  /* v6 commit 24: was min-width: 0. Tier counts that are 1/66 (~1.5%)
+     rendered as ~3px on a typical mobile bar — visually invisible despite
+     showing up in the legend below. A non-zero pixel floor keeps every
+     active segment as a thin but visible sliver, so the bar and the
+     legend stay in sync. Flex children will redistribute the rest. */
+  min-width: 6px;
 }
 
 .tier-segment-count {
@@ -1201,6 +1220,31 @@
 
 .home-launcher-primary .launcher-label {
   font-weight: 700;
+}
+
+/* v6 commit 24: Discard styling — previously the class was set on the
+   button in App.jsx but no CSS rule existed for it, so the Discard
+   button rendered as a full-height (80px) launcher tile, which read
+   too prominently for a secondary action. This makes it compact
+   (44px), lighter-weight, and lower-opacity so it visually defers
+   to the primary Resume button above. Still clearly a button —
+   keeps the rounded background, padding, and tap target. */
+.home-launcher-discard {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  opacity: 0.7;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.home-launcher-discard:hover,
+.home-launcher-discard:focus {
+  opacity: 1;
+}
+
+.home-launcher-discard .launcher-label {
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 @media (min-width: 640px) {

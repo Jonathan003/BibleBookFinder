@@ -248,6 +248,10 @@ export const translations = {
     // kept as a backward-compat alias through v4-v8) was confirmed
     // unreferenced anywhere and removed in v6 commit 13.
     confident: 'Vertrouwd',
+    // v6 commit 24: hint onder hero card wanneer 0/66 maar er al
+    // activiteit is — voorkomt het "ik heb 9 boeken gedaan, waarom
+    // 0 confident?" verwarringsmoment voor nieuwe gebruikers.
+    confidentHintFirst: 'Beantwoord een boek 3 keer correct binnen je doeltijd om je eerste gouden lijn te verdienen',
     abbreviationsPortrait: 'Afkortingen (portret)',
     abbreviationsPortraitDesc: '(rechtop)',
     abbreviationsLandscape: 'Afkortingen (liggend)',
@@ -612,6 +616,8 @@ export const translations = {
     // See NL section for design rationale. Old `mastered` key removed
     // in v6 commit 13.
     confident: 'Confident',
+    // v6 commit 24: see NL section for rationale.
+    confidentHintFirst: 'Answer a book 3 times correctly within your target time to earn your first gold line',
     abbreviationsPortrait: 'Abbreviations (portrait)',
     abbreviationsPortraitDesc: '(upright)',
     abbreviationsLandscape: 'Abbreviations (landscape)',

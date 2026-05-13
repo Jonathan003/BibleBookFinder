@@ -772,6 +772,21 @@ function App() {
                     <span className="stat-number">{confidentCount}<span className="stat-denom"> / 66</span></span>
                     <span className="stat-label">{t.confident}</span>
                   </div>
+                  {/* v6 commit 24: "0 / 66 CONFIDENT" with no further
+                      context can read as alarming for users who have
+                      already answered some books (e.g. 1 Learning,
+                      8 Familiar) — they wonder why their effort isn't
+                      reflected. The gold line requires 3 correct-AND-fast
+                      in a row, which is decoupled from FSRS tiers. This
+                      hint surfaces only when:
+                        - confidentCount === 0
+                        - There IS activity (at least one book seen)
+                      so it acts as a soft on-boarding nudge without
+                      lingering forever. Disappears the moment the first
+                      gold line is earned. */}
+                  {confidentCount === 0 && (tierStats.unseen || 0) < 66 && (
+                    <p className="hero-hint">{t.confidentHintFirst}</p>
+                  )}
                 </div>
               )}
 
