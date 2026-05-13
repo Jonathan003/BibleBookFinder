@@ -834,27 +834,41 @@ export default function QuizGrid({
         if (newStreak > bestStreak) setBestStreak(newStreak);
 
         // Personal best check
+        //
+        // Two separate concerns that v6 commit 18 split into two
+        // distinct conditions:
+        //
+        //   isFirstSolve — there's no prior best time recorded for this
+        //   book yet. We still want to record the current timeTaken as
+        //   the baseline (so a future faster solve can be detected as
+        //   an improvement), but we do NOT show a "⚡ New best"
+        //   celebration. Calling a first-time-anything a "record" is
+        //   semantically wrong — a record requires a previous benchmark
+        //   to beat. UX-wise, modern apps (Speedrun.com, Anki, Strava,
+        //   Duolingo) all treat first-time events as a baseline, not as
+        //   a personal record.
+        //
+        //   isNewBest — there's a prior best AND this attempt is
+        //   strictly faster. This is a genuine improvement; show the
+        //   celebration and bump the session counter.
+        //
+        // Both conditions update bestTime; only isNewBest triggers UI.
         const prevBest = bestTimes[targetBook.id];
-        const isNewBest = !prevBest || timeTaken < prevBest;
-        if (isNewBest) {
+        const isFirstSolve = !prevBest;
+        const isNewBest = !isFirstSolve && timeTaken < prevBest;
+        if (isFirstSolve || isNewBest) {
           updateBestTime(targetBook.id, timeTaken);
+        }
+        if (isNewBest) {
           setSessionNewBests(prev => prev + 1);
           setNewBestTime(timeTaken);
           setShowNewBest(true);
           // v6 commit 17: dismiss the "⚡ New best" celebration on the
           // same delay as pickNextBook below. The two displays (plain
-          // "✓ Correct X.Xs" and "⚡ New best X.Xs") now have identical
+          // "✓ Correct X.Xs" and "⚡ New best X.Xs") have identical
           // duration — the inconsistency between a 1500ms record
           // display and a ~800ms standard display was confusing users
           // who expected uniform pacing between questions.
-          //
-          // History: v6 commit 15 first noticed the misalignment and
-          // fixed the visible-timer race by extending the advance
-          // delay to 1500ms when a new best fired. Commit 17 reverses
-          // that direction — shortens the celebration to match the
-          // advance delay instead. Both transitions still align at the
-          // same instant (which was the v6 commit 15 invariant); they
-          // just now happen sooner.
           schedule(() => setShowNewBest(false), autoPickDelayMs(config.targetSpeedMs));
         }
 
