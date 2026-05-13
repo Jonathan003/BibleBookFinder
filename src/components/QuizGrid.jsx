@@ -828,7 +828,6 @@ export default function QuizGrid({
         total: prev.total + 1
       }));
 
-      let isNewBest = false;
       if (isWithinTime) {
         const newStreak = streak + 1;
         setStreak(newStreak);
@@ -836,13 +835,27 @@ export default function QuizGrid({
 
         // Personal best check
         const prevBest = bestTimes[targetBook.id];
-        isNewBest = !prevBest || timeTaken < prevBest;
+        const isNewBest = !prevBest || timeTaken < prevBest;
         if (isNewBest) {
           updateBestTime(targetBook.id, timeTaken);
           setSessionNewBests(prev => prev + 1);
           setNewBestTime(timeTaken);
           setShowNewBest(true);
-          schedule(() => setShowNewBest(false), 1500);
+          // v6 commit 17: dismiss the "⚡ New best" celebration on the
+          // same delay as pickNextBook below. The two displays (plain
+          // "✓ Correct X.Xs" and "⚡ New best X.Xs") now have identical
+          // duration — the inconsistency between a 1500ms record
+          // display and a ~800ms standard display was confusing users
+          // who expected uniform pacing between questions.
+          //
+          // History: v6 commit 15 first noticed the misalignment and
+          // fixed the visible-timer race by extending the advance
+          // delay to 1500ms when a new best fired. Commit 17 reverses
+          // that direction — shortens the celebration to match the
+          // advance delay instead. Both transitions still align at the
+          // same instant (which was the v6 commit 15 invariant); they
+          // just now happen sooner.
+          schedule(() => setShowNewBest(false), autoPickDelayMs(config.targetSpeedMs));
         }
 
         // Milestone check — did this book newly cross into Confident?
@@ -898,25 +911,7 @@ export default function QuizGrid({
         setStreak(0);
       }
 
-      // Advance delay. Normally autoPickDelayMs (capped at 800ms) is
-      // plenty — feedback is set, the bar is at scaleX(0), and the user
-      // is just glancing at "✓ Correct X.Xs" before the next book.
-      //
-      // BUT when a new personal best fires, the prompt slot is taken
-      // over by a "⚡ New best X.Xs" celebration for 1500ms (the
-      // showNewBest dismiss timer). If pickNextBook fires at the normal
-      // 800ms, three bad things happen in the [800, 1500] window:
-      //   1. feedback clears to null, but showNewBest is still true →
-      //      the prompt still reads "⚡ New best X.Xs" while
-      //   2. the visible timer bar starts counting down (its render
-      //      gates on !feedback, not on showNewBest), and
-      //   3. the invisible response-time clock for the next question
-      //      starts ticking — the user loses up to 700ms of their
-      //      target time before they can even see the new book name.
-      // Deferring pickNextBook until showNewBest is also clearing
-      // aligns all three transitions to the same instant.
-      const advanceDelay = isNewBest ? 1500 : autoPickDelayMs(config.targetSpeedMs);
-      schedule(() => pickNextBook(), advanceDelay);
+      schedule(() => pickNextBook(), autoPickDelayMs(config.targetSpeedMs));
       return;
     }
 
