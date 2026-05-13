@@ -1103,6 +1103,21 @@
      Mode) shrink to their content width inside the centered flex
      column, looking visibly narrower than the mode-cards above. */
 }
+
+/* v6 commit 20: zachte FSRS-leidraad onder de Start Quiz Mode knop.
+   Bewust niet-klikbaar, niet-prominent. Doel: de gebruiker informeren
+   hoeveel boeken vandaag aandacht kunnen gebruiken zonder een to-do-
+   verplichting te suggereren (zoals het oude home-stat in pre-commit-7
+   wel deed). */
+.home-launcher-hint {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: center;
+  cursor: default;
+  /* line-height geeft ademruimte zonder de knop bovenaan te raken */
+  line-height: 1.4;
+}
 @media (min-width: 640px) {
   .home-launcher-area {
     min-height: 0;

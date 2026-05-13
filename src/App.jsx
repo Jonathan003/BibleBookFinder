@@ -1056,6 +1056,7 @@ function App() {
                     // the Box Mode pattern. Session size always
                     // unbounded (null), which is the same behavior the
                     // previous "Full" option had.
+                    <>
                     <button
                       className="btn home-start-btn"
                       onClick={() => {
@@ -1066,6 +1067,20 @@ function App() {
                     >
                       {`${t.homeStartQuiz} →`}
                     </button>
+                    {/* v6 commit 20: zachte FSRS-leidraad. stats.dueNow
+                        = aantal boeken dat FSRS als due markeert plus
+                        nog-niet-geziene boeken (allebei verdienen
+                        aandacht). Plural/singular/zero split met fallback
+                        teksten zodat oudere translation-bundles niet
+                        crashen. */}
+                    <div className="home-launcher-hint">
+                      {stats.dueNow === 0
+                        ? (t.quizHintNone || 'No books need attention today')
+                        : stats.dueNow === 1
+                        ? (t.quizHintOne || '1 book could use attention today')
+                        : (t.quizHintMany || '{count} books could use attention today').replace('{count}', stats.dueNow)}
+                    </div>
+                    </>
                   )
                 )}
               </div>

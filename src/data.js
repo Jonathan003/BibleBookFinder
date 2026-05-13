@@ -458,6 +458,14 @@ export const translations = {
     upNextEyebrow: 'Volgende',
     homeStartQuiz: 'Start Quiz Modus',
     homeStartBoxMode: 'Start Doos Modus',
+    // v6 commit 20: zachte leidraad onder de Quiz launcher knop. Vervangt
+    // (op een minder dwingende manier) wat in commit 7 weggehaald is —
+    // het oude "Klaar om te oefenen: X" home-card voelde als verplichting,
+    // de nieuwe regel framet hetzelfde getal als informatieve suggestie.
+    // {count} placeholder wordt vervangen in App.jsx via .replace().
+    quizHintNone: 'Geen boeken hebben vandaag aandacht nodig',
+    quizHintOne: '1 boek kan vandaag aandacht gebruiken',
+    quizHintMany: '{count} boeken kunnen vandaag aandacht gebruiken',
     upNextQuizDue: '{n} boek(en) klaar om te oefenen',
     upNextStudyWeak: 'Focus op je zwakste boeken — {n} hebben nog aandacht nodig',
     upNextStudyAll: 'Vrij oefenen — geen schema-druk',
@@ -738,6 +746,10 @@ export const translations = {
     upNextEyebrow: 'Up next',
     homeStartQuiz: 'Start Quiz Mode',
     homeStartBoxMode: 'Start Box Mode',
+    // v6 commit 20: see NL section above for rationale.
+    quizHintNone: 'No books need attention today',
+    quizHintOne: '1 book could use attention today',
+    quizHintMany: '{count} books could use attention today',
     upNextQuizDue: '{n} book(s) ready to practice',
     upNextStudyWeak: 'Focus on your weakest books — {n} still need attention',
     upNextStudyAll: 'Practice freely — no schedule pressure',
