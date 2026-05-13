@@ -147,7 +147,7 @@ export const translations = {
     cancelDelete: 'Annuleer',
     confirmReset: 'Wissen',
     confirmResetMsg: 'Weet je zeker dat je je voortgang wilt wissen? Dit kan niet ongedaan worden gemaakt.',
-    confirmResetQuizMsg: 'Weet je zeker dat je Quiz-voortgang wilt wissen? Mastery, intervallen, streak, persoonlijke records en geschiedenis worden gewist. Doos-records blijven staan. Dit kan niet ongedaan worden gemaakt.',
+    confirmResetQuizMsg: 'Weet je zeker dat je Quiz-voortgang wilt wissen? Je gouden lijnen, niveaus, persoonlijke records, streak en sessie-geschiedenis worden allemaal gewist — alles wat de app over je leervoortgang weet. Doos-records blijven staan. Doe dit alleen als je echt vanaf nul wilt beginnen, niet om opnieuw de race naar 66 gouden lijnen te kunnen doen. Dit kan niet ongedaan worden gemaakt.',
     confirmResetBoxMsg: 'Weet je zeker dat je Doos-voortgang wilt wissen? Alle persoonlijke records per selectie worden gewist. Quiz-voortgang blijft staan. Dit kan niet ongedaan worden gemaakt.',
     cancelReset: 'Annuleer',
     // Reset section in Settings → Data (where the Reset buttons live now)
@@ -515,7 +515,7 @@ export const translations = {
     cancelDelete: 'Cancel',
     confirmReset: 'Reset',
     confirmResetMsg: 'Are you sure you want to reset your progress? This cannot be undone.',
-    confirmResetQuizMsg: 'Are you sure you want to reset Quiz Mode progress? Mastery, intervals, streak, personal bests, and history will be cleared. Box Mode records stay. This cannot be undone.',
+    confirmResetQuizMsg: 'Are you sure you want to reset Quiz Mode progress? Your gold lines, tiers, personal bests, streak, and session history will all be cleared — everything the app knows about your learning progress. Box Mode records stay. Only do this if you really want to start from scratch, not just to do the race to 66 gold lines again. This cannot be undone.',
     confirmResetBoxMsg: 'Are you sure you want to reset Box Mode progress? All per-scope personal bests will be cleared. Quiz Mode progress stays. This cannot be undone.',
     cancelReset: 'Cancel',
     // Reset section in Settings → Data (where the Reset buttons live now)
