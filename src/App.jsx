@@ -1072,9 +1072,14 @@ function App() {
                         nog-niet-geziene boeken (allebei verdienen
                         aandacht). Plural/singular/zero split met fallback
                         teksten zodat oudere translation-bundles niet
-                        crashen. */}
+                        crashen.
+                        v6 commit 21: aparte first-time case zodat een
+                        nieuwe gebruiker of net-gereset profiel niet de
+                        dramatische "66 books could use attention" leest. */}
                     <div className="home-launcher-hint">
-                      {stats.dueNow === 0
+                      {stats.unseen === stats.total
+                        ? (t.quizHintFirstTime || 'Start your first session whenever you like — the app will learn what\'s tricky for you')
+                        : stats.dueNow === 0
                         ? (t.quizHintNone || 'No books need attention today')
                         : stats.dueNow === 1
                         ? (t.quizHintOne || '1 book could use attention today')

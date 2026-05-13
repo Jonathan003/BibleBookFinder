@@ -463,6 +463,11 @@ export const translations = {
     // het oude "Klaar om te oefenen: X" home-card voelde als verplichting,
     // de nieuwe regel framet hetzelfde getal als informatieve suggestie.
     // {count} placeholder wordt vervangen in App.jsx via .replace().
+    // v6 commit 21: aparte tekst voor de "alles nog ongezien"-situatie
+    // (nieuwe gebruiker of net na reset). Voorkomt dat de eerste indruk
+    // is "66 boeken kunnen aandacht gebruiken" — wat feitelijk klopt maar
+    // overweldigend leest als je net begint.
+    quizHintFirstTime: 'Start je eerste sessie wanneer je wil — de app leert vanzelf wat lastig is',
     quizHintNone: 'Geen boeken hebben vandaag aandacht nodig',
     quizHintOne: '1 boek kan vandaag aandacht gebruiken',
     quizHintMany: '{count} boeken kunnen vandaag aandacht gebruiken',
@@ -747,6 +752,8 @@ export const translations = {
     homeStartQuiz: 'Start Quiz Mode',
     homeStartBoxMode: 'Start Box Mode',
     // v6 commit 20: see NL section above for rationale.
+    // v6 commit 21: first-time / post-reset variant — see NL section.
+    quizHintFirstTime: 'Start your first session whenever you like — the app will learn what\'s tricky for you',
     quizHintNone: 'No books need attention today',
     quizHintOne: '1 book could use attention today',
     quizHintMany: '{count} books could use attention today',
