@@ -210,6 +210,13 @@ export default function QuizGrid({
   // handleBookClick uses this to enforce TIME_UP_DISPLAY_MS as a
   // minimum read window before tap-to-dismiss works.
   const timeUpAtRef = useRef(0);
+  // v6 commit 37: tracks whether the 66/66 confident celebration has
+  // already been triggered in this session. Prevents repeated session-
+  // complete prompts when the user taps "Continue training" after the
+  // initial celebration and books briefly drop and re-reach 66 during
+  // the maintenance round. Reset implicitly on a new mount (fresh
+  // session) — refs reinitialise to false. See ADR 0003.
+  const hasTriggeredSixtySixRef = useRef(false);
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
@@ -504,6 +511,32 @@ export default function QuizGrid({
     feedbackRef.current = false;
     const cards = fsrsCardsRef.current || {};
 
+    // v6 commit 37: 66/66 confident check — FIRST early-return.
+    // When the user reaches all 66 confident, immediately fire the
+    // session-complete screen (which detects isAll66 and renders the
+    // 🏆 celebration). Pre-37, this only fired after a full maintenance
+    // round had cycled through all 66 books, during which a slow answer
+    // could de-confident a book — the user would reach 66 briefly, lose
+    // it during maintenance without realising, then see 65/66 on home
+    // and assume the share button had caused it.
+    //
+    // The ref guards against re-triggering after "Continue training"
+    // when books briefly drop and re-reach 66 during the maintenance
+    // round — by deliberately tapping Continue, the user has accepted
+    // the doortrain-and-risk-losing-66 trade-off.
+    //
+    // See ADR 0003 for the full design rationale, including alternatives
+    // considered (freeze buffers in maintenance, warning banner).
+    const currentConfidentCount = getConfidentCount(
+      confidentBuffersRef.current || {},
+      bibleBooks
+    );
+    if (currentConfidentCount === 66 && !hasTriggeredSixtySixRef.current) {
+      hasTriggeredSixtySixRef.current = true;
+      setSessionComplete(true);
+      return;
+    }
+
     // ─── Session-size limit check ─────────────────────────────────
     // If the user picked Quick (5) or Standard (10) from the home
     // screen, sessionLimitRef holds that number. When pickCount has
@@ -718,6 +751,20 @@ export default function QuizGrid({
       logSessionStart(fsrsCardsRef.current || {}, bibleBooks);
       pickNextBook();
     }
+
+    // v6 commit 37: on resume, if the user already has 66 confident,
+    // skip showing the resumed question and go straight to the
+    // session-complete prompt with 🏆 celebration. This is the resume-
+    // path equivalent of the pickNextBook early-return; the fresh-start
+    // case is handled by pickNextBook itself above. See ADR 0003.
+    if (initialPausedSession) {
+      const count = getConfidentCount(confidentBuffersRef.current || {}, bibleBooks);
+      if (count === 66) {
+        hasTriggeredSixtySixRef.current = true;
+        setSessionComplete(true);
+      }
+    }
+
     window.scrollTo(0, 0);
     // First pick only — pickNextBook is called manually after each
     // answer, so we don't want a re-run when its identity changes.
