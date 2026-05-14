@@ -61,6 +61,28 @@ function autoPickDelayMs(targetSpeedMs) {
   return Math.min(800, Math.max(250, Math.round(targetSpeedMs * 0.5)));
 }
 
+// v6 commit 34: minimum display time for the time-up reveal before
+// auto-advancing to the next question. Unlike a slow-correct answer
+// (~800ms auto-advance), time-up presents the answer the user did NOT
+// give and they need to read "⏱ Too slow — was X" to learn from it.
+// Pre-commit 34: the user had to tap the blue revealed cell to advance,
+// which could fire 0-50ms after the reveal (their finger was already
+// moving toward the book they'd just found) — too fast to read the
+// label, no time to register the color, no visible link between
+// "missing" and "what the answer was".
+//
+// 1500ms is grounded in:
+//   - Material Design's LENGTH_LONG snackbar duration (also 1500ms)
+//   - ~50ms × ~30 characters reading-speed estimate ("⏱ Te traag —
+//     was Markus" / "Time's up — was Mark") = ~1500ms
+//   - Anki's "Time to show answer" default range (1.5-3s, configurable)
+//
+// During this window, taps on the revealed cell are ignored (see
+// handleBookClick's time-up early-return). Wrong-answer feedback
+// retains tap-to-dismiss — that's an active learning acknowledgment,
+// not a passive reveal.
+const TIME_UP_DISPLAY_MS = 1500;
+
 export default function QuizGrid({
   ownerUserId, fsrsCards, updateFsrsCard,
   confidentBuffers = {}, updateConfidentBuffer,
@@ -408,6 +430,18 @@ export default function QuizGrid({
             document.querySelector(`[data-book-id="${tb.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
         });
+
+        // v6 commit 34: auto-advance after the read window, instead of
+        // waiting for the user to tap the blue cell. The dismiss-by-
+        // tap path (handleBookClick line ~776) is now blocked for
+        // 'time-up' feedback, so the only path forward is this timer.
+        // Rationale: a tap arriving mid-reveal cut off the read window
+        // before the user could register the prompt label or color.
+        // Auto-advance with a fixed window makes the pacing consistent
+        // with slow-correct answers (which already auto-advance via
+        // autoPickDelayMs) — the only difference is the duration,
+        // because time-up reveal needs more reading time.
+        schedule(() => pickNextBook(), TIME_UP_DISPLAY_MS);
       }
     }, 100);
     return () => clearInterval(interval);
@@ -772,8 +806,14 @@ export default function QuizGrid({
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
-    // Allow clicking the correct book to dismiss wrong feedback early
+    // Allow clicking the correct book to dismiss wrong feedback early.
+    // v6 commit 34: time-up no longer uses tap-to-dismiss — it auto-
+    // advances after TIME_UP_DISPLAY_MS. The early-return below blocks
+    // tap-to-dismiss for time-up specifically so the user's tap can't
+    // cut off the read window. Wrong-answer feedback retains the
+    // tap-to-dismiss flow (active learning acknowledgment).
     if (feedbackRef.current && book.id === correctBookId) {
+      if (feedback === 'time-up') return;
       feedbackRef.current = false;
       setFeedback(null);
       setResponseTime(null);

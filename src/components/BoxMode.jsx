@@ -40,6 +40,16 @@ const HIGHLIGHT_DURATION_MS = 600;
 // before the prompt changes.
 const NEXT_PICK_DELAY_MS = 700;
 
+// v6 commit 34: minimum display time for time-up reveal before auto-
+// advancing. Identical to QuizGrid's TIME_UP_DISPLAY_MS — see that
+// constant for the full rationale. Summary: a tap on the revealed
+// blue cell arrives 0-50ms after the reveal (user's finger was
+// already moving toward the book they'd just found), too fast to
+// read the "Time's up!" label or register the color. Auto-advance
+// after 1500ms makes pacing consistent with QuizGrid time-up and
+// with the slow-correct flow.
+const TIME_UP_DISPLAY_MS = 1500;
+
 // v6.3: parseTimePressure() removed. The pre-6.3 config field
 // boxMode.timePressure (an 'off' | 'soft-Xs' | 'hard-Xs' string) is
 // gone; Box Mode now reads config.targetSpeedMs directly as ms. There
@@ -237,6 +247,16 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
         const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
         setState(next);
         stateRef.current = next;
+
+        // v6 commit 34: auto-advance after the read window. Tap-to-
+        // dismiss is blocked for 'time-up' in handleBookClick below
+        // so the user's tap can't cut off the read window. See the
+        // TIME_UP_DISPLAY_MS constant for the full rationale.
+        schedule(() => {
+          setFeedback(null);
+          setCorrectBookId(null);
+          advanceToNextBook();
+        }, TIME_UP_DISPLAY_MS);
       }
     }, 100);
 
@@ -377,6 +397,10 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     // expiry — same blue-cell-tap flow as 'wrong', just different
     // labeling and tint to be honest about the cause.
     if (feedback === 'wrong' || feedback === 'time-up') {
+      // v6 commit 34: time-up auto-advances after TIME_UP_DISPLAY_MS,
+      // so tap-to-dismiss is blocked here to protect the read window.
+      // Wrong-tap still uses tap-to-dismiss (active learning ack).
+      if (feedback === 'time-up') return;
       if (book.id !== s.currentBookId) return;
       setFeedback(null);
       setCorrectBookId(null);
