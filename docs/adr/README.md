@@ -50,7 +50,7 @@ ADRs are never edited after Acceptance. If a decision changes, write a new ADR t
 
 ## Why ADRs and not CHANGELOG.md
 
-This project previously maintained `CHANGES.md` with detailed entries per commit. That file is retained as historical artifact through v6 commit 35 but does not receive new entries.
+This project previously maintained `CHANGES.md` with detailed entries per commit. That file is retained as historical artifact through v6 commit 35 at [`docs/legacy/CHANGES.md`](../legacy/CHANGES.md) but does not receive new entries.
 
 The split going forward:
 - **Routine code changes** — captured by Conventional Commits messages (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`)
