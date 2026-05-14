@@ -27,6 +27,7 @@ A reasonable target: about one ADR per significant design discussion, typically 
 | [0001](./0001-gold-line-philosophy.md) | Gold line philosophy: no daily streak, no time-decay, no refresher indicator | Accepted |
 | [0002](./0002-time-up-click-to-advance.md) | Time-up flow: click-to-advance with minimum read window | Accepted |
 | [0003](./0003-immediate-session-complete-on-66-confident.md) | Quiz Mode flow on reaching 66 confident — immediate session-complete | Accepted |
+| [0004](./0004-guard-against-late-buffer-updates.md) | Guard against late buffer updates after session-complete | Accepted |
 
 ## How to add a new ADR
 

@@ -217,12 +217,24 @@ export default function QuizGrid({
   // the maintenance round. Reset implicitly on a new mount (fresh
   // session) — refs reinitialise to false. See ADR 0003.
   const hasTriggeredSixtySixRef = useRef(false);
+  // v6 commit 39: mirrors the sessionComplete state in a ref so the
+  // time-up tick interval (which captures a stale closure) can check
+  // it. Without this, a pending timer expiry could fire AFTER the
+  // session-complete prompt was triggered by commit 37's 66-reach
+  // logic, pushing a `false` onto a confident book's buffer and
+  // silently dropping the count from 66 to 65 between the prompt
+  // render and the home render. See ADR 0004.
+  const sessionCompleteRef = useRef(false);
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
   useEffect(() => { fsrsCardsRef.current = fsrsCards; }, [fsrsCards]);
   useEffect(() => { confidentBuffersRef.current = confidentBuffers; }, [confidentBuffers]);
   useEffect(() => { targetBookRef.current = targetBook; }, [targetBook]);
+  // v6 commit 39: keep sessionCompleteRef in sync with state so the
+  // time-up tick interval (which holds a stale closure) can read the
+  // current value via the ref.
+  useEffect(() => { sessionCompleteRef.current = sessionComplete; }, [sessionComplete]);
 
   // Per-ROUND seen filter for pickNextBook's maintenance branch. Was
   // previously called sessionSeenBooksRef (v4.3) and synced from the
@@ -380,6 +392,14 @@ export default function QuizGrid({
       if (remaining <= 0 && !expiryFiredRef.current) {
         expiryFiredRef.current = true;
         clearInterval(interval);
+        // v6 commit 39: skip the entire time-up flow if we've already
+        // entered the session-complete state. Without this guard, a
+        // tick callback queued from before commit 37's pickNextBook
+        // early-return could fire AFTER setSessionComplete(true), push
+        // `false` onto a confident book's buffer, and silently drop
+        // the count from 66 to 65 between the celebration render and
+        // the home render. See ADR 0004.
+        if (sessionCompleteRef.current) return;
         // Skip if user already answered, or if there's no active
         // question (defensive — shouldn't happen since timerStart
         // is only set when a book is asked).
@@ -860,6 +880,13 @@ export default function QuizGrid({
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
+    // v6 commit 39: defense-in-depth — if we've already entered
+    // session-complete state, no book click should mutate buffers.
+    // In practice the book grid isn't rendered when sessionComplete
+    // is true (the session-complete UI replaces it), so this is a
+    // belt-and-braces guard against any queued or synthesised click
+    // that might slip through. See ADR 0004.
+    if (sessionComplete) return;
     // Allow clicking the correct book to dismiss feedback and advance.
     //
     // v6 commit 35 (replaces v6 commit 34's auto-advance approach):
