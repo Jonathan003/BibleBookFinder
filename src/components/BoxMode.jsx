@@ -40,14 +40,15 @@ const HIGHLIGHT_DURATION_MS = 600;
 // before the prompt changes.
 const NEXT_PICK_DELAY_MS = 700;
 
-// v6 commit 34: minimum display time for time-up reveal before auto-
-// advancing. Identical to QuizGrid's TIME_UP_DISPLAY_MS — see that
-// constant for the full rationale. Summary: a tap on the revealed
-// blue cell arrives 0-50ms after the reveal (user's finger was
-// already moving toward the book they'd just found), too fast to
-// read the "Time's up!" label or register the color. Auto-advance
-// after 1500ms makes pacing consistent with QuizGrid time-up and
-// with the slow-correct flow.
+// v6 commit 34 introduced this constant as an auto-advance duration
+// for time-up reveal. v6 commit 35 reverted to click-to-advance (the
+// pre-34 behavior) per user preference, but kept the constant as a
+// MINIMUM READ WINDOW: during the first TIME_UP_DISPLAY_MS after a
+// time-up reveal, taps on the revealed blue cell are silently ignored.
+// After this window, the tap works normally and advances the session.
+// See QuizGrid.jsx TIME_UP_DISPLAY_MS for the full rationale (same
+// reasoning applies to both modes — Box Mode mirrors Quiz Mode for
+// time-up handling).
 const TIME_UP_DISPLAY_MS = 1500;
 
 // v6.3: parseTimePressure() removed. The pre-6.3 config field
@@ -218,6 +219,10 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // most once per question, even if the interval ticks just before the
   // setTimerStart(null) cleanup races.
   const expiryFiredRef = useRef(false);
+  // v6 commit 35: timestamp of when the time-up reveal started.
+  // handleBookClick uses this to enforce TIME_UP_DISPLAY_MS as a
+  // minimum read window before tap-to-dismiss works.
+  const timeUpAtRef = useRef(0);
   useEffect(() => {
     if (timerStart == null) return;
     expiryFiredRef.current = false;
@@ -248,15 +253,12 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
         setState(next);
         stateRef.current = next;
 
-        // v6 commit 34: auto-advance after the read window. Tap-to-
-        // dismiss is blocked for 'time-up' in handleBookClick below
-        // so the user's tap can't cut off the read window. See the
-        // TIME_UP_DISPLAY_MS constant for the full rationale.
-        schedule(() => {
-          setFeedback(null);
-          setCorrectBookId(null);
-          advanceToNextBook();
-        }, TIME_UP_DISPLAY_MS);
+        // v6 commit 35: record when the reveal started. handleBookClick
+        // uses this timestamp to enforce TIME_UP_DISPLAY_MS as a
+        // minimum read window — taps arriving earlier are ignored.
+        // (Commit 34 had auto-advance here; reverted in 35 per user
+        // preference for click-to-advance with read-window guard.)
+        timeUpAtRef.current = Date.now();
       }
     }, 100);
 
@@ -397,10 +399,15 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     // expiry — same blue-cell-tap flow as 'wrong', just different
     // labeling and tint to be honest about the cause.
     if (feedback === 'wrong' || feedback === 'time-up') {
-      // v6 commit 34: time-up auto-advances after TIME_UP_DISPLAY_MS,
-      // so tap-to-dismiss is blocked here to protect the read window.
-      // Wrong-tap still uses tap-to-dismiss (active learning ack).
-      if (feedback === 'time-up') return;
+      // v6 commit 35 (replaces v6 commit 34's auto-advance):
+      // For 'time-up' specifically, block tap-to-dismiss for the
+      // first TIME_UP_DISPLAY_MS so the reveal stays readable. After
+      // the window, tap works normally. Wrong-answer feedback has no
+      // minimum window — it's already an active acknowledgment.
+      if (feedback === 'time-up') {
+        const elapsed = Date.now() - timeUpAtRef.current;
+        if (elapsed < TIME_UP_DISPLAY_MS) return;
+      }
       if (book.id !== s.currentBookId) return;
       setFeedback(null);
       setCorrectBookId(null);
