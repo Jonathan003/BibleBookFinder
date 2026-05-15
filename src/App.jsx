@@ -1207,6 +1207,7 @@ function App() {
               onRestore={handleRestore}
               onResetQuizProgress={doResetQuizProgress}
               onResetBoxProgress={doResetBoxProgress}
+              onStartNewRun={doStartNewRun}
             />
           )}
 

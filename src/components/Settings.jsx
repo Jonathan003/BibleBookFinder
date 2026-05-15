@@ -6,7 +6,7 @@ import { bibleBooks } from '../data';
 import { APP_COMMIT, APP_BUILD_DATE } from '../version';
 import './Settings.css';
 
-export default function Settings({ config, onSave, onBack, currentUser, onRestore, onResetQuizProgress, onResetBoxProgress }) {
+export default function Settings({ config, onSave, onBack, currentUser, onRestore, onResetQuizProgress, onResetBoxProgress, onStartNewRun }) {
   // All settings held in a single atomic object. A functional updater on
   // one state makes field changes race-free by construction: React's
   // reducer semantics guarantee each update sees the result of the
@@ -589,6 +589,38 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         <div className="settings-divider" />
         <h3 className="data-section-heading">{t.resetSectionTitle || 'Voortgang resetten'}</h3>
         <p className="settings-desc">{t.resetSectionDesc || 'Wis je voortgang per modus. Dit kan niet ongedaan worden gemaakt.'}</p>
+
+        {/* Soft reset — clears gold lines + run time, keeps FSRS scheduling,
+            best times, streak, and history. Same doStartNewRun the home-screen
+            launcher calls at 66/66, exposed here so the user can race-replay
+            from any point in their progression (not only after hitting 66).
+            Visually grouped with the destructive resets but icon is 🔄
+            (refresh/redo) rather than 🗑️ (delete) to signal non-destruction
+            of long-term data. See ADR 0005. */}
+        <button
+          className="btn-data btn-reset-progress"
+          onClick={() => setConfirmReset('newRun')}
+          disabled={confirmReset !== null}
+        >
+          🔄 {t.resetConfidentProgress || 'Vertrouwde voortgang wissen'}
+        </button>
+        {confirmReset === 'newRun' && (
+          <div className="reset-confirm-panel">
+            <span className="reset-confirm-msg">{t.confirmResetConfidentProgressMsg || t.confirmResetMsg}</span>
+            <div className="reset-confirm-buttons">
+              <button
+                className="btn-confirm-reset"
+                onClick={() => {
+                  setConfirmReset(null);
+                  if (onStartNewRun) onStartNewRun();
+                }}
+              >
+                {t.confirmReset}
+              </button>
+              <button className="btn-cancel-reset" onClick={() => setConfirmReset(null)}>{t.cancelReset}</button>
+            </div>
+          </div>
+        )}
 
         {/* Reset Quiz Mode — wipes FSRS, mastery, streak, best times,
             quiz history, totalQuizMs. Box Mode bests untouched. */}
