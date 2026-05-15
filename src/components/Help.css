@@ -56,6 +56,32 @@
 }
 
 /* Approach */
+/* v6.4 (ADR 0008 follow-up): "About this app" landing card at the
+   top of Help. Reads as a coherent intro paragraph block with a
+   subtle border-card feel, distinguishing it from the more list-shaped
+   .approach below. Slightly larger text than .approach so it carries
+   the "read this first" weight. */
+.help-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.help-intro-line {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.help-intro-line strong {
+  color: var(--text-primary);
+}
+
 .approach {
   display: flex;
   flex-direction: column;

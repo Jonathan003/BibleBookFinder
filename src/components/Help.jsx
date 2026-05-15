@@ -5,6 +5,16 @@ import './Help.css';
 const helpContent = {
   nl: {
     title: 'Help',
+    // v6.4 (ADR 0008 follow-up): "About this app" landing card. The first
+    // thing a new user reads. Three lines, framed by the speedrun-only
+    // model. Bold markers (**text**) are rendered as <strong> by the
+    // help renderer.
+    introTitle: 'Over deze app',
+    intro: [
+      'Twee modi met hetzelfde doel: leren waar alle 66 bijbelboeken staan.',
+      '**Quiz Modus** is de hoofdlus — race naar 66 vertrouwde boeken, verbeter je tijd, race opnieuw. Spaced repetition maakt je over weken sneller.',
+      '**Doos Modus** is snelle cram-oefening voor een specifieke selectie — geen schema, geen consequenties. Gebruik dit als je iets even goed wilt vastzetten.',
+    ],
     approachTitle: 'Aanbevolen aanpak',
     approach: [
       {
@@ -21,7 +31,7 @@ const helpContent = {
       },
       {
         icon: '⏸️',
-        text: 'Wanneer "Te doen" in de quiz op 0 staat: stop. Doortrainen op stabiele boeken maakt je geheugen niet sterker — wachten wel. Kom terug wanneer je tijd hebt; het is geen probleem als dat niet elke dag is.',
+        text: 'Geen druk om dagelijks te oefenen — spaced repetition werkt juist door de wachttijd tussen herhalingen. Je geheugen doet onzichtbaar werk tijdens de pauze. Kom terug wanneer je tijd hebt; FSRS biased de boekkeuze automatisch naar je zwakkere boeken zodra je opnieuw start.',
       },
       {
         icon: '⚙️',
@@ -96,6 +106,14 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
     ],
     faqTitle: 'Veelgestelde vragen',
     faq: [
+      // ─── 0. The goal (ADR 0008, speedrun-only model) ────────────────
+      // Placed first because it's the single most important concept for
+      // a new user to understand: there IS a goal, it IS reachable, and
+      // it loops.
+      {
+        q: 'Wat is het doel in Quiz Modus?',
+        a: 'Om alle 66 boeken vertrouwd te krijgen. Een boek wordt "vertrouwd" zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je doeltijd waren. Wanneer alle 66 vertrouwd zijn, heb je een run voltooid en zie je je totale tijd op het trofee-scherm. Daarna kun je opnieuw racen om je tijd te verbeteren — je spaced repetition blijft achter de schermen werken, dus elke run laat je iets sterker op je zwakkere boeken. Je kunt dit op één dag doen of over meerdere dagen verdelen, in je eigen tempo.',
+      },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
         q: 'Wat betekenen Flexibel, Ontspannen, Gebalanceerd en Intensief?',
@@ -118,20 +136,20 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
         a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je doeltijd waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
-      // ─── 8b. After all 66 gold — v6 commit 22 ────────────────────────
+      // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {
-        q: 'Wat gebeurt er als alle 66 boeken een gouden lijn hebben?',
-        a: 'Dan heb je de "race naar 66 gouden lijnen" gehaald — een echte mijlpaal. Wat is het volgende? NIET resetten via Instellingen → Data: dat wist je hele FSRS-leervoortgang (alle niveaus, intervallen, records) en is een nuclear option voor wanneer je echt vanaf nul wilt beginnen. Voor "ik wil opnieuw de race ervaren" is dat veel te ingrijpend. Wat WEL werkt: blijf gewoon trainen via Quiz Modus. Het FSRS-algoritme blijft achter de schermen je boeken plannen — soms komen ze terug omdat hun stabiliteit zakt. Als je dan traag of fout antwoordt op een boek, valt zijn gouden lijn af, en kun je hem weer terug verdienen. Zo blijft de "race" subtiel doorgaan, zonder dat je iets weggooit.',
+        q: 'Wat gebeurt er als alle 66 boeken vertrouwd zijn?',
+        a: 'Dan heb je een run voltooid — een mijlpaal. Je ziet een trofee-scherm met je totale tijd en een Delen-knop. Wil je opnieuw racen? Tik op "Start een nieuwe run →" op het startscherm onder de trofee-kaart. Dat wist je gouden lijnen en run-tijd, maar je FSRS-planning, persoonlijke records, beste streak en geschiedenis blijven behouden. De volgende run is automatisch wat scherper afgesteld op je zwakkere boeken — FSRS heeft achter de schermen al onthouden welke boeken je sneller of trager beantwoordde. Je kunt zoveel runs doen als je wilt; elk leert je geheugen iets sterker over weken en maanden.',
       },
       // ─── 8c. Time decay on gold lines — v6 commit 30 ──────────────────
       {
         q: 'Verlies ik mijn gouden lijnen als ik een tijd niet oefen?',
         a: 'Niet direct door tijdsverloop alleen — een gouden lijn verdwijnt pas als je een review fout of te traag doet. Maar in de praktijk gaan die twee samen: na een lange pauze ga je meestal trager antwoorden, en dat telt als "te traag" tegenover je ingestelde doeltijd. Zo corrigeert het systeem zichzelf via de echte leerinteractie — niet via een passieve klok of tijdteller. Achter de schermen blijft FSRS wel rekenen: boeken die je lang niet hebt gezien komen vanzelf vaker terug in Quiz Modus. Kortom: je verliest niets door even niet te oefenen, maar je vertrouwen wordt natuurlijk opnieuw getoetst zodra je terugkomt.',
       },
-      // ─── 9. Pause ──────────────────────────────────────────────────
+      // ─── 9. Pause + Start over — rewritten for ADR 0008 ──────────────
       {
-        q: 'Kan ik een quiz pauzeren? En wat doet "Onderbroken sessie weggooien"?',
-        a: 'Ja, je kunt pauzeren. Tik op "← Terug" tijdens een sessie en BBF maakt automatisch een snapshot van je huidige sessie (welke vraag je had, sessie-score, sessie-streak, sessie-trainingstijd). Op het startscherm verschijnt dan "▶ Sessie hervatten" — daarmee ga je verder waar je was. Daaronder staat ook "Onderbroken sessie weggooien". Belangrijk om te weten: Weggooien verliest alleen je sessie-administratie (sessie-streak, sessie-tijd, één gecombineerde history-entry). Het verliest GEEN leervoortgang — alle gouden lijnen, FSRS-niveaus en persoonlijke records die je tijdens de gepauzeerde sessie hebt verdiend, staan al permanent op je profiel opgeslagen. Discard is dus veiliger dan het klinkt.',
+        q: 'Kan ik een quiz pauzeren? En wat doet "Opnieuw beginnen"?',
+        a: 'Ja, je kunt pauzeren. Tik op "← Terug" tijdens een sessie en BBF maakt automatisch een snapshot (welke vraag je had, je sessie-score, streak, en trainingstijd). Op het startscherm verschijnt dan "▶ Sessie hervatten" — daarmee ga je verder waar je was. Daaronder staat ook "Opnieuw beginnen". Dat is een soft-reset: het wist je gouden lijnen en run-tijd, maar bewaart je FSRS-planning, persoonlijke records, beste streak en geschiedenis. Gebruik dit als je een run wilt afbreken en helemaal opnieuw wilt starten — bijvoorbeeld als je niet in goede vorm was en de huidige run niet representatief vindt voor je niveau. De volgende run begint dan vers, met FSRS nog steeds biased naar je zwakkere boeken.',
       },
 
       // ─── Doos Modus — aparte modus (verplaatst hierheen in v6 commit 31) ───
@@ -242,7 +260,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         q: 'Wat doet de Delen-knop?',
-        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik ben vertrouwd met 33 van 66 bijbelboeken (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd zodat je het zelf kunt plakken. De snelheid tussen haakjes (bijv. "(10s)") wordt alleen meegenomen als je de doeltijd niet hebt gewijzigd sinds je bent begonnen (of sinds je laatste reset). Als je halverwege bent overgestapt naar een andere doeltijd, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je vertrouwde boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid weer terug in je deelbericht? Dan moet je je Quiz-voortgang resetten via Instellingen → Data → "🗑️ Quiz-voortgang wissen". De reset koppelt je voortgang opnieuw aan je huidige doeltijd, dus alles wat je daarna leert telt voor die doeltijd.',
+        a: 'De Delen-knop deelt je voortgang als tekst met een link naar de app — bijvoorbeeld "Ik ben vertrouwd met 33 van 66 bijbelboeken (10s) in de Bijbelboek Zoeker quiz!". Op telefoon of tablet opent je systeem-deelmenu zodat je naar WhatsApp, e-mail enzovoort kunt sturen; op desktop wordt het bericht naar je klembord gekopieerd. De snelheid tussen haakjes wordt alleen meegenomen als je de doeltijd niet hebt gewijzigd sinds het begin van de huidige run (of sinds je laatste "Opnieuw beginnen"). Als je halverwege bent overgestapt naar een andere doeltijd, wordt de snelheid weggelaten — anders zou het misleidend zijn, want je vertrouwde boeken zijn dan een mix van verschillende snelheden. Wil je de snelheid terug in je deelbericht? Begin een nieuwe run via "Opnieuw beginnen" (als er een onderbroken sessie is) of via "Start een nieuwe run →" op het trofee-scherm — dat koppelt je voortgang opnieuw aan je huidige doeltijd.',
       },
 
       // ─── Update banner — moved to bottom ────────────────────────────
@@ -254,6 +272,12 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
   },
   en: {
     title: 'Help',
+    introTitle: 'About this app',
+    intro: [
+      'Two modes share the same goal: learn where all 66 Bible books are located.',
+      '**Quiz Mode** is the main loop — race to 66 confident books, beat your time, race again. Spaced repetition makes you faster over weeks.',
+      '**Box Mode** is fast cram practice for a specific selection — no schedule, no consequences. Use it when you want to drill before something.',
+    ],
     approachTitle: 'Recommended approach',
     approach: [
       {
@@ -270,7 +294,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         icon: '⏸️',
-        text: 'When "Due" inside the quiz reads 0: stop. Drilling stable books does not strengthen memory — waiting does. At the end of a session you\'ll get two choices: end the session, or use "Train ahead" to do a little extra. Train ahead is a bonus, not a routine.',
+        text: 'No pressure to practice daily — spaced repetition works precisely *because* of the wait between reviews. Your memory does invisible work during the pause. Come back when you have time; FSRS automatically biases the picker toward your weaker books when you resume.',
       },
       {
         icon: '⚙️',
@@ -345,6 +369,13 @@ No pressure to practice daily. Train when you have the time.`,
     ],
     faqTitle: 'Frequently asked questions',
     faq: [
+      // ─── 0. The goal (ADR 0008, speedrun-only model) ────────────────
+      // First because it's the single most important concept for a new
+      // user: there IS a goal, it IS reachable, and it loops.
+      {
+        q: 'What is the goal in Quiz Mode?',
+        a: 'To make all 66 books confident. A book becomes "confident" when your last 3 answers on it were all correct AND within your target time. When all 66 are confident, you have completed a run and you see your total time on the trophy screen. From there you can race again to beat your time — your spaced repetition keeps working underneath, so each run leaves you a little stronger on your weakest books. You can do this in one day or spread it across multiple days, at your own pace.',
+      },
       // ─── 5. Pace ────────────────────────────────────────────────────
       {
         q: 'What do Flexible, Relaxed, Balanced, and Intensive mean?',
@@ -367,20 +398,20 @@ No pressure to practice daily. Train when you have the time.`,
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
         a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your target time. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
       },
-      // ─── 8b. After all 66 gold — v6 commit 22 ────────────────────────
+      // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {
-        q: 'What happens when all 66 books have a gold line?',
-        a: 'You\'ve completed the "race to 66 gold lines" — a real milestone. What\'s next? DO NOT reset via Settings → Data: that wipes your entire FSRS learning progress (all tiers, intervals, records) and is a nuclear option for when you really want to start from scratch. For "I want to do the race again" it\'s way too drastic. What DOES work: just keep training via Quiz Mode. The FSRS algorithm keeps scheduling books behind the scenes — sometimes they come back because their stability has dropped. If you then answer slowly or wrong on a book, its gold line drops off, and you can earn it back. That way the "race" subtly continues, without throwing anything away.',
+        q: 'What happens when all 66 books are confident?',
+        a: 'You have completed a run — a milestone. You see a trophy screen with your total time and a Share button. Want to race again? Tap "Start a new run →" on the home screen under the trophy card. That wipes your gold lines and run time, but your FSRS scheduling, personal bests, best streak, and history are preserved. The next run is automatically tuned a bit more toward your weaker books — FSRS has been quietly tracking which books you answer faster or slower. You can do as many runs as you want; each one strengthens your memory a little more over weeks and months.',
       },
       // ─── 8c. Time decay on gold lines — v6 commit 30 ──────────────────
       {
         q: 'Will I lose my gold lines if I don\'t practice for a while?',
         a: 'Not directly from time alone — a gold line only disappears when you answer a review wrong or too slowly. But in practice the two go together: after a long break you tend to answer more slowly, and that counts as "too slow" against your configured target time. So the system corrects itself through the actual learning interaction — not through a passive clock or timer. Behind the scenes FSRS keeps running: books you haven\'t seen for a while come back more often in Quiz Mode on their own. In short: you don\'t lose anything by skipping a few sessions, but your confidence gets naturally retested as soon as you come back.',
       },
-      // ─── 9. Pause ──────────────────────────────────────────────────
+      // ─── 9. Pause + Start over — rewritten for ADR 0008 ──────────────
       {
-        q: 'Can I pause a quiz session? And what does "Discard paused session" do?',
-        a: 'Yes, you can pause. Tap "← Back" during a session and BBF automatically snapshots your current session (which question you were on, session score, session streak, session training time). On the home screen you\'ll then see "▶ Resume session" — that picks up where you left off. Below it there\'s also "Discard paused session". Important to know: Discard only loses your session bookkeeping (session streak, session time, one combined history entry). It does NOT lose any learning progress — all gold lines, FSRS tiers, and personal bests you earned during the paused session are already permanently saved on your profile. Discard is safer than it sounds.',
+        q: 'Can I pause a quiz session? And what does "Start over" do?',
+        a: 'Yes, you can pause. Tap "← Back" during a session and BBF automatically snapshots your current session (which question you were on, your session score, streak, and training time). On the home screen you\'ll then see "▶ Resume session" — that picks up where you left off. Below it there\'s also "Start over". That\'s a soft reset: it wipes your gold lines and run time, but keeps your FSRS scheduling, personal bests, best streak, and history. Use it when you want to abandon the current run and race fresh — for instance if you weren\'t in good shape and don\'t think the current run represents your real level. The next run starts clean, with FSRS still biased toward your weaker books.',
       },
 
       // ─── Box Mode — separate practice mode (moved here in v6 commit 31) ────
@@ -490,7 +521,7 @@ No pressure to practice daily. Train when you have the time.`,
       },
       {
         q: 'What does the Share button do?',
-        a: 'The Share button shares your progress as text with a link to the app — for example "I\'m confident on 33 out of 66 Bible books (10s) in the Bible Book Finder quiz!". On phone or tablet it opens your system share sheet so you can send to WhatsApp, email, etc.; on desktop it copies the message to your clipboard so you can paste it yourself. The speed in parentheses (e.g. "(10s)") is only included if you haven\'t changed your speed setting since you started (or since your last reset). If you switched to a different speed partway through, the speed is left out — otherwise it would be misleading, because your confident books are then a mix of different speeds. Want the speed back in your share message? Then reset your Quiz progress via Settings → Data → "🗑️ Reset Quiz progress". The reset re-couples your progress to your current speed, so everything you learn afterwards counts for that speed.',
+        a: 'The Share button shares your progress as text with a link to the app — for example "I\'m confident on 33 out of 66 Bible books (10s) in the Bible Book Finder quiz!". On phone or tablet it opens your system share sheet so you can send to WhatsApp, email, etc.; on desktop it copies the message to your clipboard. The speed in parentheses is only included if you haven\'t changed your target time since the start of the current run (or since your last "Start over"). If you switched mid-run, the speed is left out — otherwise it would be misleading, because your confident books are then a mix of different speeds. Want the speed back in your share message? Begin a new run via "Start over" (if a paused session exists) or via "Start a new run →" on the trophy screen — that re-couples your progress to your current target time.',
       },
 
       // ─── Update banner — moved to bottom ────────────────────────────
@@ -531,6 +562,28 @@ export default function Help({ onBack }) {
         <button className="back-btn" onClick={onBack}>← {lang === 'nl' ? 'Terug' : 'Back'}</button>
         <h2>{content.title}</h2>
       </div>
+
+      {/* v6.4 (ADR 0008 follow-up): "About this app" landing card.
+          The first content a new user sees — three lines framing the
+          two-mode model. Progressive disclosure: this is Layer 1 ("what
+          is this thing?"), with the Recommended approach below as
+          Layer 2 ("how should I use it?"), and FAQ below that as
+          Layer 3 ("specific questions when they arise").
+          Bold markers (**text**) are rendered as <strong>. */}
+      <section className="help-section help-intro-section">
+        <h3>{content.introTitle}</h3>
+        <div className="help-intro">
+          {(content.intro || []).map((line, i) => (
+            <p key={i} className="help-intro-line">
+              {line.split(/(\*\*[^*]+\*\*)/).map((seg, j) =>
+                seg.startsWith('**') && seg.endsWith('**')
+                  ? <strong key={j}>{seg.slice(2, -2)}</strong>
+                  : <span key={j}>{seg}</span>
+              )}
+            </p>
+          ))}
+        </div>
+      </section>
 
       <section className="help-section">
         <h3>{content.approachTitle}</h3>
