@@ -76,6 +76,11 @@ export const defaultConfig = {
     // takes over.
     theme: 'auto',
     highlightFound: true,
+    // Box Mode counterpart to highlightFound. Controls whether books that
+    // have climbed to box 5 in the current cram session get the gold
+    // underline marker. Defaults to true since the marker has historically
+    // been always-on; the toggle is for users who want a quieter grid.
+    highlightTopBox: true,
     abbreviationsPortrait: 'auto',
     abbreviationsLandscape: 'auto',
     // Auto-scroll the asked book into view in the grid. Used by Quiz

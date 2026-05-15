@@ -772,7 +772,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     return (
       <button
         key={book.id}
-        className={`book-cell ${inTopBox ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
+        className={`book-cell ${inTopBox && config.display.highlightTopBox !== false ? 'boxmode-rooted' : ''}${showCorrect ? ' correct' : ''}${showWrong ? ' wrong' : ''}`}
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}

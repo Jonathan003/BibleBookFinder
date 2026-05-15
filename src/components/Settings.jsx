@@ -449,9 +449,6 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
           <SettingRow label={t.autoScroll || 'Auto-scroll'} desc={t.autoScrollDesc || '(scroll to the asked book on each question)'}>
             <Toggle value={display.autoScroll !== false} onChange={v => updateField('display', 'autoScroll', v)} />
           </SettingRow>
-          <SettingRow label={t.highlightFound || 'Confident books'} desc={t.highlightFoundDesc || '(show gold line under confident books)'}>
-            <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
-          </SettingRow>
           {/* Theme: light/dark/auto. v4 dark-mode addition. 'auto' follows
               the OS prefers-color-scheme; 'light' and 'dark' override it. */}
           <SettingRow label={t.theme || 'Theme'} desc={t.themeDesc || ''}>
@@ -469,6 +466,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               still hosts the (Advanced-folded) FSRS learning pace
               control, which IS quiz-only. */}
           <h4 className="settings-subsection">{t.settingsSubsectionQuiz || 'Quiz Mode'}</h4>
+          {/* Confident-books gold-line toggle, moved here from SHARED in v6.
+              It only ever affected Quiz Mode (Box Mode has its own gold
+              underline controlled by display.highlightTopBox). The label
+              uses the same "Confident books" wording the home screen uses
+              for the X / 66 counter. */}
+          <SettingRow label={t.highlightFound || 'Confident books'} desc={t.highlightFoundDesc || '(show gold line under confident books)'}>
+            <Toggle value={display.highlightFound} onChange={v => updateField('display', 'highlightFound', v)} />
+          </SettingRow>
           {/* Learning pace controls FSRS request_retention. In the new
               schedule-free model the user no longer sees a calendar, so
               this lever is rarely needed — Intensive is the sensible
@@ -508,6 +513,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
               users who want no pressure set the shared slider near
               30s; users who want speed practice set it lower. */}
           <h4 className="settings-subsection">{t.settingsSubsectionBoxMode || 'Box Mode'}</h4>
+          {/* Box Mode counterpart to highlightFound. Controls the gold
+              underline on books that have climbed to box 5 in the current
+              cram session. Default true preserves the previous always-on
+              behavior; the toggle is here so users who prefer a quieter
+              grid can hide it independently of Quiz Mode's toggle. */}
+          <SettingRow label={t.highlightTopBox || 'Top-box books'} desc={t.highlightTopBoxDesc || '(show gold line under books in box 5)'}>
+            <Toggle value={display.highlightTopBox !== false} onChange={v => updateField('display', 'highlightTopBox', v)} />
+          </SettingRow>
           <SettingRow label={t.boxModeFailModeLabel || 'On wrong answer'} desc={t.boxModeFailModeDesc || ''}>
             <select value={boxMode.failMode || 'soft'} onChange={e => updateField('boxMode', 'failMode', e.target.value)} className="setting-select">
               <option value="soft">{t.boxModeFailModeSoft || 'Drop one box'}</option>

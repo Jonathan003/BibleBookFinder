@@ -221,6 +221,12 @@ export const translations = {
     // avoid cascading changes — only the displayed string moved.
     highlightFound: 'Vertrouwde boeken',
     highlightFoundDesc: '(toon gouden lijn onder vertrouwde boeken)',
+    // Box Mode counterpart to highlightFound. Marks books in box 5 of the
+    // current cram session with the same gold underline. Same colour, but
+    // a different concept than Quiz Mode's persistent confident-buffer
+    // gold line — that's why the toggles are separate per mode.
+    highlightTopBox: 'Bovenste-doos boeken',
+    highlightTopBoxDesc: '(toon gouden lijn onder boeken in doos 5)',
     autoScroll: 'Automatisch scrollen',
     autoScrollDesc: '(scroll naar het gevraagde boek bij elke vraag)',
     theme: 'Thema',
@@ -603,6 +609,8 @@ export const translations = {
     // to match the renamed concept).
     highlightFound: 'Confident books',
     highlightFoundDesc: '(show gold line under confident books)',
+    highlightTopBox: 'Top-box books',
+    highlightTopBoxDesc: '(show gold line under books in box 5)',
     autoScroll: 'Auto-scroll',
     autoScrollDesc: '(scroll to the asked book on each question)',
     theme: 'Theme',
