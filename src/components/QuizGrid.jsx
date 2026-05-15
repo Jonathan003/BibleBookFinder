@@ -61,33 +61,6 @@ function autoPickDelayMs(targetSpeedMs) {
   return Math.min(800, Math.max(250, Math.round(targetSpeedMs * 0.5)));
 }
 
-// v6 commit 34 introduced this constant as an auto-advance duration
-// for the time-up reveal. v6 commit 35 reverted to click-to-advance
-// (the original pre-34 behavior) per user preference, but kept the
-// constant as a MINIMUM READ WINDOW: during the first TIME_UP_DISPLAY_MS
-// after a time-up reveal, taps on the revealed blue cell are ignored.
-// After this window, the tap works normally and advances to the next
-// question.
-//
-// Why a minimum read window at all? Pre-34, the user could tap the
-// blue revealed cell 0-50ms after the reveal (their finger was already
-// moving toward the book they'd just found) — too fast to read the
-// "⏱ Too slow — was X" label or register the color. The minimum read
-// window guarantees the reveal is legible regardless of tap timing.
-//
-// 1500ms is grounded in:
-//   - Material Design's LENGTH_LONG snackbar duration (also 1500ms)
-//   - ~50ms × ~30 characters reading-speed estimate ("⏱ Te traag —
-//     was Markus" / "Time's up — was Mark") = ~1500ms
-//   - Anki's "Time to show answer" default range (1.5-3s, configurable)
-//
-// Wrong-answer feedback does NOT use this minimum-window — that flow
-// is active learning acknowledgment (the user tapped wrong, sees the
-// correct one revealed, taps it to acknowledge). Time-up is a passive
-// reveal (the user did nothing, the timer expired) and needs the
-// guaranteed read window.
-const TIME_UP_DISPLAY_MS = 1500;
-
 export default function QuizGrid({
   ownerUserId, fsrsCards, updateFsrsCard,
   confidentBuffers = {}, updateConfidentBuffer,
@@ -206,10 +179,6 @@ export default function QuizGrid({
   // question, even if the 100ms tick lands right before the cleanup
   // race. Mirrors Box Mode's `expiryFiredRef`.
   const expiryFiredRef = useRef(false);
-  // v6 commit 35: timestamp of when the time-up reveal started.
-  // handleBookClick uses this to enforce TIME_UP_DISPLAY_MS as a
-  // minimum read window before tap-to-dismiss works.
-  const timeUpAtRef = useRef(0);
   // v6 commit 37: tracks whether the 66/66 confident celebration has
   // already been triggered in this session. Prevents repeated session-
   // complete prompts when the user taps "Continue training" after the
@@ -466,16 +435,6 @@ export default function QuizGrid({
             document.querySelector(`[data-book-id="${tb.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
         });
-
-        // v6 commit 35: record when the time-up reveal started. The
-        // tap-to-dismiss path in handleBookClick uses this timestamp
-        // to enforce the minimum read window (TIME_UP_DISPLAY_MS) —
-        // taps arriving before the window elapses are silently
-        // ignored. After the window, taps work normally.
-        // (v6 commit 34 had auto-advance here via schedule(); that
-        // was reverted in 35 per user preference for explicit
-        // tap-to-dismiss, retaining only the minimum read window.)
-        timeUpAtRef.current = Date.now();
       }
     }, 100);
     return () => clearInterval(interval);
@@ -888,24 +847,12 @@ export default function QuizGrid({
     // that might slip through. See ADR 0004.
     if (sessionComplete) return;
     // Allow clicking the correct book to dismiss feedback and advance.
-    //
-    // v6 commit 35 (replaces v6 commit 34's auto-advance approach):
-    // For 'time-up' feedback specifically, the dismiss tap is allowed
-    // ONLY after TIME_UP_DISPLAY_MS has elapsed since the reveal.
-    // Earlier taps are silently ignored. This guarantees the user has
-    // at least 1.5s to read "⏱ Te traag — was X" — the reveal label
-    // can otherwise be cut off by a tap arriving 0-50ms after the
-    // reveal (the finger was already moving toward the just-found
-    // book when the timer expired).
-    //
-    // Wrong-answer feedback has no minimum window — that flow is an
-    // active learning acknowledgment (the user tapped the wrong
-    // book, sees the correct one revealed, taps it to confirm).
+    // Both time-up and wrong-answer use the same click-to-advance flow:
+    // user taps the revealed blue cell, feedback clears, picker fires.
+    // Only the prompt text differs ("⏱ Te traag — was X" for time-up,
+    // "❌ Fout — was X" for wrong-answer). See ADR 0007 — supersedes
+    // the 1500ms minimum read window from ADR 0002.
     if (feedbackRef.current && book.id === correctBookId) {
-      if (feedback === 'time-up') {
-        const elapsed = Date.now() - timeUpAtRef.current;
-        if (elapsed < TIME_UP_DISPLAY_MS) return;
-      }
       feedbackRef.current = false;
       setFeedback(null);
       setResponseTime(null);
