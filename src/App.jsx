@@ -363,7 +363,14 @@ function App() {
   const goToMode = useCallback((mode) => {
     if (currentUser) {
       updateUser(currentUser.id, { lastUsedMode: mode });
-      setCurrentUserState({ ...currentUser, lastUsedMode: mode });
+      // Functional setState — critical when goToMode is batched with other
+      // setCurrentUserState updates in the same event handler (e.g. the
+      // celebration launcher fires doStartNewRun + goToMode together; a
+      // non-functional `{ ...currentUser, ... }` here would spread the
+      // pre-reset currentUser and clobber doStartNewRun's cleared
+      // confidentBuffers, causing QuizGrid to mount at 66/66 confident
+      // and immediately trigger the session-complete screen).
+      setCurrentUserState(prev => prev ? { ...prev, lastUsedMode: mode } : prev);
     }
     setView(mode);
   }, [currentUser]);
