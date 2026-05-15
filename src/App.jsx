@@ -1084,9 +1084,9 @@ function App() {
                       </button>
                       <button
                         className="btn home-launcher-btn home-launcher-discard"
-                        onClick={() => handleQuizPause(null)}
+                        onClick={() => doStartNewRun()}
                       >
-                        <span className="launcher-label">{t.discardPausedSession || 'Discard paused session'}</span>
+                        <span className="launcher-label">{t.discardPausedSession || 'Start over'}</span>
                       </button>
                     </>
                   ) : (
@@ -1207,7 +1207,6 @@ function App() {
               onRestore={handleRestore}
               onResetQuizProgress={doResetQuizProgress}
               onResetBoxProgress={doResetBoxProgress}
-              onStartNewRun={doStartNewRun}
             />
           )}
 

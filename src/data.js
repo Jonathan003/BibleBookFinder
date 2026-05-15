@@ -149,7 +149,6 @@ export const translations = {
     confirmResetMsg: 'Weet je zeker dat je je voortgang wilt wissen? Dit kan niet ongedaan worden gemaakt.',
     confirmResetQuizMsg: 'Wist FSRS-planning, gouden lijnen, persoonlijke records, streak en geschiedenis. Dit kan niet ongedaan worden gemaakt.',
     confirmResetBoxMsg: 'Wist alle persoonlijke records per selectie. Dit kan niet ongedaan worden gemaakt.',
-    confirmResetConfidentProgressMsg: 'Reset naar 0 / 66 vertrouwd. FSRS-planning en beste tijden blijven behouden.',
     cancelReset: 'Annuleer',
     // Reset section in Settings → Data (where the Reset buttons live now)
     resetSectionTitle: 'Voortgang resetten',
@@ -179,7 +178,6 @@ export const translations = {
     share: 'Delen',
     resetQuizProgress: 'Quiz-voortgang wissen',
     resetBoxProgress: 'Doos-voortgang wissen',
-    resetConfidentProgress: 'Vertrouwde voortgang wissen',
     back: 'Terug',
     settingsTitle: 'Instellingen',
     gridTab: 'Raster',
@@ -324,7 +322,7 @@ export const translations = {
     // in v6 commit 7; key removed in v6 commit 13.
     resumeSession: 'Sessie hervatten',
     resumeSessionDesc: 'Ga verder waar je gebleven was',
-    discardPausedSession: 'Onderbroken sessie weggooien',
+    discardPausedSession: 'Opnieuw beginnen',
     // ─── Box Mode dashboard (v4.1, labels improved v4.4) ────────
     // Stat-card labels for the redesigned Box panel. Renamed in v4.4
     // because "1 cleared of 9, 8 to go" wasn't clear — "cleared" is
@@ -411,32 +409,12 @@ export const translations = {
     welcomeBack24h: 'Welkom terug! Laten we kijken wat je nog weet.',
     welcomeBack7d: 'Welkom terug! Ga verder waar je gebleven was — geen druk.',
     // ─── Session-complete screen ──────────────────────────────────────
-    // Shown when DUE=0 with no unseen books, or when the user hits their
-    // Quick/Standard pick-count limit. The user has genuinely finished;
-    // any further training is a deliberate choice (Box Mode).
-    sessionCompleteTitle: '✨ Sessie compleet',
-    sessionCompleteRestTitle: '🧠 Stoppen versterkt je geheugen meer dan doortrainen.',
-    sessionCompleteRestBody: 'Wachten is geen pauze — het is wanneer je geheugen het werk doet.',
-    // Today's totals line. {N} {M} {T} are filled in by the component.
-    // "boeken" here counts unique book IDs seen today (sessions saved
-    // with seenBookIds). For legacy entries without that field the
-    // component falls back to total questions answered.
-    sessionCompleteTodayLabel: 'Vandaag',
-    sessionCompleteBooks: 'boeken',
-    sessionCompleteSessions: 'sessies',
-    sessionCompleteSessionSingle: 'sessie',
-    sessionCompleteMinutes: 'minuten getraind',
-    // v6.1: new label used by the rewritten "Today" line that calls
-    // formatDuration(todayMs) instead of formatting minutes by hand.
-    // sessionCompleteMinutes is no longer referenced; kept here so any
-    // older exports/imports that still send it through don't crash.
-    sessionCompleteTrainedLabel: 'getraind',
-    sessionCompleteFinish: 'Sessie afsluiten',
-    // v6.2: second button on the in-session celebration screen. Lets the
-    // user keep training without going back to home first. Resets only
-    // sessionSeenBooks (so the maintenance picker has books to choose
-    // again); keeps score, streak, and sessionMs accumulating.
-    sessionCompleteContinue: 'Verder trainen',
+    // v6.4 (ADR 0008, speedrun-only model): the session-complete screen
+    // is now purely the 66/66 celebration (trophy + total time + share +
+    // back arrow). The previous variant strings — non-celebration title,
+    // "stopping strengthens your memory" rest message, Today daily-stats
+    // line, Continue training button, End session button — all removed
+    // with the dead code paths that referenced them.
 
     // ─── Box Mode (Doos Modus) ─────────────────────────────────────
     // Cram-style training. All selected books start in box 1; correct
@@ -549,7 +527,6 @@ export const translations = {
     confirmResetMsg: 'Are you sure you want to reset your progress? This cannot be undone.',
     confirmResetQuizMsg: 'Wipes FSRS scheduling, gold lines, personal bests, streak, and history. This cannot be undone.',
     confirmResetBoxMsg: 'Wipes all per-scope personal bests. This cannot be undone.',
-    confirmResetConfidentProgressMsg: 'Resets to 0 / 66 confident. FSRS scheduling and best times are preserved.',
     cancelReset: 'Cancel',
     // Reset section in Settings → Data (where the Reset buttons live now)
     resetSectionTitle: 'Reset progress',
@@ -575,7 +552,6 @@ export const translations = {
     share: 'Share',
     resetQuizProgress: 'Reset Quiz progress',
     resetBoxProgress: 'Reset Box progress',
-    resetConfidentProgress: 'Reset confident progress',
     back: 'Back',
     settingsTitle: 'Settings',
     gridTab: 'Grid',
@@ -683,7 +659,7 @@ export const translations = {
     // the home stat card in v6 commit 7; key removed in v6 commit 13.
     resumeSession: 'Resume session',
     resumeSessionDesc: 'Pick up where you left off',
-    discardPausedSession: 'Discard paused session',
+    discardPausedSession: 'Start over',
     // See NL section for design rationale (v4.1; labels improved v4.4).
     scopesCleared: 'cleared',
     scopesToGo: 'to go',
@@ -731,23 +707,7 @@ export const translations = {
     welcomeBack24h: 'Welcome back! Let\'s see what you remember.',
     welcomeBack7d: 'Welcome back! Pick up where you left off — no pressure.',
     // ─── Session-complete screen ──────────────────────────────────────
-    // See NL section for design rationale.
-    sessionCompleteTitle: '✨ Session complete',
-    sessionCompleteRestTitle: '🧠 Stopping strengthens your memory more than pushing through.',
-    sessionCompleteRestBody: 'The wait is not a pause — it\'s when your memory does the work.',
-    sessionCompleteTodayLabel: 'Today',
-    sessionCompleteBooks: 'books',
-    sessionCompleteSessions: 'sessions',
-    sessionCompleteSessionSingle: 'session',
-    sessionCompleteMinutes: 'minutes trained',
-    // v6.1: new label used by the rewritten "Today" line that calls
-    // formatDuration(todayMs) instead of formatting minutes by hand.
-    // sessionCompleteMinutes is no longer referenced; kept here so any
-    // older exports/imports that still send it through don't crash.
-    sessionCompleteTrainedLabel: 'trained',
-    sessionCompleteFinish: 'End session',
-    // v6.2: see Dutch version above for design rationale.
-    sessionCompleteContinue: 'Continue training',
+    // v6.4 (ADR 0008, speedrun-only model): see NL section.
 
     // ─── Box Mode ──────────────────────────────────────────────────
     boxModeTitle: 'Box Mode',

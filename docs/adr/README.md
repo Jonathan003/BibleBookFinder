@@ -28,9 +28,10 @@ A reasonable target: about one ADR per significant design discussion, typically 
 | [0002](./0002-time-up-click-to-advance.md) | Time-up flow: click-to-advance with minimum read window | Superseded by [0007](./0007-time-up-match-wrong-answer-flow.md) |
 | [0003](./0003-immediate-session-complete-on-66-confident.md) | Quiz Mode flow on reaching 66 confident — immediate session-complete | Accepted |
 | [0004](./0004-guard-against-late-buffer-updates.md) | Guard against late buffer updates after session-complete | Accepted |
-| [0005](./0005-soft-reset-for-start-a-new-run.md) | Soft-reset semantics for "Start a new run" | Accepted |
+| [0005](./0005-soft-reset-for-start-a-new-run.md) | Soft-reset semantics for "Start a new run" | Accepted (post-66 maintenance framing partly superseded by [0008](./0008-speedrun-only-quiz-mode-model.md)) |
 | [0006](./0006-hint-no-rating-penalty.md) | Hint usage does not affect FSRS rating or gold-line credit | Accepted |
 | [0007](./0007-time-up-match-wrong-answer-flow.md) | Time-up uses the same click-to-advance flow as wrong-answer | Accepted |
+| [0008](./0008-speedrun-only-quiz-mode-model.md) | Speedrun-only Quiz Mode model — one goal, one loop | Accepted |
 
 ## How to add a new ADR
 

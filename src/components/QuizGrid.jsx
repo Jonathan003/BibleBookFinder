@@ -8,7 +8,7 @@ import {
   reviewBook, getDueBooks, serializeCard, deserializeCard,
   Rating, getBookStats, isConfident, recordConfidentAttempt, getConfidentCount, getNonConfidentBooks,
 } from '../fsrs';
-import { computeTodayStats } from '../streak';
+
 import { formatDuration } from '../timeFormat';
 import { logSessionStart, logBookPick, logAnswerResult, logSessionEnd } from '../debug';
 import './QuizGrid.css';
@@ -750,15 +750,10 @@ export default function QuizGrid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finishSession = useCallback(() => {
-    logSessionEnd(fsrsCardsRef.current || {}, bibleBooks);
-    saveCurrentSegment();
-    // Session completed naturally — clear any paused checkpoint so the
-    // user doesn't see a stale Resume CTA referring to the just-ended
-    // run. App.jsx writes null → pausedQuizSession on user.
-    if (onPause) onPause(null);
-    onBack();
-  }, [saveCurrentSegment, onBack, onPause]);
+  // v6.4 (ADR 0008): finishSession removed. Its responsibilities
+  // (logSessionEnd + saveCurrentSegment + clear-pause + onBack) are
+  // now absorbed into handleBack's sessionComplete branch, which is
+  // the only path that needs them in the speedrun-only model.
 
   // v4: Back is a pause, not a session-end. Snapshot the full session
   // state to onPause(snapshot); App.jsx persists it onto the user as
@@ -774,6 +769,16 @@ export default function QuizGrid({
   // path too).
   const handleBack = useCallback(() => {
     if (sessionComplete) {
+      // v6.4 (speedrun-only model, ADR 0008): the back arrow is the sole
+      // exit from the celebration screen — Continue training and End
+      // session buttons removed. Absorb their bookkeeping here: write
+      // the session segment, clear any stale paused-session snapshot
+      // (which can exist if this run was pause-and-resumed), then
+      // navigate back. Equivalent to what the old End session button
+      // did via finishSession.
+      logSessionEnd(fsrsCardsRef.current || {}, bibleBooks);
+      saveCurrentSegment();
+      if (onPause) onPause(null);
       onBack();
       return;
     }
@@ -803,39 +808,14 @@ export default function QuizGrid({
       sessionDataRef.current.saved = true;
     }
     onBack();
-  }, [onBack, onPause, sessionComplete, targetBook, streak, score, responseTimes,
+  }, [onBack, onPause, sessionComplete, saveCurrentSegment, targetBook, streak, score, responseTimes,
       sessionMasteredBooks, sessionHintedBooks, sessionWrongBooks, sessionSeenBooks,
       sessionNewBests, sessionMs, sessionLimit]);
 
-  // End-session button on the session-complete screen — saves and
-  // returns to menu, same as finishSession.
-  const handleEndSession = useCallback(() => {
-    finishSession();
-  }, [finishSession]);
-
-  // v6.2: Continue-training button on the session-complete screen.
-  //
-  // sessionComplete=true only fires when the maintenance-mode picker
-  // (Branch 4) has exhausted its candidate pool — i.e. all 66 books are
-  // confident AND every one has already been asked in this round.
-  // Tapping Continue means "give me more books"; we clear the per-round
-  // seen filter so the picker has candidates again, then call
-  // pickNextBook. We deliberately keep the session-level sessionSeenBooks
-  // state, score, streak, sessionMs, and the various sessionXxxBooks
-  // tallies — the user wants to keep going inside the same logical
-  // session, not start over.
-  //
-  // Why the round/session split matters: when the user eventually taps
-  // End Session, saveCurrentSegment writes seenBookIds from the
-  // session-level state, so the saved entry correctly reflects every
-  // book seen across BOTH rounds. If we instead cleared the session
-  // state here, the second-round books would be the only ones in the
-  // save, under-counting the user's actual training.
-  const handleContinueTraining = useCallback(() => {
-    setSessionComplete(false);
-    roundSeenBooksRef.current = new Set();
-    pickNextBook();
-  }, [pickNextBook]);
+  // v6.4 (ADR 0008): handleEndSession + handleContinueTraining removed.
+  // The speedrun-only model has a single exit path on the celebration
+  // screen — the back arrow — which handleBack now handles directly
+  // (save + clear-pause + onBack) when sessionComplete is true.
 
   const handleBookClick = (book) => {
     if (!targetBook) return;
@@ -1142,93 +1122,35 @@ export default function QuizGrid({
   };
 
   // ─── Session-complete screen ─────────────────────────────────────────
-  // Two states:
-  // - confidentCount === 66: full celebration (trophy + title + body +
-  //   total time + share). Same content the home-screen all-66 card has.
-  // - confidentCount < 66: neutral framing. Just "Session complete" +
-  //   today's stats + End session. No "stopping strengthens" rest message
-  //   (that framing was schedule-shaped despite the disclaimer and
-  //   contradicted the v4 "train when you have time" model — same
-  //   reasoning as the home-screen rest message we removed in commit 4).
+  // v6.4 (ADR 0008): the speedrun-only model collapses this screen to
+  // a single state — sessionComplete only ever fires at 66/66 confident
+  // (the maintenance-mode Branch 4 that produced the < 66 "Session
+  // complete" variant is eliminated). The screen is purely a milestone
+  // moment: trophy + total time + Share + back-arrow header.
   if (sessionComplete) {
-    const today = computeTodayStats(quizHistory);
-    const liveBooks = sessionSeenBooks.size;
-    const liveSessions = score.total > 0 ? 1 : 0;
-    const liveMs = sessionMs;
-    const todayBooks = today.books + liveBooks;
-    const todaySessions = today.sessions + liveSessions;
-    const todayMs = today.durationMs + liveMs;
-    // v6.1: dropped `todayMinutes = Math.round(todayMs / 60000)`. The
-    // "Today" line now uses formatDuration(todayMs) for consistency
-    // with the share message, home-screen celebration, and Settings
-    // → Data screen. Previous Math.round behavior caused visible
-    // discrepancies: a 9.5m session displayed as "10 minutes trained"
-    // here but "9m" everywhere else (formatDuration uses Math.floor).
-    // formatDuration also scales gracefully past 60 minutes — a 65m
-    // session showed "65 minutes trained" before, now "1h 5m trained".
-    const sessionsLabel = todaySessions === 1 ? t.sessionCompleteSessionSingle : t.sessionCompleteSessions;
-    const isAll66 = getConfidentCount(confidentBuffersRef.current || {}, bibleBooks) === 66;
     return (
       <div className="quiz-grid session-complete-screen">
-        {isAll66 ? (
-          <div className="celebration-66 celebration-66-inline">
-            <span className="celebration-trophy" aria-hidden="true">🏆</span>
-            <h2 className="celebration-title">{t.celebration66Title}</h2>
-            <p className="celebration-body">{t.celebration66Body}</p>
-            {totalQuizMs > 0 && (
-              <div className="celebration-time">
-                <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
-                <span className="celebration-time-value">{formatDuration(totalQuizMs)}</span>
-                {/* v6.1: was `formatDuration(totalQuizMs + sessionMs)`,
-                    which double-counted the current session. Reason:
-                    addTrainingTime(cappedMs) is called per question
-                    (correct-answer handler line ~536, wrong-answer
-                    handler line ~655), incrementing totalQuizMs by the
-                    same cappedMs that's being added to sessionMs. So by
-                    the time the celebration renders, totalQuizMs ALREADY
-                    includes the entire current session — adding sessionMs
-                    on top doubled it. Jonathan's screenshot showed total
-                    19m for a single ~9.5m session: 9.5 (totalQuizMs) +
-                    9.5 (sessionMs) = 19. The home-screen celebration
-                    (App.jsx) uses just `formatDuration(totalQuizMs)` and
-                    has always been right; this is now consistent. */}
-              </div>
-            )}
+        {/* v6.4 (ADR 0008): back-arrow header on the celebration screen.
+            Single exit path — same chrome the user already used during
+            active quiz. No bottom action buttons (Anki community Github
+            #15349: single-action celebration buttons read as friction,
+            not service). User dwells as long as they want, taps Share
+            if they want, then exits via the back arrow. */}
+        <div className="quiz-top">
+          <div className="quiz-prompt-row">
+            <button className="back-btn" onClick={handleBack}>← {t.back}</button>
           </div>
-        ) : (
-          <h2 className="session-complete-title">{t.sessionCompleteTitle}</h2>
-        )}
-
-        {/* Daily totals — shown in both branches. A line of zeros on a
-            fresh-account first-run would feel like scolding, so only
-            render when there's something to report. */}
-        {(todayBooks > 0 || todaySessions > 0) && (
-          <p className="session-complete-today">
-            <strong>{t.sessionCompleteTodayLabel}:</strong>{' '}
-            {todayBooks} {t.sessionCompleteBooks}
-            {' · '}{todaySessions} {sessionsLabel}
-            {todayMs > 0 && (<>{' · '}{formatDuration(todayMs)} {t.sessionCompleteTrainedLabel}</>)}
-          </p>
-        )}
-
-        <div className="session-complete-buttons">
-          {/* v6.2: Continue training is now the primary action.
-              Research (Quizlet Learn, Brainscape Smart Study) shows
-              users typically want to keep going after hitting a natural
-              stopping point — the dual-button pattern just makes the
-              choice explicit. End session stays available as the
-              secondary action.
-
-              Visual hierarchy: Continue gets the purple gradient that
-              used to be on End session. End session moves to the
-              neutral outlined style (the .btn default) so the eye
-              lands on Continue first. */}
-          <button className="btn session-complete-continue" onClick={handleContinueTraining}>
-            {t.sessionCompleteContinue}
-          </button>
-          <button className="btn session-complete-finish" onClick={handleEndSession}>
-            {t.sessionCompleteFinish}
-          </button>
+        </div>
+        <div className="celebration-66 celebration-66-inline">
+          <span className="celebration-trophy" aria-hidden="true">🏆</span>
+          <h2 className="celebration-title">{t.celebration66Title}</h2>
+          <p className="celebration-body">{t.celebration66Body}</p>
+          {totalQuizMs > 0 && (
+            <div className="celebration-time">
+              <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
+              <span className="celebration-time-value">{formatDuration(totalQuizMs)}</span>
+            </div>
+          )}
         </div>
       </div>
     );
