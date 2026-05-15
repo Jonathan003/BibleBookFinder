@@ -35,11 +35,6 @@ function App() {
   const [config, setConfig] = useState(defaultConfig);
   const [shareFeedback, setShareFeedback] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState(null); // '24h' | '7d' | null
-  // Two-tap confirmation for the "Start a new run" reset on the all-66
-  // celebration screen. First tap arms (button switches to "Tap again
-  // to confirm"); second tap fires doResetQuizProgress. Auto-clears
-  // when the user navigates away.
-  const [celebrationResetConfirm, setCelebrationResetConfirm] = useState(false);
   // Home-screen mode selection (the in-page tabs pattern). Picking a card
   // updates this state — it does NOT launch. The Start button below
   // launches whatever's selected. Defaults to lastUsedMode so returning
@@ -396,6 +391,25 @@ function App() {
     });
   };
 
+  // Soft reset for the home-screen launcher when confidentCount === 66.
+  // Clears only the in-run metrics that need to reset for a fresh race:
+  // confident gold lines, paused session, total run time, target-speed
+  // snapshot. Preserves long-term FSRS scheduling, per-book best times,
+  // lifetime streak, and history. This is the "speedrun replay" path:
+  // the user races to 66 again with the picker quietly biased toward
+  // their weakest books (FSRS still informs Branch 1 and Branch 3 of
+  // pickNextBook). See ADR 0005 for the per-field rationale and the
+  // research that motivated the split.
+  const doStartNewRun = () => {
+    if (!currentUser) return;
+    updateUserData({
+      confidentBuffers: {},
+      pausedQuizSession: null,
+      masteryMsAtStart: config.targetSpeedMs,
+      totalQuizMs: 0,
+    });
+  };
+
   // Reset Box Mode progress for the current user. Wipes per-scope
   // personal bests (fastestMs, fewestMistakes, longestStreak across all
   // scopes — All 66, Pentateuch, Gospels, etc.). Quiz Mode data is NOT
@@ -699,14 +713,20 @@ function App() {
                   to jump vertically. */}
               <div className="dashboard-area">
               <div className={`dashboard-panel${selectedMode === 'quiz' ? '' : ' dashboard-panel-hidden'}`} aria-hidden={selectedMode !== 'quiz'}>
-              <button
-                className="share-icon-btn-panel"
-                onClick={share}
-                title={t.share}
-                aria-label={t.share}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              </button>
+              {/* Corner share icon. Hidden in the all-66 celebration state
+                  since the celebration card has its own dominant Share
+                  button — keeping both visible was the v5 duplicate-share
+                  bug Jonathan flagged in screenshot review (2026-05-15). */}
+              {confidentCount !== 66 && (
+                <button
+                  className="share-icon-btn-panel"
+                  onClick={share}
+                  title={t.share}
+                  aria-label={t.share}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+              )}
               {/* v6: dashboard panel title. Mirrors the Box Mode panel's
                   "📦 Box Mode" header so the share icon in the top-right
                   has something to balance against. Without this header,
@@ -757,22 +777,14 @@ function App() {
                     >
                       🔗 {t.share}
                     </button>
-                    <button
-                      className={`btn celebration-reset-btn${celebrationResetConfirm ? ' confirm' : ''}`}
-                      onClick={() => {
-                        if (celebrationResetConfirm) {
-                          doResetQuizProgress();
-                          setCelebrationResetConfirm(false);
-                        } else {
-                          setCelebrationResetConfirm(true);
-                          // Auto-disarm after 4s so a stray first tap
-                          // doesn't leave the button armed indefinitely.
-                          setTimeout(() => setCelebrationResetConfirm(false), 4000);
-                        }
-                      }}
-                    >
-                      {celebrationResetConfirm ? t.celebration66ResetConfirm : t.celebration66Reset}
-                    </button>
+                    {/* The "Start a new run" reset moved out of the
+                        celebration card and into the bottom launcher
+                        as of ADR 0005. The launcher relabels to
+                        "Start a new run →" when confidentCount === 66
+                        and calls doStartNewRun() (soft reset, keeps
+                        FSRS) before navigating to Quiz Mode. Removing
+                        the inline button eliminates the dual-button
+                        confusion on the celebration screen. */}
                   </div>
                 </div>
               ) : (
@@ -1088,31 +1100,32 @@ function App() {
                     <button
                       className="btn home-start-btn"
                       onClick={() => {
+                        // At 66/66 the launcher doubles as "Start a new run":
+                        // soft-reset confident buffers + per-run timer
+                        // (keeping FSRS, best times, history) before
+                        // launching. See ADR 0005.
+                        if (confidentCount === 66) {
+                          doStartNewRun();
+                        }
                         setQuizSessionLimit(null);
                         setQuizPhase('playing');
                         goToMode('quiz');
                       }}
                     >
-                      {`${t.homeStartQuiz} →`}
+                      {`${confidentCount === 66 ? t.homeStartNewRun : t.homeStartQuiz} →`}
                     </button>
-                    {/* v6 commit 20: zachte FSRS-leidraad. stats.dueNow
-                        = aantal boeken dat FSRS als due markeert plus
-                        nog-niet-geziene boeken (allebei verdienen
-                        aandacht). Plural/singular/zero split met fallback
-                        teksten zodat oudere translation-bundles niet
-                        crashen.
-                        v6 commit 21: aparte first-time case zodat een
-                        nieuwe gebruiker of net-gereset profiel niet de
-                        dramatische "66 books could use attention" leest. */}
-                    <div className="home-launcher-hint">
-                      {stats.unseen === stats.total
-                        ? (t.quizHintFirstTime || 'Start your first session whenever you like — the app will learn what\'s tricky for you')
-                        : stats.dueNow === 0
-                        ? (t.quizHintNone || 'No books need attention today')
-                        : stats.dueNow === 1
-                        ? (t.quizHintOne || '1 book could use attention today')
-                        : (t.quizHintMany || '{count} books could use attention today').replace('{count}', stats.dueNow)}
-                    </div>
+                    {/* First-time onboarding hint only. The daily-quota-
+                        flavored "X books could use attention today"
+                        variants were removed alongside the always-
+                        speedrun model (ADR 0005): the user's primary
+                        loop is race-to-66, and surfacing FSRS due-counts
+                        on the home screen reintroduces the schedule
+                        chrome ADR 0001 explicitly disowns. */}
+                    {stats.unseen === stats.total && (
+                      <div className="home-launcher-hint">
+                        {t.quizHintFirstTime || 'Start your first session whenever you like — the app will learn what\'s tricky for you'}
+                      </div>
+                    )}
                     </>
                   )
                 )}

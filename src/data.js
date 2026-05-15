@@ -464,6 +464,11 @@ export const translations = {
     resumePausedAt: 'Onderbroken {when}',
     homeStartQuiz: 'Start Quiz Modus',
     homeStartBoxMode: 'Start Doos Modus',
+    // ADR 0005: launcher label op het 66/66 celebration-scherm. De knop
+    // doet dan een soft reset (doStartNewRun) — wist gold lines + run-tijd,
+    // bewaart FSRS scheduling en lifetime best-times — en start meteen
+    // een nieuwe run.
+    homeStartNewRun: 'Start een nieuwe run',
     // v6 commit 20: zachte leidraad onder de Quiz launcher knop. Vervangt
     // (op een minder dwingende manier) wat in commit 7 weggehaald is —
     // het oude "Klaar om te oefenen: X" home-card voelde als verplichting,
@@ -758,6 +763,11 @@ export const translations = {
     resumePausedAt: 'Paused {when}',
     homeStartQuiz: 'Start Quiz Mode',
     homeStartBoxMode: 'Start Box Mode',
+    // ADR 0005: launcher label on the 66/66 celebration screen. The button
+    // performs a soft reset (doStartNewRun) — wipes gold lines + run time,
+    // preserves FSRS scheduling and lifetime best times — and immediately
+    // launches a fresh run.
+    homeStartNewRun: 'Start a new run',
     // v6 commit 20: see NL section above for rationale.
     // v6 commit 21: first-time / post-reset variant — see NL section.
     quizHintFirstTime: 'Start your first session whenever you like — the app will learn what\'s tricky for you',
