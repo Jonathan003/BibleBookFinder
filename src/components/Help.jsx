@@ -99,7 +99,7 @@ Wil je geen tijdsdruk? Zet de doeltijd op 30 seconden — in de praktijk voel je
         heading: 'Waarom pauzes prima zijn',
         body: `Spaced repetition werkt juist door de wachttijd tussen herhalingen. Tijdens de pauze doet je geheugen onzichtbaar werk — dat is wat het sterker maakt. Een boek dat je al kent opnieuw oefenen voegt geen nieuwe sterkte toe; het reset alleen de timer.
 
-Lange pauzes voegen een achterstand toe (meer boeken staan op "Te doen" als je terugkomt) maar geen straf. Het schema corrigeert zichzelf: boeken die je echt vergeten bent vragen meer aandacht; boeken die je nog kent passen gewoon terug in het ritme.
+Lange pauzes voegen een achterstand toe maar geen straf. Het schema corrigeert zichzelf: boeken die je echt vergeten bent vragen meer aandacht; boeken die je nog kent passen gewoon terug in het ritme.
 
 Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
@@ -362,7 +362,7 @@ Don't want time pressure? Set the target speed to 30 seconds — in practice the
         heading: 'Why breaks are fine',
         body: `Spaced repetition works precisely because of the wait between reviews. During the pause, your memory does invisible work — that's what makes it stronger. Practicing a book you already know adds no new strength; it just resets the timer.
 
-Long breaks add a backlog (more books show as "Due" when you come back) but no penalty. The schedule self-corrects: books you've truly forgotten will ask for more attention; books you still know just slot back into the rhythm.
+Long breaks add a backlog but no penalty. The schedule self-corrects: books you've truly forgotten will ask for more attention; books you still know just slot back into the rhythm.
 
 No pressure to practice daily. Train when you have the time.`,
       },
