@@ -975,20 +975,15 @@ function App() {
               </div>
 
               {/* Mode selector — tap to select (NOT launch). The Start
-                  button below launches whichever is selected. Box on the
-                  left as the more visible/concrete option, Quiz on the
-                  right as the more abstract scheduled-review one. */}
+                  button below launches whichever is selected. v6.4 (ADR
+                  0008 follow-up): Quiz on the LEFT as the main loop,
+                  Box on the right as the secondary cram tool. Visual
+                  order matches the Help "About this app" framing: Quiz
+                  is the main loop, Box is fast cram practice for a
+                  specific moment. Earlier comment ("Box on the left as
+                  the more visible/concrete option") predates ADR 0008
+                  and is no longer the design intent. */}
               <div className="mode-cards mode-cards-selectable">
-                <button
-                  className={`mode-card${selectedMode === 'boxMode' ? ' mode-card-selected' : ''}`}
-                  aria-label={t.boxModeBtnLabel}
-                  aria-pressed={selectedMode === 'boxMode'}
-                  onClick={() => setSelectedMode('boxMode')}
-                >
-                  <span className="mode-card-icon" aria-hidden="true">📦</span>
-                  <span className="mode-card-label">{t.boxModeBtnLabel}</span>
-                  <span className="mode-card-subtitle">{t.boxModeSubtitle || 'Speed-sort against the clock'}</span>
-                </button>
                 <button
                   className={`mode-card${selectedMode === 'quiz' ? ' mode-card-selected' : ''}`}
                   aria-label={t.quizMode}
@@ -998,6 +993,16 @@ function App() {
                   <span className="mode-card-icon" aria-hidden="true">🎯</span>
                   <span className="mode-card-label">{t.quizMode}</span>
                   <span className="mode-card-subtitle">{t.quizModeSubtitle || 'Long-term spaced review'}</span>
+                </button>
+                <button
+                  className={`mode-card${selectedMode === 'boxMode' ? ' mode-card-selected' : ''}`}
+                  aria-label={t.boxModeBtnLabel}
+                  aria-pressed={selectedMode === 'boxMode'}
+                  onClick={() => setSelectedMode('boxMode')}
+                >
+                  <span className="mode-card-icon" aria-hidden="true">📦</span>
+                  <span className="mode-card-label">{t.boxModeBtnLabel}</span>
+                  <span className="mode-card-subtitle">{t.boxModeSubtitle || 'Speed-sort against the clock'}</span>
                 </button>
               </div>
 
