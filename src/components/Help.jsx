@@ -23,7 +23,7 @@ const helpContent = {
       },
       {
         icon: '🚀',
-        text: 'Een goede manier om te beginnen: start in Quiz Modus met alle 66 boeken. Het algoritme leert vanzelf welke boeken je lastig vindt. Begin met een ruime doeltijd (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
+        text: 'Een goede manier om te beginnen: start gewoon Quiz Modus. Het algoritme bouwt automatisch je race naar 66 vertrouwde boeken op en leert vanzelf welke boeken je lastig vindt. Begin met een ruime doeltijd (de standaard is 10 seconden). Het standaard leertempo is Intensief — laat dat zo als je net begint. Intensief betekent meer herhaling, wat helpt om sneller te leren — ook als je niet elke dag oefent.',
       },
       {
         icon: '🪜',
@@ -286,7 +286,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       {
         icon: '🚀',
-        text: 'A good way to start: jump into Quiz Mode with all 66 books. The algorithm will automatically learn which books you find difficult. Begin with a generous target time (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
+        text: 'A good way to start: just launch Quiz Mode. The algorithm automatically sets up your race to 66 confident books and learns which ones you find difficult. Begin with a generous target time (the default is 10 seconds). The default learning pace is Intensive — leave it there when starting out. Intensive means more repetition, which helps you learn faster — even if you don\'t practice every day.',
       },
       {
         icon: '🪜',
