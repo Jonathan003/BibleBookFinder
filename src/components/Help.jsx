@@ -177,6 +177,10 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         a: 'Ja. In tegenstelling tot Quiz Modus (waar je leervoortgang over sessies heen blijft staan) begint elke Doos Modus sessie met alle gekozen boeken in doos 1. Doos Modus is bewust een "cram-modus": geen schema, geen meerdere-dagen voortgang, alleen één in zichzelf staande sessie waar je alle gekozen boeken naar doos 5 brengt. De ENIGE Doos-data die persisteert tussen sessies: je persoonlijke records per selectie (snelste tijd, minste fouten, langste streak). Dat zijn high scores zoals in een arcade-game — geen leervoortgang. Quiz Modus is je echte langetermijn-leertool.',
       },
       {
+        q: 'Kan ik meerdere groepen tegelijk kiezen in Doos Modus?',
+        a: 'Ja. Op het selectiescherm van Doos Modus tik je gewoon op elke groep die je wilt opnemen — de selectie stapelt op. Tik nogmaals om een groep af te wisselen. Je kunt 2 tot 8 groepen combineren (kies je alle 9 groepen, dan zie je dat als "Alle 66"). Een veelgebruikte combinatie: Pentateuch + Evangeliën voor de wekelijkse Bijbel-leesprogramma\'s die beide testamenten bestrijken. Je persoonlijke record wordt per unieke combinatie bijgehouden — dus "Pentateuch + Evangeliën" heeft zijn eigen beste tijd, los van "alleen Pentateuch" of "alleen Evangeliën". Onder de selectie zie je een samenvatting verschijnen ("Pentateuch + Evangeliën — 23 boeken") zodra je 2 of meer kiest, zodat je weet wat je gaat oefenen.',
+      },
+      {
         q: 'Hoe werkt de tijd in Doos Modus?',
         a: 'Standaard heb je 10 seconden per vraag in Doos Modus, met een aftellende balk bovenaan het scherm. Als de tijd op is voordat je antwoordt, licht het gevraagde boek blauw op en moet je daarop tikken om verder te gaan — hetzelfde gedrag als bij een fout antwoord. Het boek zakt dan ook één doos. Je kunt de doeltijd aanpassen via Instellingen → Training → Algemeen → "Doeltijd per boek" (instelbaar tussen 2 en 30 seconden). Zet hem op 30 seconden als je liever zonder tijdsdruk oefent; zet hem op 2-5 seconden voor een echte uitdaging. Dezelfde instelling stuurt ook de timer in Quiz Modus.',
       },
@@ -189,7 +193,7 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       // vraag hieronder.
       {
         q: 'Moet ik elke dag trainen?',
-        a: 'Nee. Spaced repetition werkt juist door de wachttijd tussen herhalingen — je geheugen wordt sterker tijdens de pauze, niet door extra herhalingen op iets dat al zit. Eén dag overslaan is geen probleem. Meerdere dagen achter elkaar overslaan loopt op — wanneer je terugkomt zal "Te doen" in de quiz hoger staan, maar er is geen straf, je werkt het gewoon weer weg in je eigen tempo. Wanneer "Te doen" in de quiz op 0 staat heb je voor nu klaar; doortrainen helpt je geheugen niet meer (een stabiel boek opnieuw oefenen voegt geen nieuwe sterkte toe, het reset alleen de timer). Wil je toch verder oefenen, gebruik dan Doos Modus — die heeft geen invloed op je FSRS-schema.',
+        a: 'Nee. Spaced repetition werkt juist door de wachttijd tussen herhalingen — je geheugen wordt sterker tijdens de pauze, niet door extra herhalingen op iets dat al zit. Eén dag overslaan is geen probleem. Meerdere dagen achter elkaar overslaan loopt op — wanneer je terugkomt zal "Te doen" in de quiz hoger staan, maar er is geen straf, je werkt het gewoon weer weg in je eigen tempo. Het doel in Quiz Modus is alle 66 boeken vertrouwd krijgen (66 / 66 op het startscherm). Daar mag je in je eigen tempo naartoe werken — over één dag of meerdere dagen verdeeld. Wil je ook trainen buiten je race om — bijvoorbeeld een specifieke groep boeken voor een vergadering — gebruik dan Doos Modus. Die heeft geen invloed op je FSRS-schema.',
       },
       {
         q: 'Hoe wordt mijn trainingstijd bijgehouden?',
@@ -439,6 +443,10 @@ No pressure to practice daily. Train when you have the time.`,
         a: 'Yes. Unlike Quiz Mode (where your learning progress persists across sessions), every Box Mode session starts with all selected books in box 1. Box Mode is intentionally a "cram mode": no schedule, no multi-day progression, just one self-contained session where you bring all selected books to box 5. The ONLY Box data that persists between sessions: your personal bests per scope (fastest time, fewest mistakes, longest streak). Those are high scores like in an arcade game — not learning progress. Quiz Mode is your real long-term learning tool.',
       },
       {
+        q: 'Can I select multiple groups in Box Mode?',
+        a: 'Yes. On the Box Mode selection screen, just tap each group you want to include — the selection accumulates. Tap again to deselect. You can combine 2 to 8 groups (selecting all 9 groups shows up as "All 66"). A common combination: Pentateuch + Gospels for weekly Bible reading programs that span both testaments. Your personal best is tracked per unique combination — so "Pentateuch + Gospels" has its own best time, separate from "Pentateuch only" or "Gospels only". A summary appears below the picker ("Pentateuch + Gospels — 23 books") once you have 2 or more selected, so you can see what you\'re about to practice.',
+      },
+      {
         q: 'How does the timer in Box Mode work?',
         a: 'By default you have 10 seconds per question in Box Mode, with a depleting bar at the top of the screen. If the timer expires before you answer, the asked book lights up blue and you must tap it to continue — same behavior as a wrong answer. The book also drops one box. You can adjust the target time via Settings → Training → Shared → "Target time per book" (settable between 2 and 30 seconds). Set it to 30 seconds if you prefer no time pressure; set it to 2-5 seconds for a real challenge. The same setting also drives the timer in Quiz Mode.',
       },
@@ -450,7 +458,7 @@ No pressure to practice daily. Train when you have the time.`,
       // training) is now combined into the merged question below.
       {
         q: 'Do I need to train every day?',
-        a: 'No. Spaced repetition works *because* of the wait between reviews — your memory strengthens during the pause, not from extra reps on things already stable. Skipping a day is fine. Skipping multiple days in a row piles up — when you come back the in-quiz "Due" counter will be higher, but there\'s no penalty, you just work it off at your own pace. When "Due" inside the quiz reads 0 you\'re done for now; extra reps don\'t help (re-drilling a stable book adds no new strength; it just resets the timer). If you want to keep practicing anyway, use Box Mode — it has no effect on your FSRS schedule.',
+        a: 'No. Spaced repetition works *because* of the wait between reviews — your memory strengthens during the pause, not from extra reps on things already stable. Skipping a day is fine. Skipping multiple days in a row piles up — when you come back the in-quiz "Due" counter will be higher, but there\'s no penalty, you just work it off at your own pace. The goal in Quiz Mode is to get all 66 books confident (66 / 66 on the home screen). You can work toward it at your own pace — in one day or spread across many. Want to train outside your race too — for example a specific group of books before a meeting — use Box Mode. It has no effect on your FSRS schedule.',
       },
       {
         q: 'How is my training time tracked?',
