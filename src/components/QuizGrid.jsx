@@ -77,6 +77,7 @@ export default function QuizGrid({
   // piece of session state from it on first render.
   initialPausedSession = null,
   onPause,
+  onShare,
   sessionLimit = null,
 }) {
   const { config, t, lang } = useAppConfig();
@@ -204,22 +205,6 @@ export default function QuizGrid({
   // time-up tick interval (which holds a stale closure) can read the
   // current value via the ref.
   useEffect(() => { sessionCompleteRef.current = sessionComplete; }, [sessionComplete]);
-
-  // Per-ROUND seen filter for pickNextBook's maintenance branch. Was
-  // previously called sessionSeenBooksRef (v4.3) and synced from the
-  // sessionSeenBooks state, but v6.2's Continue-training button needs
-  // these to diverge: the picker filter must reset between rounds so a
-  // new round has candidates again, while the session-level state must
-  // keep accumulating so saved seenBookIds reflect everything seen
-  // across the whole session (both rounds combined).
-  //
-  // Updates now happen alongside the state setter in pickNextBook; no
-  // useEffect sync needed. resetSegment clears it; handleContinueTraining
-  // clears it; paused-session restoration seeds it from the snapshot
-  // (round and session collapse to the same set on resume, which is
-  // fine — a multi-round Continue session that gets paused mid-round-2
-  // and then resumed will treat the resumed round as a fresh round).
-  const roundSeenBooksRef = useRef(new Set());
 
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
@@ -467,8 +452,6 @@ export default function QuizGrid({
     setResponseTimes([]);
     setSessionMs(0);
     setSessionSeenBooks(new Set());
-    // v6.2: a brand-new segment is also a brand-new round.
-    roundSeenBooksRef.current = new Set();
     setSessionMasteredBooks(new Set());
     setSessionHintedBooks(new Set());
     setSessionWrongBooks(new Set());
@@ -562,44 +545,20 @@ export default function QuizGrid({
         selected = pool[Math.floor(Math.random() * pool.length)];
         branch = 'non-confident-fallback';
       } else {
-        // v4.3 maintenance branch: all 66 confident AND nothing FSRS-due.
-        // Previously this dropped straight into session-complete and the
-        // user couldn't keep training without "Start a new run" (full
-        // reset). Now: pick from the books with the lowest FSRS stability
-        // — these are the "weakest" gold-lined books, most likely to
-        // drift off the gold line first. Top 8 by stability ascending,
-        // then random within the pool (same shape as the due-pool and
-        // non-confident-fallback branches).
-        //
-        // Filtered by roundSeenBooksRef so a Full maintenance session
-        // (limit=null, pool=66) naturally ends after touching every book
-        // once. Without the filter the same lowest-stability 8 would
-        // dominate every pick and the session would loop forever; Quick
-        // (limit=5) and Standard (limit=10) end via sessionLimit either
-        // way, but Full needs this filter to terminate.
-        //
-        // v6.2: this is roundSeenBooksRef (was sessionSeenBooksRef). The
-        // session-level sessionSeenBooks state continues to accumulate;
-        // only this per-round filter resets when the user taps Continue
-        // training on the celebration screen.
-        //
-        // This pairs with the launcher fallback in App.jsx that sets
-        // trainingPool = 66 when both the FSRS-due and non-confident
-        // counts are zero.
-        const seen = roundSeenBooksRef.current || new Set();
-        const candidates = bibleBooks.filter(b => !seen.has(b.id));
-        if (candidates.length === 0) {
-          setSessionComplete(true);
-          return;
-        }
-        const byStability = [...candidates].sort((a, b) => {
-          const sa = cards[a.id]?.stability || 0;
-          const sb = cards[b.id]?.stability || 0;
-          return sa - sb;
-        });
-        const pool = byStability.slice(0, Math.min(8, byStability.length));
-        selected = pool[Math.floor(Math.random() * pool.length)];
-        branch = 'maintenance';
+        // v6.4 (ADR 0008): under the speedrun-only model, "no due, no
+        // unseen, no non-confident" can only mean all 66 books are
+        // confident. The 66-confident guard near the top of pickNextBook
+        // catches that case first and fires setSessionComplete before
+        // reaching here — so this else branch should be unreachable
+        // under normal flow. Kept as a defensive safety net: if some
+        // unforeseen state slips through (e.g. a future picker change
+        // bypasses the guard), end the session cleanly rather than
+        // surface an empty grid. The pre-v6.4 maintenance picker that
+        // lived here (lowest-stability pool filtered by roundSeenBooks
+        // for terminating Full sessions) is gone with the Continue-
+        // training removal.
+        setSessionComplete(true);
+        return;
       }
     }
 
@@ -611,11 +570,6 @@ export default function QuizGrid({
     sessionPickCountRef.current += 1;
 
     setTargetBook(selected);
-    // v6.2: track on the per-round ref (used by the maintenance picker
-    // filter) AND in the session-level state (used for save/stats).
-    // These coincide before any Continue Training tap; afterward the
-    // ref resets while the state keeps accumulating.
-    roundSeenBooksRef.current = new Set(roundSeenBooksRef.current).add(selected.id);
     setSessionSeenBooks(prev => {
       if (prev.has(selected.id)) return prev;
       const next = new Set(prev);
@@ -685,13 +639,6 @@ export default function QuizGrid({
       if (Array.isArray(s.sessionWrongBooks)) setSessionWrongBooks(new Set(s.sessionWrongBooks));
       if (Array.isArray(s.sessionSeenBooks)) {
         setSessionSeenBooks(new Set(s.sessionSeenBooks));
-        // v6.2: on resume, treat the round and session as collapsed —
-        // we don't snapshot the per-round filter separately because a
-        // mid-Continue pause is rare and the cleanest UX is to start
-        // the resumed round fresh anyway. If the user had cycled
-        // through everything in the original round, the picker will
-        // re-fire celebration after a single new round, which is fine.
-        roundSeenBooksRef.current = new Set(s.sessionSeenBooks);
       }
       if (typeof s.sessionNewBests === 'number') setSessionNewBests(s.sessionNewBests);
       if (typeof s.sessionMs === 'number') setSessionMs(s.sessionMs);
@@ -1149,6 +1096,20 @@ export default function QuizGrid({
             <div className="celebration-time">
               <span className="celebration-time-label">{t.celebrationTimeLabel}</span>
               <span className="celebration-time-value">{formatDuration(totalQuizMs)}</span>
+            </div>
+          )}
+          {/* v6.4 (ADR 0008): Share button on the in-quiz celebration.
+              Matches the parallel Share button on the home celebration
+              card so users can share at the milestone moment without
+              navigating home first. Same .celebration-share-btn style
+              for visual consistency. Only renders if onShare is wired —
+              defensive null check in case QuizGrid is mounted from a
+              context that doesn't pass it through. */}
+          {onShare && (
+            <div className="celebration-actions">
+              <button className="btn celebration-share-btn" onClick={onShare}>
+                🔗 {t.share}
+              </button>
             </div>
           )}
         </div>

@@ -7,15 +7,14 @@ An interactive quiz app to help you learn the location of all 66 Bible books. In
 ## Features
 
 **Modes**
-- **Quiz Mode** — FSRS picks the next book based on stability and difficulty, but the calendar is hidden. The home screen shows your confident count out of 66, a tier breakdown bar (Unseen → Permanent), and total training time. A single "Start Quiz Mode" button launches an open-ended session — work until you want to stop, no fixed budget.
-- **Box Mode** — Single-session Leitner-style cram independent of the FSRS schedule. Each book starts in box 1; correct answers promote, wrong answers demote, session ends when every book reaches box 5. Per-scope personal bests (all 66, individual groups) for time, mistakes, and longest streak. No FSRS impact, no progress impact — a clean cram tool.
+- **Quiz Mode** — Race to 66 confident books (a book becomes confident when your last 3 answers on it were all correct AND within your target time). The home screen shows confident count out of 66, a tier breakdown bar (Unseen → Permanent), and total training time. When you hit 66, a trophy celebration with total time appears; tap "Start a new run →" to soft-reset confident lines and race again with FSRS preserving long-term scheduling underneath. A single run can span one session or many days. See [ADR 0008](./docs/adr/0008-speedrun-only-quiz-mode-model.md) for the design rationale.
+- **Box Mode** — Single-session Leitner-style cram independent of the FSRS schedule. Each book starts in box 1; correct answers promote, wrong answers demote, session ends when every book reaches box 5. Scope is selectable: all 66, a single group (Pentateuch, Gospels, etc.), or any combination of 2-8 groups (e.g. Pentateuch + Gospels for weekly Bible reading). Per-scope personal bests for time, mistakes, and longest streak. No FSRS impact, no progress impact — a clean cram tool.
 
 **Progress tracking**
 - **Confident gold line** — The gold line under a book cell appears when your last 3 answers on that book were all correct AND within your target time. Achievable in a single ~30-minute session if you already know the layout. One miss removes the line; 3 more correct-fast answers earn it back.
 - **Six-tier ladder** — A parallel FSRS-driven long-term measure: Unseen → Learning → Familiar → Rooted → Anchored → Permanent. Independent of the gold line; this is the "stuck in long-term memory" axis (Permanent ≈ 6+ months stability).
 - **Total training time** — Cumulative active-quiz time, surfaced on the home screen so irregular practice still shows accumulating effort.
-- **All-66 celebration** — When you hit 66 confident, the home screen swaps to a finishing screen with total time, a share button, and a "Start a new run" reset for chasing a faster time.
-- **Session-complete screen** — When the picker has cycled through every currently-confident book in the maintenance round, the quiz pauses on a stopping point. Two actions: **Continue training** to start a fresh maintenance round, or **End session** to save and return home.
+- **All-66 celebration** — When you hit 66 confident, the in-quiz screen shows a trophy with your total run time and a Share button; the back arrow returns home where a parallel celebration card waits. From home, "Start a new run →" soft-resets and launches a fresh race; FSRS scheduling, per-book best times, lifetime streak, and history all carry over.
 - **Learning pace** (advanced) — Flexible / Relaxed / Balanced / Intensive control FSRS `request_retention`. Hidden behind Settings → Training → Quiz Mode → Advanced since the schedule-free model rarely needs it; default is Intensive.
 
 **Your data**
@@ -66,13 +65,13 @@ Hosted on **GitHub Pages** (primary) with auto-deploy via GitHub Actions on ever
 
 ## Training-time tracking
 
-Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("I'm confident on X out of 66 Bible books in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Quiz progress wipes the counter; backups carry it across devices via `_schemaVersion: 4`.
+Cumulative active-quiz time (`totalQuizMs`) is summed per answered question, capped at 30 seconds per question (Anki-style). The cap means walking away or letting the screen idle adds at most 30 s per uncompleted question rather than minutes or hours. This keeps the share-message claim ("I'm confident on X out of 66 Bible books in Y time") legitimate without requiring `visibilitychange`/`pagehide` handlers (which are unreliable on mobile, especially on iOS). Reset Quiz progress wipes the counter; "Start a new run" (or "Start over" on a paused run) also resets it for a fresh race; backups carry it across devices via `_schemaVersion: 5`.
 
 ## Design philosophy: open practice, no schedule chrome
 
 The app is built for a small dataset (66 books) and users who often already know many of the answers — a fundamentally different problem than Anki's "thousands of unfamiliar cards" use case for which FSRS was designed. So FSRS runs underneath as a smart picker (it still decides which book to ask next based on stability, difficulty, and elapsed time), but its calendar projection is not surfaced to the user. There is no 7-day forecast, no "next book due at 9 PM" countdown, no daily-quota nag. Practice happens when the user has time — in bed before sleep, on a coffee break, between shifts — and the home screen reflects that: a single "X / 66 Confident" stat shows where you stand toward the goal, with no countdown or pressure to come back at a specific moment.
 
-Spaced repetition's core insight still applies: re-drilling stable books resets the FSRS timer without adding strength. So the session-complete screen is a real stopping point — but for users who want to keep going, a **Continue training** button starts a fresh maintenance round in the same session without round-tripping to home. Users who want a different kind of practice altogether have Box Mode, a separate Leitner-style cram independent of FSRS scheduling.
+Spaced repetition's core insight still applies: re-drilling stable books resets the FSRS timer without adding strength. So Quiz Mode shapes itself as a speedrun: race to 66 confident, see your time, soft-reset and race again. Each run leaves FSRS calibration intact, so the picker biases toward your weakest books over runs — long-term retention compounds without the user having to think about a calendar. Users who want a different kind of practice altogether have Box Mode, a separate Leitner-style cram independent of FSRS scheduling. See [ADR 0008](./docs/adr/0008-speedrun-only-quiz-mode-model.md).
 
 ## Update notifications
 

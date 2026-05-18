@@ -1067,10 +1067,15 @@ function App() {
                   )
                 ) : (
                   pausedQuizSession ? (
-                    // ─── Resume CTA (v4) ──────────────────────────────
-                    // When a paused Quiz session exists, show Resume +
-                    // Discard exactly like the Box Mode paused pattern.
-                    // Restored from in-session snapshot on tap.
+                    // ─── Resume CTA — paused-quiz launcher pair ──────────
+                    // When a paused Quiz session exists, show Resume + Start
+                    // over. Resume restores the in-session snapshot; Start
+                    // over (added in ADR 0008) calls doStartNewRun to soft-
+                    // reset the run (clears confidentBuffers + run time,
+                    // keeps FSRS). The Box Mode paused pattern is similar
+                    // visually but its Discard semantics are simpler (just
+                    // drops the bookmark, no equivalent of confident state
+                    // to reset). See ADR 0008.
                     <>
                       <button
                         className="btn home-launcher-btn home-launcher-primary"
@@ -1189,6 +1194,7 @@ function App() {
                 sessionLimit={quizSessionLimit}
                 initialPausedSession={pausedQuizSession}
                 onPause={handleQuizPause}
+                onShare={share}
                 onBack={() => {
                   setQuizPhase(null);
                   setQuizSessionLimit(null);
