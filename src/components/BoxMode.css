@@ -248,9 +248,19 @@
   background: color-mix(in srgb, #f59e0b 8%, var(--bg-secondary, #fff));
 }
 
-.boxmode-scope-option:not(.selected):hover,
-.boxmode-scope-option:not(.selected):focus-visible {
+.boxmode-scope-option:not(.selected):not(:disabled):hover,
+.boxmode-scope-option:not(.selected):not(:disabled):focus-visible {
   border-color: var(--accent, #7C3AED);
+}
+
+/* ADR 0009: disabled state for the attention scope button. Communicates
+   "not usable right now" via opacity + cursor — both kleur-onafhankelijk
+   so users with color-vision differences still get the signal. The
+   underlying button is `disabled` in HTML, so onClick is already blocked
+   at the React level; this styling makes the visual state match. */
+.boxmode-scope-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .scope-label {
