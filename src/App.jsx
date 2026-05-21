@@ -458,6 +458,28 @@ function App() {
       const top = boxBests[0];
       const scopeLabel = (scope) => {
         if (scope === 'all') return lang === 'nl' ? 'alle 66 boeken' : 'all 66 books';
+        // ADR 0009: defensive — attention is theoretically unreachable here
+        // because recordCompletion is skipped for that scope (so it never
+        // lands in boxBests), but if a future change ever lets it through
+        // we want a human-readable label instead of an "undefined".
+        if (scope === 'attention') {
+          return lang === 'nl' ? 'aandacht-boeken' : 'attention books';
+        }
+        // Multi-group: scope = 'multi:gospels+law' → "Pentateuch · Gospels".
+        // Mirrors BoxMode's scopeDisplayName (group order preserved from
+        // the canonical sort; separator is the middle dot). Previously
+        // this case fell through to the group: branch below, which would
+        // try to look up 'gospels+law' as a single group ID and render
+        // raw "gospels+law" in the share text.
+        if (scope.startsWith('multi:')) {
+          const groupIds = scope.slice('multi:'.length).split('+');
+          return groupIds
+            .map(id => {
+              const fullName = translations[lang]?.groupNames?.[id] || translations.nl.groupNames[id] || id;
+              return String(fullName).split('—')[0].trim();
+            })
+            .join(' · ');
+        }
         // scope = 'group:law' etc. — use the group name.
         const groupId = scope.split(':')[1];
         const name = (translations[lang]?.groupNames?.[groupId]) || groupId;

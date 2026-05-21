@@ -175,10 +175,15 @@
    set opacity: 0.4 and cursor: not-allowed on out-of-scope books in
    the in-session grid, but Jonathan flagged it as feeling like
    "cheating" — it visually highlighted which books were the
-   answer pool, defeating part of the test. Books now keep their
-   normal group color regardless of scope; the click guard
-   (onClick={() => isInScope && handleBookClick(book)} in BoxMode.jsx)
-   still no-ops out-of-scope taps without visual change. */
+   answer pool, defeating part of the test. Books keep their normal
+   group color regardless of scope.
+
+   Post-e4839be (uniformity with Quiz Mode): the click guard that
+   previously no-op'd out-of-scope taps was also removed. Every tap
+   is now handled — an out-of-scope tap falls into handleBookClick's
+   wrong-tap branch automatically (since its book.id !== currentBookId)
+   and produces standard wrong-feedback. The "no visual cheat" design
+   choice still holds (no dimming), but stille kliks are gone too. */
 
 /* ─── Selection screen ──────────────────────────────────────────── */
 .boxmode-selecting {
