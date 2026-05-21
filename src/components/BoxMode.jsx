@@ -323,6 +323,12 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
     if (s.scope) {
       if (s.scope === 'all' || s.scope.startsWith('group:')) {
         setSelectedScopes([s.scope]);
+      } else if (s.scope === 'attention') {
+        // ADR 0009: attention scope restores as its own canonical key,
+        // mutually exclusive with categorical scopes. Without this branch
+        // selectedScopes would silently default to ['all'] on resume,
+        // making "Another selection" show the wrong picker state.
+        setSelectedScopes(['attention']);
       } else if (s.scope.startsWith('multi:')) {
         const groupIds = s.scope.slice('multi:'.length).split('+');
         setSelectedScopes(groupIds.map(id => `group:${id}`));

@@ -180,12 +180,15 @@ export default function QuizGrid({
   // question, even if the 100ms tick lands right before the cleanup
   // race. Mirrors Box Mode's `expiryFiredRef`.
   const expiryFiredRef = useRef(false);
-  // v6 commit 37: tracks whether the 66/66 confident celebration has
-  // already been triggered in this session. Prevents repeated session-
-  // complete prompts when the user taps "Continue training" after the
-  // initial celebration and books briefly drop and re-reach 66 during
-  // the maintenance round. Reset implicitly on a new mount (fresh
-  // session) — refs reinitialise to false. See ADR 0003.
+  // Tracks whether the 66/66 confident celebration has already fired in
+  // this session, so a transient drop-and-recover (e.g. an in-flight
+  // answer landing just after the celebration triggers, briefly pushing
+  // a book off-confident and back on) doesn't re-trigger the prompt.
+  // Reset implicitly on a new mount (fresh session) — refs reinitialise
+  // to false. Originally added for v6 commit 37's "Continue training"
+  // path, which ADR 0008 removed; the ref is still needed because race
+  // conditions between answer-commit and session-complete remain
+  // possible even in the speedrun-only model. See ADR 0003.
   const hasTriggeredSixtySixRef = useRef(false);
   // v6 commit 39: mirrors the sessionComplete state in a ref so the
   // time-up tick interval (which captures a stale closure) can check
@@ -482,10 +485,12 @@ export default function QuizGrid({
     // it during maintenance without realising, then see 65/66 on home
     // and assume the share button had caused it.
     //
-    // The ref guards against re-triggering after "Continue training"
-    // when books briefly drop and re-reach 66 during the maintenance
-    // round — by deliberately tapping Continue, the user has accepted
-    // the doortrain-and-risk-losing-66 trade-off.
+    // The ref guards against re-triggering: even though ADR 0008 removed
+    // the "Continue training" / maintenance round path, race conditions
+    // between answer-commit and session-complete remain possible (an
+    // in-flight buffer update can briefly push 66 → 65 → 66 before the
+    // complete screen mounts). Firing the celebration only once per
+    // mount handles this cleanly.
     //
     // See ADR 0003 for the full design rationale, including alternatives
     // considered (freeze buffers in maintenance, warning banner).
