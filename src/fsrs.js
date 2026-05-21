@@ -305,6 +305,59 @@ export function getNonConfidentBooks(confidentBuffers, fsrsCards, allBooks) {
     .map(x => x.book);
 }
 
+// ADR 0009: get books for the "attention" scope in Box Mode. A book belongs
+// in the attention set when at least one of:
+//   1. Its FSRS difficulty is a statistical outlier (> mean + 1σ) compared
+//      to other books with cards — i.e., personally hard for this user.
+//   2. It is FSRS-due NOW — i.e., overdue by the schedule.
+// Unseen books (no card) are excluded entirely.
+//
+// Returns { books, eligible, reason } so callers can render the disabled
+// state with the right explanation. The function does NOT mutate any FSRS
+// data — pure read.
+//
+// Disabled reasons:
+//   'insufficient-data' — fewer than MIN_CARDS_FOR_STATS books have cards
+//   'no-outliers'       — no books match either criterion (user is doing fine)
+//   'too-few'           — matches exist but < MIN_ATTENTION_BOOKS (not enough
+//                         for a useful Box Mode session)
+export function getAttentionBooks(fsrsCards, allBooks, now = new Date()) {
+  const MIN_CARDS_FOR_STATS = 20;
+  const MIN_ATTENTION_BOOKS = 3;
+
+  // Collect books that have FSRS cards (skip Unseen).
+  const withCards = allBooks
+    .map(b => ({ book: b, card: fsrsCards?.[b.id] }))
+    .filter(x => x.card != null);
+
+  if (withCards.length < MIN_CARDS_FOR_STATS) {
+    return { books: [], eligible: false, reason: 'insufficient-data' };
+  }
+
+  // Compute mean and standard deviation of difficulty across books with cards.
+  const difficulties = withCards.map(x => x.card.difficulty || 0);
+  const mean = difficulties.reduce((a, b) => a + b, 0) / difficulties.length;
+  const variance = difficulties.reduce((sum, d) => sum + (d - mean) ** 2, 0) / difficulties.length;
+  const stddev = Math.sqrt(variance);
+  const threshold = mean + stddev;
+
+  // Build attention set: union of (difficulty > threshold) and (FSRS-due).
+  const attention = withCards.filter(({ card }) => {
+    const isHigh = (card.difficulty || 0) > threshold;
+    const isDue = isDueNow(card, now);
+    return isHigh || isDue;
+  }).map(x => x.book);
+
+  if (attention.length === 0) {
+    return { books: [], eligible: false, reason: 'no-outliers' };
+  }
+  if (attention.length < MIN_ATTENTION_BOOKS) {
+    return { books: [], eligible: false, reason: 'too-few' };
+  }
+
+  return { books: attention, eligible: true, reason: null };
+}
+
 // Get stats summary for display
 export function getBookStats(fsrsCards, allBooks) {
   let mastered = 0;

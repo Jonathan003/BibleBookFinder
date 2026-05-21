@@ -1155,6 +1155,7 @@ function App() {
           {view === 'boxMode' && (
             <BoxMode
               ownerUserId={currentUser.id}
+              fsrsCards={fsrsCards}
               initialPausedSession={pausedBoxSession}
               onPause={handleBoxPause}
               onBack={() => {

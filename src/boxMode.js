@@ -49,8 +49,19 @@ const RECOVERY_GRACE_TURNS    = 2;   // turns after the trigger that suppress de
  * @param {string}   [params.failMode='soft']  'soft' (drop one box) or 'strict' (back to 1)
  * @param {number}   [params.now=Date.now()]   For testability
  */
-export function createInitialState({ books, scope, failMode = 'soft', now = Date.now() }) {
-  const selectedBooks = filterBooksByScope(books, scope);
+export function createInitialState({ books, scope, failMode = 'soft', now = Date.now(), attentionBookIds = null }) {
+  // ADR 0009: for scope === 'attention', the working set is computed
+  // dynamically from FSRS data in the UI layer (BoxMode.jsx) and passed
+  // in as attentionBookIds. The box engine itself remains FSRS-unaware;
+  // filterBooksByScope handles only categorical scopes (all / group / multi).
+  let selectedBooks;
+  if (scope === 'attention' && Array.isArray(attentionBookIds)) {
+    const idSet = new Set(attentionBookIds);
+    selectedBooks = books.filter(b => idSet.has(b.id));
+  } else {
+    selectedBooks = filterBooksByScope(books, scope);
+  }
+
   const bookBoxes = {};
   for (const b of selectedBooks) bookBoxes[b.id] = BOTTOM_BOX;
 

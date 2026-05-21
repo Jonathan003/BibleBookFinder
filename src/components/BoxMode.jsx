@@ -26,6 +26,7 @@ import {
   isComplete, endSession, getBoxCounts, getRecentAnswers, getElapsedMs, TOP_BOX,
 } from '../boxMode';
 import { recordCompletion, getBoxModeBestForScope } from '../boxModeStorage';
+import { getAttentionBooks } from '../fsrs';
 import { formatDuration } from '../timeFormat';
 import BoxModeBoxes, { BoxModeRecentDots } from './BoxModeBoxes';
 import './BoxMode.css';
@@ -72,6 +73,8 @@ const TOTAL_GROUPS = 9;
  */
 function computeScopeKey(selected) {
   if (!selected || selected.length === 0) return 'all';
+  // ADR 0009: attention scope is its own canonical key, never combined.
+  if (selected.length === 1 && selected[0] === 'attention') return 'attention';
   if (selected.length === 1) return selected[0];
   const groupIds = selected
     .filter(s => s.startsWith('group:'))
@@ -97,6 +100,8 @@ function computeScopeKey(selected) {
  */
 function scopeDisplayName(scopeKey, lang, t) {
   if (scopeKey === 'all') return t.boxModeScopeAll;
+  // ADR 0009: attention scope has its own display name string
+  if (scopeKey === 'attention') return t.boxModeScopeAttention || 'Boeken die aandacht nodig hebben';
   if (scopeKey.startsWith('group:')) {
     const groupId = scopeKey.slice('group:'.length);
     return (groupNames[lang]?.[groupId] || groupNames.nl[groupId] || groupId)
@@ -111,7 +116,7 @@ function scopeDisplayName(scopeKey, lang, t) {
   return scopeKey;
 }
 
-export default function BoxMode({ ownerUserId, onBack, initialPausedSession = null, onPause }) {
+export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPausedSession = null, onPause }) {
   const { config, t, lang } = useAppConfig();
   const { otColumns, ntColumns, displayMode, testamentsLayout, gridRef } = useGridLayout();
   const schedule = useTimeoutManager();
@@ -338,8 +343,20 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     // v5: derive canonical scope key from the selectedScopes list.
     // Empty / all-9 normalize to 'all'; single entry stays as-is;
     // 2-8 groups become 'multi:groupId1+...' (sorted).
+    // ADR 0009: 'attention' is its own canonical key, computed via
+    // getAttentionBooks against current FSRS state.
     const scope = computeScopeKey(selectedScopes);
-    const initial = createInitialState({ books: bibleBooks, scope, failMode });
+    let attentionBookIds = null;
+    if (scope === 'attention') {
+      const info = getAttentionBooks(fsrsCards, bibleBooks);
+      if (!info.eligible) {
+        // Guard — shouldn't happen because the button is disabled when
+        // ineligible, but be defensive.
+        return;
+      }
+      attentionBookIds = info.books.map(b => b.id);
+    }
+    const initial = createInitialState({ books: bibleBooks, scope, failMode, attentionBookIds });
     const firstBookId = pickNextBookId(initial);
     if (firstBookId == null) {
       // Empty scope — shouldn't happen with our group filters but guard anyway
@@ -358,7 +375,7 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
     setTimerStart(Date.now());
     setTimerProgress(1);
     setPhase('playing');
-  }, [config.boxMode?.failMode, selectedScopes]);
+  }, [config.boxMode?.failMode, selectedScopes, fsrsCards]);
 
   // ─── Quiz loop actions ─────────────────────────────────────────────
 
@@ -480,7 +497,14 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
       longestStreak: endedState.longestStreak,
     };
     setFinishedSessionData(sessionData);
-    const result = recordCompletion(ownerUserId, endedState.scope, sessionData);
+    // ADR 0009: do NOT record personal bests for the attention scope —
+    // its book set is dynamic and varies between sessions, so per-scope
+    // best comparisons would be meaningless. The end-screen still
+    // renders with the session stats (time, mistakes, streak) but
+    // result.beatBests will be falsy.
+    const result = endedState.scope === 'attention'
+      ? { beatTime: false, beatMistakes: false, beatStreak: false }
+      : recordCompletion(ownerUserId, endedState.scope, sessionData);
     setCompletionResult(result);
     setPhase('complete');
     // Box session completed naturally — clear any paused checkpoint so
@@ -556,12 +580,20 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   // selection has 2+ chips active.
 
   const handleScopeTap = useCallback((scopeId) => {
+    // ADR 0009: attention scope is mutually exclusive with categorical
+    // scopes. Tapping it deselects everything else; tapping any other
+    // scope deselects attention.
+    if (scopeId === 'attention') {
+      setSelectedScopes(['attention']);
+      return;
+    }
     if (scopeId === 'all') {
       setSelectedScopes(['all']);
       return;
     }
     setSelectedScopes(prev => {
-      let next = prev.filter(s => s !== 'all');
+      // Drop 'all' and 'attention' if either was selected before
+      let next = prev.filter(s => s !== 'all' && s !== 'attention');
       if (next.includes(scopeId)) {
         next = next.filter(s => s !== scopeId);
       } else {
@@ -578,15 +610,23 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
   if (phase === 'selecting') {
     const scopeKeyPreview = computeScopeKey(selectedScopes);
     const selectionLabel = scopeDisplayName(scopeKeyPreview, lang, t);
-    const selectionBookCount = scopeKeyPreview === 'all'
-      ? 66
-      : (scopeKeyPreview.startsWith('group:')
-          ? bibleBooks.filter(b => b.group === scopeKeyPreview.slice('group:'.length)).length
-          : (() => {
-              const groupIds = scopeKeyPreview.slice('multi:'.length).split('+');
-              const set = new Set(groupIds);
-              return bibleBooks.filter(b => set.has(b.group)).length;
-            })());
+
+    // ADR 0009: compute the attention scope at render time so the button
+    // can show the current count and disable when not eligible.
+    const attentionInfo = getAttentionBooks(fsrsCards, bibleBooks);
+    const isAttentionSelected = selectedScopes.length === 1 && selectedScopes[0] === 'attention';
+
+    const selectionBookCount = scopeKeyPreview === 'attention'
+      ? attentionInfo.books.length
+      : (scopeKeyPreview === 'all'
+          ? 66
+          : (scopeKeyPreview.startsWith('group:')
+              ? bibleBooks.filter(b => b.group === scopeKeyPreview.slice('group:'.length)).length
+              : (() => {
+                  const groupIds = scopeKeyPreview.slice('multi:'.length).split('+');
+                  const set = new Set(groupIds);
+                  return bibleBooks.filter(b => set.has(b.group)).length;
+                })()));
     return (
       <div className="boxmode-screen boxmode-selecting">
         <div className="boxmode-header">
@@ -620,7 +660,47 @@ export default function BoxMode({ ownerUserId, onBack, initialPausedSession = nu
               </button>
             );
           })}
+
+          {/* ADR 0009: attention scope — dynamic FSRS-driven selection of
+              books that are statistically harder for this user or are
+              FSRS-due. Mutually exclusive with categorical scopes.
+              Disabled with explanatory text when not eligible (insufficient
+              data, no outliers, or too few books). */}
+          <button
+            className={`boxmode-scope-option boxmode-scope-attention ${isAttentionSelected ? 'selected' : ''} ${!attentionInfo.eligible ? 'disabled' : ''}`}
+            onClick={() => attentionInfo.eligible && handleScopeTap('attention')}
+            disabled={!attentionInfo.eligible}
+            title={attentionInfo.eligible
+              ? (t.boxModeScopeAttentionTooltip || '')
+              : (attentionInfo.reason === 'insufficient-data'
+                  ? (t.boxModeScopeAttentionInsufficientData || '')
+                  : attentionInfo.reason === 'no-outliers'
+                    ? (t.boxModeScopeAttentionNoOutliers || '')
+                    : (t.boxModeScopeAttentionTooFew || ''))}
+          >
+            <span className="scope-label">{t.boxModeScopeAttention || 'Boeken die aandacht nodig hebben'}</span>
+            <span className="scope-count">{attentionInfo.eligible ? attentionInfo.books.length : '—'}</span>
+          </button>
         </div>
+
+        {/* Attention-scope explainer: appears below the picker when the
+            scope is selected (shows how many books) or disabled (shows
+            why). Keeps the explanation in one place rather than hidden
+            in a tooltip. */}
+        {isAttentionSelected && attentionInfo.eligible && (
+          <p className="boxmode-attention-hint">
+            {(t.boxModeAttentionSelected || 'Geselecteerd: {n} boeken die FSRS als moeilijk of overdue markeert.').replace('{n}', String(attentionInfo.books.length))}
+          </p>
+        )}
+        {!attentionInfo.eligible && (
+          <p className="boxmode-attention-hint boxmode-attention-disabled-hint">
+            {attentionInfo.reason === 'insufficient-data'
+              ? (t.boxModeScopeAttentionInsufficientData || 'Train eerst meer in Quiz Modus om data op te bouwen.')
+              : attentionInfo.reason === 'no-outliers'
+                ? (t.boxModeScopeAttentionNoOutliers || 'Geen duidelijk zwakke boeken — je staat er goed voor!')
+                : (t.boxModeScopeAttentionTooFew || 'Nog niet genoeg boeken om te oefenen.')}
+          </p>
+        )}
 
         {/* v5.1: selection summary appears only when multi-scope is
             active (2+ chips selected). For single-scope sessions the
