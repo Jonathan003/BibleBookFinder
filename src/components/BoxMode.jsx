@@ -242,6 +242,15 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
         const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
         setState(next);
         stateRef.current = next;
+        // Uniformity with QuizGrid: scroll the revealed (blue) cell
+        // into view on timer expiry. A user who'd been scrolling to
+        // find the book lands back on the answer without manual work.
+        const revealedId = s.currentBookId;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.querySelector(`[data-book-id="${revealedId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        });
       }
     }, 100);
 
@@ -460,6 +469,17 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
       const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
       setState(next);
       stateRef.current = next;
+      // Uniformity with QuizGrid: scroll the revealed (blue) cell into
+      // view so a user who'd scrolled while searching doesn't have to
+      // find it manually. Double rAF: first frame runs after commit,
+      // second frame after browser layout — so the cell is guaranteed
+      // positioned. Same pattern QuizGrid uses on wrong-tap.
+      const revealedId = s.currentBookId;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelector(`[data-book-id="${revealedId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
     }
   }, [feedback, schedule]);
 
