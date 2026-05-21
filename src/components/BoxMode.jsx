@@ -237,6 +237,11 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
         // instead of the misleading "Wrong" label — the user didn't
         // click incorrectly, they just ran out of time. The blue-cell-
         // tap acknowledgment flow is identical to a wrong tap.
+        // Clear any open hint-overlay first — mirrors QuizGrid's time-up
+        // handler, so a user who had the hint visible when the timer
+        // expired sees a clean "look for the blue cell" prompt rather
+        // than a leftover overlay competing with the reveal.
+        setHintVisible(false);
         setFeedback('time-up');
         setCorrectBookId(s.currentBookId);
         const next = applyAnswer(s, { bookId: s.currentBookId, correct: false });
