@@ -840,12 +840,25 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
 
   const otBooks = bibleBooks.filter(b => b.testament === 'OT');
   const ntBooks = bibleBooks.filter(b => b.testament === 'NT');
-  const inSelectedScope = (book) => state.selectedBookIds.includes(book.id);
 
   const hintGroupName = groupNames[lang]?.[targetBook.group] || '';
 
   const renderBookCell = (book) => {
-    const isInScope = inSelectedScope(book);
+    // ADR 0009 follow-up: previously, taps on out-of-scope cells were
+    // silently ignored via an `isInScope && handleBookClick(book)` guard.
+    // This produced a confusing "nothing happens" experience for the
+    // attention scope specifically — users don't know which books are
+    // in scope (FSRS chose them dynamically), so a click on what they
+    // think is the right book can land on an out-of-scope cell and
+    // produce no feedback. The fix removes the guard entirely: every
+    // tap is handled, and since a book whose id !== currentBookId falls
+    // into handleBookClick's wrong-tap branch automatically, an out-of-
+    // scope tap now produces standard wrong-feedback (orange prompt +
+    // blue reveal of the correct cell + scroll-into-view). The correct
+    // book (which IS in scope) gets demoted one box, same as any wrong
+    // tap. The out-of-scope tapped book is not in bookBoxes, so
+    // applyAnswer doesn't accidentally mutate it. Uniformity with
+    // Quiz Mode, where every cell is always tappable.
     const isTarget = book.id === state.currentBookId;
     const isCorrectReveal = book.id === correctBookId;
     const showCorrect = feedback === 'correct' && isTarget;
@@ -887,9 +900,9 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
         style={{ backgroundColor: bgColor }}
         data-book-id={book.id}
         aria-label={lang === 'nl' ? book.nl : book.en}
-        onClick={() => isInScope && handleBookClick(book)}
+        onClick={() => handleBookClick(book)}
         disabled={inAcknowledgeMode && book.id !== correctBookId}
-        aria-disabled={!isInScope || (inAcknowledgeMode && book.id !== correctBookId)}
+        aria-disabled={inAcknowledgeMode && book.id !== correctBookId}
       >
         <span className="book-name">{displayName}</span>
       </button>
