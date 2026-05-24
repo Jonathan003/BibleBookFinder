@@ -261,18 +261,19 @@ export default function QuizGrid({
 
   // ADR 0010 refinement: wraps recordRecentAnswer with back-to-back
   // suppression. Uses isBackToBackSameBook to detect working-memory
-  // contamination. Two rules:
-  //   1. If event.correct AND same book as last answered (within 60s)
-  //      → SKIP (working-memory contamination — see ref declaration).
+  // memory contamination (which checks both back-to-back AND pool-size).
+  // Two rules:
+  //   1. If event.correct AND working-memory contamination detected
+  //      → SKIP (do not record into recentAnswers).
   //   2. Misses (correct: false) are always recorded. A miss after a
   //      same-book correct is the strongest "needs attention" signal
   //      (working memory should have helped — it didn't).
   //
   // The ref is updated separately at each answer site via
   // updateLastAnswered, NOT inside this wrapper. This keeps the
-  // detection consistent across recentAnswers / FSRS / confident-buffer
-  // pathways — they all share the same notion of "what was the
-  // previous answered book".
+  // detection consistent across recentAnswers / confident-buffer /
+  // bestTime pathways — they all share the same notion of "what was
+  // the previous answered book".
   //
   // Caller can pass `null` for recordRecentAnswer (e.g. if the parent
   // hasn't wired it yet) — the wrapper is a no-op in that case.
@@ -908,36 +909,38 @@ export default function QuizGrid({
       // from working memory, not long-term memory).
       recordRecentAnswerFiltered(targetBook.id, { ms: cappedMs, correct: true });
 
-      // ADR 0010 refinement (revised): same-book back-to-back protection
-      // for recall-quality metrics. When the user just answered this
-      // same book within the last 60 seconds, the current answer is
-      // working-memory-assisted, not real recall:
-      //   - Confident buffer: force false. Working memory should not
-      //     advance the gold-line signal.
+      // ADR 0010 refinement (final scope): two protections against
+      // same-book back-to-back working-memory contamination remain:
       //   - recentAnswers: suppressed (handled in the wrapper above).
       //   - bestTime: skipped (handled in the personal-best block below).
-      //   - Score, streak, best-time, training-time: unchanged. The
-      //     user DID answer correctly and quickly — those metrics
-      //     reflect tap performance, not recall quality.
       //
-      // What we DON'T override: the FSRS Rating. An earlier version of
-      // this refinement (commit 1069c4e) forced Rating.Hard on wm
-      // repeats, intending to keep contaminated books from earning easy
-      // long intervals. Live testing revealed this caused a vicious
-      // picker cycle: Hard-rated books stay in the ~10-minute due pool,
-      // the picker draws randomly from the top-8 of that pool, and
-      // since most recently-answered books in an active race are also
-      // Hard-overridden, the pool fills with same-book candidates →
-      // up to 10 consecutive picks of the same book. Rolled back in
-      // f4a2c1d (commit hash TBD when committed). FSRS-6 has its own
-      // same-day stability dampening (S^(-w_19) term), which together
-      // with the picker's random draw from top-8 provides adequate
-      // protection against contaminated long intervals — without the
-      // pathological repetition.
+      // Both are "shadow" metrics — they don't affect race-to-66
+      // progression. A working-memory-fast answer still pushes its
+      // natural value to the confident buffer (and earns the gold line
+      // when 3 trues accumulate) and still receives its natural FSRS
+      // Rating. We chose this scoping after live testing showed that
+      // wm-protection on the confident-buffer broke race completion
+      // at 65/66 confident (only one non-confident book left, picker
+      // forced to repeat it, every repeat pushed false, buffer never
+      // filled — race could never complete). Earlier we also tried
+      // forcing FSRS Rating.Hard on wm repeats; that caused a
+      // pathological picker loop (up to 10 same-book picks in a row).
+      //
+      // The lesson: wm-protection has real scientific basis (Kahana &
+      // Loftus 1999 — working-memory contamination produces artificially
+      // fast RTs) but it must be confined to metrics that can't block
+      // user progress. recentAnswers feeds the attention scope only.
+      // bestTime is a per-book record that doesn't gate anything else.
+      // Both can safely skip a wm-repeat without breaking anything.
+      // The confident-buffer and the FSRS schedule, by contrast, ARE
+      // progression-gating — they need to honor every real correct
+      // answer the user gives. FSRS-6's own same-day stability
+      // dampening (the S^(-w_19) term in its same-day formula) provides
+      // intrinsic protection against runaway intervals from repeated
+      // same-day correct answers; we rely on that instead.
       const isWorkingMemoryRepeat = isBackToBackSameBook(targetBook.id);
-      const effectiveConfidentHit = isWorkingMemoryRepeat ? false : isWithinTime;
 
-      // Update FSRS card with the natural rating (no override).
+      // Update FSRS card with the natural rating.
       const currentCard = fsrsCards[targetBook.id]
         ? deserializeCard(fsrsCards[targetBook.id])
         : createBookCard();
@@ -946,21 +949,20 @@ export default function QuizGrid({
       logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), rating);
 
       // ─── Confident-buffer update (v4) ────────────────────────────────
-      // Record this attempt on the new gold-line signal. `true` only if
+      // Record this attempt on the gold-line signal. `true` only if
       // the answer was both correct AND within masteryMs (the same
       // criterion FSRS uses to map speed → Rating.Good vs Hard). Slow
       // correct answers push `false` — they're not "confident" hits, the
       // user knew the book but couldn't find it fast.
       //
-      // ADR 0010 refinement: effectiveConfidentHit forces false when
-      // this is a same-book back-to-back working-memory repeat (see
-      // override block above). Real recall must come from spaced
-      // practice, not from a working-memory loop.
+      // No wm override here. The previous refinement forced false on
+      // back-to-back wm repeats, which broke race completion at 65/66
+      // (see comment block above for full reasoning).
       const wasConfident = isConfident(confidentBuffers[targetBook.id]);
-      const nextBuffer = recordConfidentAttempt(confidentBuffers[targetBook.id], effectiveConfidentHit);
+      const nextBuffer = recordConfidentAttempt(confidentBuffers[targetBook.id], isWithinTime);
       const isNowConfident = isConfident(nextBuffer);
       if (updateConfidentBuffer) {
-        updateConfidentBuffer(targetBook.id, effectiveConfidentHit);
+        updateConfidentBuffer(targetBook.id, isWithinTime);
       }
 
       // Score only counts if within time limit

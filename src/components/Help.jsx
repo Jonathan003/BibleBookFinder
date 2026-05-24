@@ -138,8 +138,8 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
       },
       // ─── 8a-bis. Working-memory protection — ADR 0010 refinement ──────
       {
-        q: 'Waarom telt een snel antwoord soms niet mee voor de gouden lijn of mijn record?',
-        a: 'Als je voor hetzelfde boek twee keer kort na elkaar de vraag krijgt (binnen een minuut), wordt het tweede snelle antwoord niet meegerekend voor je vooruitgang. Reden: je herinnerde gewoon nog waar het boek stond — dat is werkgeheugen, niet echte recall. Wetenschappelijk onderzoek (Kahana & Loftus 1999) toont aan dat antwoorden direct na elkaar artificieel sneller zijn dan echte herinnering vanuit het lange-termijn geheugen. BBF beschermt drie metingen tegen deze "vals snelle" antwoorden: de gouden lijn, je FSRS-planning, en je persoonlijke record per boek. Je score, streak en totale tijd tellen wel gewoon mee — die meten je tap-snelheid, niet je kennis. In de praktijk: als je een boek 5 seconden eerste keer en 1 seconde tweede keer doet, telt alleen de eerste 5 seconden als echte leer-meting. Voor de gouden lijn moet je het boek dus ook later in een nieuwe race nog vlot kunnen vinden.',
+        q: 'Waarom telt een snel antwoord soms niet mee voor mijn persoonlijk record?',
+        a: 'Als je voor hetzelfde boek twee keer kort na elkaar de vraag krijgt (binnen een minuut), wordt het tweede snelle antwoord niet meegerekend voor je persoonlijk record voor dat boek, en voor de detectie van "Boeken die aandacht nodig hebben". Reden: je herinnerde gewoon nog waar het boek stond — dat is werkgeheugen, niet echte recall. Wetenschappelijk onderzoek (Kahana & Loftus 1999) toont aan dat antwoorden direct na elkaar artificieel sneller zijn dan echte herinnering vanuit het lange-termijn geheugen. Je gouden lijn, je FSRS-planning, je score, streak en totale tijd tellen wel gewoon mee — die mogen niet geblokkeerd worden door een werk-geheugen detectie. In de praktijk: als je een boek 5 seconden eerste keer en 1 seconde tweede keer doet, telt alleen de eerste 5 seconden voor je persoonlijk record en voor de "aandacht-boeken" detectie.',
       },
       // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {
@@ -413,8 +413,8 @@ No pressure to practice daily. Train when you have the time.`,
       },
       // ─── 8a-bis. Working-memory protection — ADR 0010 refinement ──────
       {
-        q: 'Why does a fast answer sometimes not count toward my gold line or personal best?',
-        a: 'When the same book is asked twice in close succession (within one minute), the second fast answer is not counted as progress. The reason: you simply remembered where the book was — that\'s working memory, not real recall. Cognitive research (Kahana & Loftus, 1999) shows that answers given immediately after each other are artificially faster than genuine recall from long-term memory. BBF protects three measurements against these "falsely fast" answers: the gold line, your FSRS schedule, and your per-book personal best. Your score, streak, and total time DO count — those measure tap speed, not knowledge. In practice: if you answer a book in 5 seconds first time and 1 second second time, only the first 5 seconds counts as a real learning measurement. To earn the gold line, you need to also find the book quickly in a later race.',
+        q: 'Why does a fast answer sometimes not count toward my personal best?',
+        a: 'When the same book is asked twice in close succession (within one minute), the second fast answer is not counted toward your per-book personal best, nor toward "Books that need attention" detection. The reason: you simply remembered where the book was — that\'s working memory, not real recall. Cognitive research (Kahana & Loftus, 1999) shows that answers given immediately after each other are artificially faster than genuine recall from long-term memory. Your gold line, FSRS schedule, score, streak, and total time DO count — those mustn\'t be blocked by a working-memory detection. In practice: if you answer a book in 5 seconds first time and 1 second second time, only the first 5 seconds counts toward your personal best and the attention-scope detection.',
       },
       // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {

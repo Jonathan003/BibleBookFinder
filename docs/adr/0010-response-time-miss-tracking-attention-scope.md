@@ -125,22 +125,23 @@ The button shows disabled state with the relevant explanatory text when ineligib
 
 Added shortly after ADR 0010 shipped, when user testing revealed that the picker frequently re-shows the same book within seconds (Rating.Hard schedules a ~10-minute re-show, Rating.Again schedules ~1-minute, and the picker draws randomly from a top-8 due pool — so a slowly-answered book often comes back immediately). The user observed: when the same book is asked twice in immediate succession, the second answer is artificially faster because they just visually located the cell. That measures working memory, not long-term recall.
 
-The refinement has THREE protections, all keyed off the same detector. Each shields a recall-quality metric from working-memory contamination:
+The refinement has TWO protections, both keyed off the same detector:
 
 **Protection 1 — Suppress same-book correct in `recentAnswers`.**
 Filters working-memory contamination out of the median used by ADR 0010 criterion 2.
 
-**Protection 2 — Override confident-buffer to `false`.**
-A back-to-back correct pushes false into the gold-line buffer instead of true. Real recall must come from spaced practice.
-
-**Protection 3 — Skip per-book `bestTime` update + ⚡ celebration.**
+**Protection 2 — Skip per-book `bestTime` update + ⚡ celebration.**
 A 1-second answer after a 5-second answer for the same book is working memory, not a new personal best.
 
-**What we deliberately do NOT do: override the FSRS Rating.**
+### What we deliberately do NOT protect
 
-An earlier version of this refinement (commit 1069c4e) added a fourth protection: forcing Rating.Hard on wm repeats, so contaminated books wouldn't earn long Good/Easy intervals. The rationale was sound on paper. Live testing exposed the flaw: Rating.Hard keeps cards in the ~10-minute due pool, the picker draws randomly from the top-8 of that pool, and in an active race most recent answers were getting the Hard override. The pool filled with same-book candidates. Result: up to 10 consecutive picks of the same book — a pathological loop that made the app unusable. Rolled back; the picker-cycle harm vastly outweighed the marginal protection.
+This scope was reached through three rounds of live user testing, each exposing a different way the wider protection misbehaved. Documenting the history helps future maintainers avoid re-treading the path:
 
-FSRS-6 has its own built-in same-day stability dampening (the `S^(-w_19)` term in its same-day formula), which together with the picker's randomized draw from the top-8 due pool provides adequate protection against contamination of criterion 1 (FSRS-due NOW). The user's three remaining protections (recentAnswers, confident-buffer, bestTime) cover the criteria that the user directly experiences. Acceptable trade-off.
+**The FSRS Rating** was protected initially (commit `1069c4e`): a back-to-back wm correct got its Rating forced to Hard, intending to prevent contaminated books from earning long Good/Easy intervals. Live testing exposed a vicious picker cycle — Rating.Hard keeps cards in the ~10-minute due pool, the picker draws from the top-8 of that pool, and most recently-answered books were Hard-overridden, so the pool filled with same-book candidates → up to 10 consecutive picks of the same book. Rolled back in `85493ee`. FSRS-6 has its own intrinsic same-day stability dampening (the `S^(-w_19)` term) that provides adequate scheduling protection without our intervention.
+
+**The confident-buffer (gold-line signal)** was protected next: a back-to-back wm correct pushed `false` into the confident buffer instead of `true`. Live testing exposed a race-completion bug — at 65/66 confident the picker has only one non-confident book left, every pick is forced to be back-to-back, every pick pushed `false`, the buffer never filled with three trues, and the race could never complete. A user reported tapping the same book 20+ times with no progress. Rolled back (this revision). The confident buffer now records every correct-within-time answer, regardless of back-to-back status.
+
+The pattern: protecting **progression-gating metrics** (FSRS schedule, confident buffer) against wm contamination introduces deadlocks. Protection only works on **shadow metrics** — measurements that inform other systems but don't gate user progress.
 
 ### The detector
 
@@ -161,42 +162,36 @@ const updateLastAnswered = (bookId) => {
 
 The 60-second window guards against a rare edge case: user stops answering for ~hour without formally pausing (no component unmount), then returns. Working memory is gone after such a gap, so the next same-book answer is real recall, not contamination. Within 60 seconds the picker can plausibly produce a same-book repeat via the top-8 due pool; beyond that, intervening books and time have flushed working memory.
 
-The ref is updated at every answer site (correct / wrong-tap / time-up) via `updateLastAnswered`. Sharing the same `lastAnsweredBookRef` across all three downstream protections ensures they agree on what counts as back-to-back.
+The ref is updated at every answer site (correct / wrong-tap / time-up) via `updateLastAnswered`. Sharing the same `lastAnsweredBookRef` across both protections ensures they agree on what counts as back-to-back.
 
 ### Rules
 
 | Event | Same book as previous AND within 60s? | What changes |
 |---|---|---|
-| Correct (Easy/Good/Hard by speed) | No | Normal: natural Rating to FSRS, normal confident-buffer push, recorded into recentAnswers, bestTime updated if faster |
-| Correct | Yes | FSRS Rating **passes through naturally** (no override); confident-buffer pushes **false**; recentAnswers record **suppressed**; **bestTime update skipped** + ⚡ celebration suppressed; other counters unchanged |
+| Correct (Easy/Good/Hard by speed) | No | Normal: natural Rating to FSRS, natural confident-buffer push, recorded into recentAnswers, bestTime updated if faster |
+| Correct | Yes | FSRS Rating **passes through naturally**; confident-buffer **passes through naturally**; recentAnswers record **suppressed**; **bestTime update skipped** + ⚡ celebration suppressed; other counters unchanged |
 | Wrong-tap (Rating.Again) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Again to FSRS; always confident false |
 | Time-up (Rating.Hard) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Hard to FSRS; always confident false |
 
-Misses (wrong-tap and time-up) never get overridden — they're already "bad" outcomes and pushing them further makes no sense.
-
-The protections are kept logically consistent: every metric that's supposed to reflect **recall quality at the user-visible level** (confident buffer, recentAnswers median, per-book bestTime) is shielded from working-memory contamination. Every metric that reflects **tap performance** (score, streak, best-streak, sessionMs, training-time) passes through unchanged — a fast tap is a fast tap. The bestTime metric is in the recall-quality bucket because it's framed as a "how well do I know this book" record in the UI, not a raw-reflex record. The FSRS schedule is in neither bucket explicitly — it's a long-term scheduler that has its own intrinsic same-day dampening, and overriding it caused worse harm (pathological picker cycles) than benefit.
+Misses (wrong-tap and time-up) never get filtered — they're already "bad" outcomes and pushing them further makes no sense.
 
 ### Research backing
 
-- **Kahana & Loftus (1999), University of Pennsylvania** (memory.psych.upenn.edu/files/pubs/KahaLoft99.pdf): "IRTs to the first repeated elements were unaffected by the repetition. In contrast, subjects had shorter IRTs to the second repeated element if the repetitions were in nearby list positions." Translation: spaced repetitions show normal RTs, nearby (back-to-back) repetitions show artificially shorter RTs — exactly the contamination we need to filter.
-- **Intertrial priming literature** (well-documented in cognitive psychology): direct repetition of a target produces a measurable RT-acceleration effect. The acceleration disappears when other items intervene.
-- **Working-memory decay**: gamma-band sensory activity drops to noise levels within ~500ms unless reactivated; one intervening item is typically enough to displace the previous item from active working memory (Cowan's "magic number 4" capacity).
-- **FSRS-6's own same-day dampening** (Expertium's FSRS technical doc, expertium.github.io/Algorithm.html): the new stability formula includes a `S^(-w_19)` term that makes stability rise slower for same-day reviews. This is built-in protection that we now rely on instead of overriding the Rating ourselves.
+- **Kahana & Loftus (1999), University of Pennsylvania** (memory.psych.upenn.edu/files/pubs/KahaLoft99.pdf): "IRTs to the first repeated elements were unaffected by the repetition. In contrast, subjects had shorter IRTs to the second repeated element if the repetitions were in nearby list positions." Translation: spaced repetitions show normal RTs, nearby (back-to-back) repetitions show artificially shorter RTs — exactly the contamination we filter from the shadow metrics.
+- **Intertrial priming literature**: direct repetition of a target produces a measurable RT-acceleration effect that disappears when other items intervene.
+- **FSRS-6's intrinsic same-day dampening** (Expertium's FSRS technical doc, expertium.github.io/Algorithm.html): the same-day stability formula `S' = S * e^(w17*(G-3+w18)) * S^(-w19)` includes a `S^(-w19)` term that makes stability rise slower for same-day reviews. This is the algorithm's built-in protection that we now rely on instead of overriding the Rating ourselves.
 
 ### What this changes in practice
 
-For a typical race, the user notices nothing immediate — same-book repeats from the picker no longer pollute the long-term tracking, but they also no longer cause the picker pathology that the override caused.
-
-Gold-line growth is slower for users who get many back-to-back same-book picks (because confident buffer gets `false` instead of `true`). Wetenschappelijk correcter — gold should reflect real spaced recall, not working-memory loops — but slightly less satisfying for the dopamine-driven user. ADR 0008's perfectionist principle wins here: correctness over convenience.
-
-A "⚡ New best!" celebration no longer fires when a personal best would have come from a wm-fast second answer. The personal best stays at the previous value until the user demonstrates real spaced recall.
+For an active race the user notices little immediate effect. The attention-scope median (criterion 2) is cleanly computed over spaced answers only. Personal bests no longer flip to a wm-fast value. Race-to-66 completion works at every pool size including pool=1. FSRS scheduling reflects what the user actually did — no overrides.
 
 ### What this does NOT change
 
 - Box Mode still tracks nothing (unchanged from base ADR 0010).
 - Misses (wrong-tap, time-up) are recorded unchanged.
-- FSRS Rating passes through unmodified — same Good/Hard/Easy as natural speed-based mapping.
-- Score, streak, best-streak, sessionMs, training-time — all unchanged. These reflect tap performance, not recall quality.
+- FSRS Rating passes through unmodified — natural speed-based mapping.
+- Confident buffer passes through unmodified — every correct-within-time pushes a `true`.
+- Score, streak, best-streak, sessionMs, training-time — all unchanged.
 - Window size (5) and `MIN_CORRECT_FOR_MEDIAN` (3) are unchanged.
 - Schema version stays at v6 — the refinement is implementation-only, no new data fields.
 
