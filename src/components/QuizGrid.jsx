@@ -202,34 +202,52 @@ export default function QuizGrid({
   // silently dropping the count from 66 to 65 between the prompt
   // render and the home render. See ADR 0004.
   const sessionCompleteRef = useRef(false);
-  // ADR 0010 refinement: tracks the most recent bookId for which a
-  // correct answer was recorded into recentAnswers. Used by the
-  // recordRecentAnswerFiltered wrapper below to suppress back-to-back
-  // repeats of the same book.
+  // ADR 0010 refinement: tracks the most recently answered book (id +
+  // timestamp) for working-memory contamination detection. Used by:
+  //   - recordRecentAnswerFiltered (suppresses same-book correct repeats)
+  //   - the correct-flow FSRS rating override (forces Hard on back-to-back)
+  //   - the correct-flow confident-buffer override (forces false on back-to-back)
   //
-  // Why: when a book is asked twice in immediate succession (common in
-  // BBF's picker — Rating.Hard schedules a quick re-show, Rating.Again
-  // schedules even sooner), the second answer is contaminated by
-  // working memory. The user just visually located the cell; the
-  // 1-second second answer measures working-memory recall, not
-  // long-term recall. Cognitive psychology backs this up:
-  //   - Kahana & Loftus (1999): IRTs to second repeated elements are
-  //     artificially shorter when repetitions are in nearby positions.
-  //     Spaced repetitions show normal RTs.
+  // Why a SHARED ref instead of separate ones: a back-to-back same-book
+  // correct is the same working-memory contamination event regardless
+  // of which downstream system reads it. Sharing one source of truth
+  // keeps the three protections consistent — if one says "this is
+  // back-to-back", the others say the same.
+  //
+  // Research backing:
+  //   - Kahana & Loftus (1999): IRTs to second repeated elements at
+  //     nearby positions are artificially shorter (working-memory
+  //     contamination). Spaced repetitions show normal RTs.
   //   - Intertrial priming literature: direct repetition produces
   //     well-documented RT-acceleration effects.
-  //   - Working-memory decay: gamma-band activity drops to noise within
-  //     500ms; one intervening item is usually enough to displace the
-  //     previous item.
+  //   - FSRS-6 has its own same-day stability dampening (S^(-w_19)
+  //     term), but for cards in learning state the boost can still be
+  //     significant — this override provides additional protection.
   //
-  // The wrapper only filters CORRECT answers. Misses are always
-  // recorded — a wrong-tap or time-up even after a same-book correct is
-  // a strong signal (the user had working-memory help and still missed).
+  // The 60-second time window guards against a rare edge case: user
+  // stops answering for ~hour without formally pausing (no component
+  // unmount), then returns. Working memory is gone after such a gap,
+  // so the next same-book answer is real recall, not contamination.
+  // Within 60 seconds the picker can plausibly produce a same-book
+  // repeat via the top-8 due pool; beyond that, intervening books and
+  // time have flushed working memory.
   //
-  // The ref resets implicitly on a new component mount (fresh session,
-  // including post-pause resume — working memory is gone after any
-  // real-world pause anyway).
-  const lastRecordedBookIdRef = useRef(null);
+  // The ref resets on component remount (fresh session, including
+  // resume-from-pause).
+  const lastAnsweredBookRef = useRef({ bookId: null, ts: 0 });
+  const BACK_TO_BACK_WINDOW_MS = 60_000;
+
+  const isBackToBackSameBook = useCallback((bookId) => {
+    const ref = lastAnsweredBookRef.current;
+    if (ref.bookId !== bookId) return false;
+    if (Date.now() - ref.ts > BACK_TO_BACK_WINDOW_MS) return false;
+    return true;
+  }, []);
+
+  const updateLastAnswered = useCallback((bookId) => {
+    lastAnsweredBookRef.current = { bookId, ts: Date.now() };
+  }, []);
+
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
@@ -242,33 +260,29 @@ export default function QuizGrid({
   useEffect(() => { sessionCompleteRef.current = sessionComplete; }, [sessionComplete]);
 
   // ADR 0010 refinement: wraps recordRecentAnswer with back-to-back
-  // suppression. Three rules:
-  //   1. If event.correct === true AND bookId matches lastRecordedBookIdRef
-  //      → SKIP (working-memory contamination — see ref declaration above).
-  //   2. Misses (correct: false) are always recorded, even back-to-back.
-  //      A miss after a same-book correct is a strong signal (working
-  //      memory should have helped — it didn't).
-  //   3. Every recording updates lastRecordedBookIdRef to the current
-  //      bookId, so the next call compares against the most recent
-  //      RECORDED book (not just the most recent picked book — a skipped
-  //      pick doesn't change what we compare against, which is exactly
-  //      what we want for catching 3+ in a row of the same book).
+  // suppression. Uses isBackToBackSameBook to detect working-memory
+  // contamination. Two rules:
+  //   1. If event.correct AND same book as last answered (within 60s)
+  //      → SKIP (working-memory contamination — see ref declaration).
+  //   2. Misses (correct: false) are always recorded. A miss after a
+  //      same-book correct is the strongest "needs attention" signal
+  //      (working memory should have helped — it didn't).
+  //
+  // The ref is updated separately at each answer site via
+  // updateLastAnswered, NOT inside this wrapper. This keeps the
+  // detection consistent across recentAnswers / FSRS / confident-buffer
+  // pathways — they all share the same notion of "what was the
+  // previous answered book".
   //
   // Caller can pass `null` for recordRecentAnswer (e.g. if the parent
   // hasn't wired it yet) — the wrapper is a no-op in that case.
   const recordRecentAnswerFiltered = useCallback((bookId, event) => {
     if (!recordRecentAnswer) return;
-    if (event.correct && lastRecordedBookIdRef.current === bookId) {
-      // Same-book back-to-back correct — suppress as working-memory
-      // contamination. Do NOT update the ref: the next pick should
-      // still compare against the earlier recorded answer for this
-      // book, not against the suppressed one. This is what catches
-      // 3+ identical-book streaks correctly.
-      return;
+    if (event.correct && isBackToBackSameBook(bookId)) {
+      return; // suppress as working-memory contamination
     }
     recordRecentAnswer(bookId, event);
-    lastRecordedBookIdRef.current = bookId;
-  }, [recordRecentAnswer]);
+  }, [recordRecentAnswer, isBackToBackSameBook]);
 
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
@@ -461,6 +475,12 @@ export default function QuizGrid({
         // correct is a strong signal that the user can't hold the
         // book reliably.
         recordRecentAnswerFiltered(tb.id, { ms: 0, correct: false });
+
+        // ADR 0010 refinement: record this as the last-answered book.
+        // Time-up updates the ref so a subsequent same-book correct
+        // (e.g., from the blue-cell tap acknowledgment after the
+        // reveal) is detected as working-memory contamination.
+        updateLastAnswered(tb.id);
 
         // Confident buffer: push `false` — a question that timed
         // out is by definition not a confident answer. Mirrors the
@@ -888,13 +908,35 @@ export default function QuizGrid({
       // from working memory, not long-term memory).
       recordRecentAnswerFiltered(targetBook.id, { ms: cappedMs, correct: true });
 
-      // Update FSRS card with the new rating.
+      // ADR 0010 refinement (extended): same-book back-to-back protection
+      // for FSRS scheduling and confident-buffer. When the user just
+      // answered this same book within the last 60 seconds, the current
+      // answer is working-memory-assisted, not real recall:
+      //   - FSRS rating: override Good/Easy → Hard. Hard is still a
+      //     "passing grade" (per Expertium's FSRS technical doc:
+      //     "Easy, Good and Hard all count as 'success'"), but it
+      //     schedules the card sooner than Good would, keeping it in
+      //     rotation until the user proves real recall in a future
+      //     session. FSRS-6 already dampens same-day reviews via the
+      //     S^(-w_19) term, but for cards in learning state the boost
+      //     can still be significant. This override provides additional
+      //     protection.
+      //   - Confident buffer: force false. Working memory should not
+      //     advance the gold-line signal.
+      //   - Score, streak, best-time, training-time: unchanged. The
+      //     user DID answer correctly and quickly — those metrics
+      //     reflect tap performance, not recall quality.
+      const isWorkingMemoryRepeat = isBackToBackSameBook(targetBook.id);
+      const effectiveRating = isWorkingMemoryRepeat ? Rating.Hard : rating;
+      const effectiveConfidentHit = isWorkingMemoryRepeat ? false : isWithinTime;
+
+      // Update FSRS card with the (possibly overridden) rating.
       const currentCard = fsrsCards[targetBook.id]
         ? deserializeCard(fsrsCards[targetBook.id])
         : createBookCard();
-      const result = reviewBook(scheduler, currentCard, rating);
+      const result = reviewBook(scheduler, currentCard, effectiveRating);
       updateFsrsCard(targetBook.id, serializeCard(result.card));
-      logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), rating);
+      logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), effectiveRating);
 
       // ─── Confident-buffer update (v4) ────────────────────────────────
       // Record this attempt on the new gold-line signal. `true` only if
@@ -902,11 +944,16 @@ export default function QuizGrid({
       // criterion FSRS uses to map speed → Rating.Good vs Hard). Slow
       // correct answers push `false` — they're not "confident" hits, the
       // user knew the book but couldn't find it fast.
+      //
+      // ADR 0010 refinement: effectiveConfidentHit forces false when
+      // this is a same-book back-to-back working-memory repeat (see
+      // override block above). Real recall must come from spaced
+      // practice, not from a working-memory loop.
       const wasConfident = isConfident(confidentBuffers[targetBook.id]);
-      const nextBuffer = recordConfidentAttempt(confidentBuffers[targetBook.id], isWithinTime);
+      const nextBuffer = recordConfidentAttempt(confidentBuffers[targetBook.id], effectiveConfidentHit);
       const isNowConfident = isConfident(nextBuffer);
       if (updateConfidentBuffer) {
-        updateConfidentBuffer(targetBook.id, isWithinTime);
+        updateConfidentBuffer(targetBook.id, effectiveConfidentHit);
       }
 
       // Score only counts if within time limit
@@ -1012,6 +1059,13 @@ export default function QuizGrid({
         setStreak(0);
       }
 
+      // ADR 0010 refinement: record this as the last-answered book so
+      // the NEXT pick can detect back-to-back working-memory contamination.
+      // Placed at the end of the correct-flow so all checks above
+      // (recentAnswers wrapper, FSRS rating override, confident buffer)
+      // saw the PREVIOUS book context, not this one.
+      updateLastAnswered(targetBook.id);
+
       schedule(() => pickNextBook(), autoPickDelayMs(config.targetSpeedMs));
       return;
     }
@@ -1066,6 +1120,13 @@ export default function QuizGrid({
     if (updateConfidentBuffer) {
       updateConfidentBuffer(targetBook.id, false);
     }
+
+    // ADR 0010 refinement: record this as the last-answered book.
+    // Misses still update the ref so a subsequent same-book correct
+    // (e.g., from the blue-cell tap acknowledgment) is detected as
+    // working-memory contamination — the user just saw the answer
+    // revealed.
+    updateLastAnswered(targetBook.id);
 
     // Wait for user to click the correct (blue) book to advance
   };

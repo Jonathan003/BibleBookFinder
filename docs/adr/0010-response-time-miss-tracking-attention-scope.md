@@ -121,35 +121,73 @@ The button shows disabled state with the relevant explanatory text when ineligib
 - The window-size choice (5) is empirical; may need tuning if it proves too jumpy or too sluggish.
 - The miss-counter does not distinguish wrong-tap from time-up. Both are treated as the same kind of "didn't get it right on first try." If we later want different handling, the data structure supports it (the `ms` field is 0 for both, but we could add a `cause: 'wrong-tap' | 'time-up'` field without migration). Not done now to keep the structure minimal.
 
-## Refinement: same-book back-to-back suppression
+## Refinement: same-book back-to-back working-memory protection
 
 Added shortly after ADR 0010 shipped, when user testing revealed that the picker frequently re-shows the same book within seconds (Rating.Hard schedules a ~10-minute re-show, Rating.Again schedules ~1-minute, and the picker draws randomly from a top-8 due pool — so a slowly-answered book often comes back immediately). The user observed: when the same book is asked twice in immediate succession, the second answer is artificially faster because they just visually located the cell. That measures working memory, not long-term recall.
+
+The refinement has TWO layers, both keyed off the same detector:
+
+**Layer 1 (initial refinement) — Suppress same-book correct in `recentAnswers`.**
+Filters working-memory contamination out of the median used by ADR 0010 criterion 2.
+
+**Layer 2 (extended refinement) — Override FSRS rating and confident buffer.**
+Extends the protection to FSRS scheduling (which drives criterion 1) and the gold-line "confident" signal. A back-to-back correct gets its Rating overridden from natural Good/Easy → Hard, and pushes `false` into the confident buffer instead of `true`. The user's score, streak, best-time, and training-time counters are NOT touched — those reflect tap performance, not recall quality, and a fast tap is a fast tap regardless of where the recall came from.
+
+### The detector
+
+Shared via two helpers in `QuizGrid.jsx`:
+
+```javascript
+const lastAnsweredBookRef = useRef({ bookId: null, ts: 0 });
+const BACK_TO_BACK_WINDOW_MS = 60_000;
+
+const isBackToBackSameBook = (bookId) =>
+  lastAnsweredBookRef.current.bookId === bookId
+  && Date.now() - lastAnsweredBookRef.current.ts <= BACK_TO_BACK_WINDOW_MS;
+
+const updateLastAnswered = (bookId) => {
+  lastAnsweredBookRef.current = { bookId, ts: Date.now() };
+};
+```
+
+The 60-second window guards against a rare edge case: user stops answering for ~hour without formally pausing (no component unmount), then returns. Working memory is gone after such a gap, so the next same-book answer is real recall, not contamination. Within 60 seconds the picker can plausibly produce a same-book repeat via the top-8 due pool; beyond that, intervening books and time have flushed working memory.
+
+The ref is updated at every answer site (correct / wrong-tap / time-up) via `updateLastAnswered`. Sharing the same `lastAnsweredBookRef` across all three downstream protections (recentAnswers / FSRS / confident-buffer) ensures they agree on what counts as back-to-back.
+
+### Rules
+
+| Event | Same book as previous AND within 60s? | What changes |
+|---|---|---|
+| Correct (Easy/Good/Hard by speed) | No | Normal: natural Rating, normal confident-buffer push, recorded into recentAnswers |
+| Correct | Yes | FSRS Rating overridden to **Hard**; confident-buffer pushes **false**; recentAnswers record **suppressed**; other counters unchanged |
+| Wrong-tap (Rating.Again) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Again to FSRS; always confident false |
+| Time-up (Rating.Hard) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Hard to FSRS; always confident false |
+
+Misses (wrong-tap and time-up) never get overridden — they're already "bad" outcomes and pushing them further makes no sense.
 
 ### Research backing
 
 - **Kahana & Loftus (1999), University of Pennsylvania** (memory.psych.upenn.edu/files/pubs/KahaLoft99.pdf): "IRTs to the first repeated elements were unaffected by the repetition. In contrast, subjects had shorter IRTs to the second repeated element if the repetitions were in nearby list positions." Translation: spaced repetitions show normal RTs, nearby (back-to-back) repetitions show artificially shorter RTs — exactly the contamination we need to filter.
 - **Intertrial priming literature** (well-documented in cognitive psychology): direct repetition of a target produces a measurable RT-acceleration effect. The acceleration disappears when other items intervene.
 - **Working-memory decay**: gamma-band sensory activity drops to noise levels within ~500ms unless reactivated; one intervening item is typically enough to displace the previous item from active working memory (Cowan's "magic number 4" capacity).
-
-### Rule
-
-In `QuizGrid.jsx`, the `recordRecentAnswerFiltered` wrapper around `recordRecentAnswer` implements:
-
-1. If `event.correct === true` AND `bookId === lastRecordedBookIdRef.current` → **SKIP** (do not record). The `lastRecordedBookIdRef` ref is unchanged, so a 3rd, 4th, ... same-book correct in a row is also skipped.
-2. Otherwise → **record** and update `lastRecordedBookIdRef` to the current `bookId`.
-3. Misses (`correct: false`) are always recorded. A wrong-tap or time-up after a same-book correct is the strongest possible "needs attention" signal — working memory should have helped, it didn't.
-4. The ref resets implicitly on a new component mount (which happens on every fresh session start, including post-pause resume). Working memory is gone after any real-world pause anyway, so cross-session tracking is unnecessary.
+- **FSRS-6's own same-day dampening** (Expertium's FSRS technical doc, expertium.github.io/Algorithm.html): the new stability formula `S' = S * e^(w17*(G-3+w18)) * S^(-w19)` includes a `S^(-w19)` term that makes stability rise slower for same-day reviews. This is built-in protection, but for cards in learning state (low S) the boost can still be significant. The override here provides additional protection on top of FSRS-6's dampening.
+- **"Hard is a passing grade, not a failing grade"** (Expertium): "Easy, Good and Hard all count as 'success'". Forcing Hard semantically means "user got it, but with effort" — exactly what working-memory-assisted recall is. The card still progresses; it just keeps coming back sooner until the user proves real recall in a spaced context.
 
 ### What this changes in practice
 
-For a typical race of ~198 picks (66 books × ~3 attempts each), roughly 30–50 picks are back-to-back same-book repeats (Branch 1 due-pool keeps recently-answered books in rotation). Under the refinement, those are suppressed. Effective recordings per race: ~150–170 instead of ~198. Per book: still typically 2–3 recordings, enough for the window to fill in 1–2 races.
+For a typical race of ~198 picks (66 books × ~3 attempts each), roughly 30–50 picks are back-to-back same-book repeats. Under the refinement, those are suppressed in recentAnswers AND get their FSRS Rating overridden to Hard AND push false into the confident buffer.
 
-The median computed over the filtered window now reflects long-term recall — clean of working-memory contamination.
+Effective recordings into recentAnswers per race: ~150–170 instead of ~198. Per book: still typically 2–3 recordings, enough for the window to fill in 1–2 races.
+
+FSRS due-dates are shorter for working-memory-assisted answers, so attention-scope criterion 1 (FSRS-due NOW) becomes more sensitive — books that the user only "knew" via working memory keep showing up in the attention set until real recall is demonstrated.
+
+Gold-line growth is slower for users who get many back-to-back same-book picks (because confident buffer gets `false` instead of `true`). Wetenschappelijk correcter — gold should reflect real spaced recall, not working-memory loops — but slightly less satisfying for the dopamine-driven user. ADR 0008's perfectionist principle wins here: correctness over convenience.
 
 ### What this does NOT change
 
 - Box Mode still tracks nothing (unchanged from base ADR 0010).
-- Misses are recorded unchanged.
+- Misses (wrong-tap, time-up) are recorded unchanged.
+- Score, streak, best-time, training-time, sessionMs — all unchanged. A fast tap is a fast tap regardless of recall quality.
 - Window size (5) and `MIN_CORRECT_FOR_MEDIAN` (3) are unchanged.
 - Schema version stays at v6 — the refinement is implementation-only, no new data fields.
 
