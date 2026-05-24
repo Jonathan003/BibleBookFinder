@@ -908,35 +908,42 @@ export default function QuizGrid({
       // from working memory, not long-term memory).
       recordRecentAnswerFiltered(targetBook.id, { ms: cappedMs, correct: true });
 
-      // ADR 0010 refinement (extended): same-book back-to-back protection
-      // for FSRS scheduling and confident-buffer. When the user just
-      // answered this same book within the last 60 seconds, the current
-      // answer is working-memory-assisted, not real recall:
-      //   - FSRS rating: override Good/Easy → Hard. Hard is still a
-      //     "passing grade" (per Expertium's FSRS technical doc:
-      //     "Easy, Good and Hard all count as 'success'"), but it
-      //     schedules the card sooner than Good would, keeping it in
-      //     rotation until the user proves real recall in a future
-      //     session. FSRS-6 already dampens same-day reviews via the
-      //     S^(-w_19) term, but for cards in learning state the boost
-      //     can still be significant. This override provides additional
-      //     protection.
+      // ADR 0010 refinement (revised): same-book back-to-back protection
+      // for recall-quality metrics. When the user just answered this
+      // same book within the last 60 seconds, the current answer is
+      // working-memory-assisted, not real recall:
       //   - Confident buffer: force false. Working memory should not
       //     advance the gold-line signal.
+      //   - recentAnswers: suppressed (handled in the wrapper above).
+      //   - bestTime: skipped (handled in the personal-best block below).
       //   - Score, streak, best-time, training-time: unchanged. The
       //     user DID answer correctly and quickly — those metrics
       //     reflect tap performance, not recall quality.
+      //
+      // What we DON'T override: the FSRS Rating. An earlier version of
+      // this refinement (commit 1069c4e) forced Rating.Hard on wm
+      // repeats, intending to keep contaminated books from earning easy
+      // long intervals. Live testing revealed this caused a vicious
+      // picker cycle: Hard-rated books stay in the ~10-minute due pool,
+      // the picker draws randomly from the top-8 of that pool, and
+      // since most recently-answered books in an active race are also
+      // Hard-overridden, the pool fills with same-book candidates →
+      // up to 10 consecutive picks of the same book. Rolled back in
+      // f4a2c1d (commit hash TBD when committed). FSRS-6 has its own
+      // same-day stability dampening (S^(-w_19) term), which together
+      // with the picker's random draw from top-8 provides adequate
+      // protection against contaminated long intervals — without the
+      // pathological repetition.
       const isWorkingMemoryRepeat = isBackToBackSameBook(targetBook.id);
-      const effectiveRating = isWorkingMemoryRepeat ? Rating.Hard : rating;
       const effectiveConfidentHit = isWorkingMemoryRepeat ? false : isWithinTime;
 
-      // Update FSRS card with the (possibly overridden) rating.
+      // Update FSRS card with the natural rating (no override).
       const currentCard = fsrsCards[targetBook.id]
         ? deserializeCard(fsrsCards[targetBook.id])
         : createBookCard();
-      const result = reviewBook(scheduler, currentCard, effectiveRating);
+      const result = reviewBook(scheduler, currentCard, rating);
       updateFsrsCard(targetBook.id, serializeCard(result.card));
-      logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), effectiveRating);
+      logAnswerResult(targetBook, fsrsCards[targetBook.id], serializeCard(result.card), rating);
 
       // ─── Confident-buffer update (v4) ────────────────────────────────
       // Record this attempt on the new gold-line signal. `true` only if
