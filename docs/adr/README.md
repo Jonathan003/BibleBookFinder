@@ -32,7 +32,8 @@ A reasonable target: about one ADR per significant design discussion, typically 
 | [0006](./0006-hint-no-rating-penalty.md) | Hint usage does not affect FSRS rating or gold-line credit | Accepted |
 | [0007](./0007-time-up-match-wrong-answer-flow.md) | Time-up uses the same click-to-advance flow as wrong-answer | Accepted |
 | [0008](./0008-speedrun-only-quiz-mode-model.md) | Speedrun-only Quiz Mode model — one goal, one loop | Accepted |
-| [0009](./0009-attention-scope-box-mode.md) | Attention scope in Box Mode — FSRS-driven practice path | Accepted |
+| [0009](./0009-attention-scope-box-mode.md) | Attention scope in Box Mode — FSRS-driven practice path | Accepted (criterion superseded by [0010](./0010-response-time-miss-tracking-attention-scope.md)) |
+| [0010](./0010-response-time-miss-tracking-attention-scope.md) | Response-time + miss tracking for attention scope | Accepted |
 
 ## How to add a new ADR
 

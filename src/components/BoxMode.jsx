@@ -116,7 +116,7 @@ function scopeDisplayName(scopeKey, lang, t) {
   return scopeKey;
 }
 
-export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPausedSession = null, onPause }) {
+export default function BoxMode({ ownerUserId, fsrsCards = {}, recentAnswers = {}, onBack, initialPausedSession = null, onPause }) {
   const { config, t, lang } = useAppConfig();
   const { otColumns, ntColumns, displayMode, testamentsLayout, gridRef } = useGridLayout();
   const schedule = useTimeoutManager();
@@ -368,7 +368,7 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
     const scope = computeScopeKey(selectedScopes);
     let attentionBookIds = null;
     if (scope === 'attention') {
-      const info = getAttentionBooks(fsrsCards, bibleBooks);
+      const info = getAttentionBooks(fsrsCards, bibleBooks, recentAnswers);
       if (!info.eligible) {
         // Guard — shouldn't happen because the button is disabled when
         // ineligible, but be defensive.
@@ -395,7 +395,7 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
     setTimerStart(Date.now());
     setTimerProgress(1);
     setPhase('playing');
-  }, [config.boxMode?.failMode, selectedScopes, fsrsCards]);
+  }, [config.boxMode?.failMode, selectedScopes, fsrsCards, recentAnswers]);
 
   // ─── Quiz loop actions ─────────────────────────────────────────────
 
@@ -644,7 +644,7 @@ export default function BoxMode({ ownerUserId, fsrsCards = {}, onBack, initialPa
 
     // ADR 0009: compute the attention scope at render time so the button
     // can show the current count and disable when not eligible.
-    const attentionInfo = getAttentionBooks(fsrsCards, bibleBooks);
+    const attentionInfo = getAttentionBooks(fsrsCards, bibleBooks, recentAnswers);
     const isAttentionSelected = selectedScopes.length === 1 && selectedScopes[0] === 'attention';
 
     const selectionBookCount = scopeKeyPreview === 'attention'

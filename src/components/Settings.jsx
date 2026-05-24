@@ -133,7 +133,14 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
       //          in-progress session. `?? null` fallback on restore
       //          means older backups still load cleanly, just with no
       //          paused session to resume.
-      _schemaVersion: 5,
+      // v6 added: recentAnswers (per-book rolling window of last 5
+      //          answer events {ms, correct, ts}, used by ADR 0010's
+      //          attention-scope criteria 2 and 3). Pre-v6 backups
+      //          silently lack this — on restore it's set to {} and
+      //          rebuilds naturally within 1-2 Quiz Mode sessions.
+      //          During the rebuild window the attention scope falls
+      //          back to criterion 1 (FSRS-due) only.
+      _schemaVersion: 6,
       exportDate: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -161,6 +168,9 @@ export default function Settings({ config, onSave, onBack, currentUser, onRestor
         // user keeps the JSON shape stable across backups.
         pausedQuizSession: currentUser.pausedQuizSession || null,
         pausedBoxSession: currentUser.pausedBoxSession || null,
+        // ADR 0010 (schema v6): per-book recent-answer windows for the
+        // attention scope. Empty object {} for fresh users.
+        recentAnswers: currentUser.recentAnswers || {},
       }
     };
     const filename = `biblebookfinder-${currentUser.name.replace(/\s+/g, '-')}-backup.json`;

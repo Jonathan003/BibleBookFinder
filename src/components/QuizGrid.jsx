@@ -63,6 +63,10 @@ function autoPickDelayMs(targetSpeedMs) {
 
 export default function QuizGrid({
   ownerUserId, fsrsCards, updateFsrsCard,
+  // ADR 0010: per-book recent-answer tracking for the attention scope.
+  // QuizGrid calls this for every answered question (correct, wrong-tap,
+  // time-up). Box Mode does NOT — see ADR 0010 for the safe-zone rationale.
+  recordRecentAnswer,
   confidentBuffers = {}, updateConfidentBuffer,
   bestTimes, updateBestTime,
   bestStreak, setBestStreak, addQuizSession, addTrainingTime,
@@ -393,6 +397,15 @@ export default function QuizGrid({
         const result = reviewBook(scheduler, currentCard, Rating.Hard);
         updateFsrsCard(tb.id, serializeCard(result.card));
         logAnswerResult(tb, currentCardData, serializeCard(result.card), Rating.Hard);
+
+        // ADR 0010: record the time-up as a miss in the recent-answer
+        // window. correct=false (the user didn't tap the right cell
+        // before time ran out), ms=0 (no valid response-time measurement).
+        // This is criterion-3 territory: time-up counts as "didn't get
+        // it right on first try."
+        if (recordRecentAnswer) {
+          recordRecentAnswer(tb.id, { ms: 0, correct: false });
+        }
 
         // Confident buffer: push `false` — a question that timed
         // out is by definition not a confident answer. Mirrors the
@@ -812,6 +825,14 @@ export default function QuizGrid({
       const rating = ratingFromSpeed(timeTaken, config.targetSpeedMs);
       setFeedback(isWithinTime ? 'correct' : 'slow');
 
+      // ADR 0010: record this correct answer into the recent-answer
+      // window. Both fast and slow correct answers count; only the
+      // actual response time matters for the median, capped at the
+      // same MAX_ANSWER_MS used for training-time accumulation.
+      if (recordRecentAnswer) {
+        recordRecentAnswer(targetBook.id, { ms: cappedMs, correct: true });
+      }
+
       // Update FSRS card with the new rating.
       const currentCard = fsrsCards[targetBook.id]
         ? deserializeCard(fsrsCards[targetBook.id])
@@ -944,6 +965,14 @@ export default function QuizGrid({
     feedbackRef.current = true;
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
+
+    // ADR 0010: record the miss. ms=0 because the user's response time
+    // was spent finding the wrong cell, not the target — not a valid
+    // measurement for the target book's median. The `correct: false`
+    // flag is what criterion 3 (recent miss) keys on.
+    if (recordRecentAnswer) {
+      recordRecentAnswer(targetBook.id, { ms: 0, correct: false });
+    }
 
     // Track time spent on this question for the cumulative training
     // counter and the per-segment sessionMs accumulator. Wrong answers

@@ -1,4 +1,5 @@
 import { createEmptyCard, fsrs, Rating, State } from 'ts-fsrs';
+import { computeBookMedians, getSlowBookIds, getRecentlyMissedBookIds } from './recentAnswers.js';
 
 // Pace presets map to FSRS desired retention (request_retention).
 // Lower retention → longer intervals → lighter daily review pressure,
@@ -305,27 +306,39 @@ export function getNonConfidentBooks(confidentBuffers, fsrsCards, allBooks) {
     .map(x => x.book);
 }
 
-// ADR 0009: get books for the "attention" scope in Box Mode. A book belongs
-// in the attention set when at least one of:
-//   1. Its FSRS difficulty is a statistical outlier (> mean + 1σ) compared
-//      to other books with cards — i.e., personally hard for this user.
-//   2. It is FSRS-due NOW — i.e., overdue by the schedule.
-// Unseen books (no card) are excluded entirely.
+// ADR 0010: get books for the "attention" scope in Box Mode. Replaces
+// ADR 0009's difficulty-outlier criterion (which converged on identical
+// values under BBF's race mechanic and produced empty scopes for active
+// users). The new logic uses three criteria, joined with OR:
 //
-// Returns { books, eligible, reason } so callers can render the disabled
-// state with the right explanation. The function does NOT mutate any FSRS
-// data — pure read.
+//   1. FSRS-due NOW (unchanged).
+//   2. "Personally slow" — median recent response time > mean of all
+//      per-book medians + 1σ. Requires ≥3 correct answers in the
+//      book's window. Computed via recentAnswers.js.
+//   3. "Recent miss" — at least one wrong-tap or time-up in the book's
+//      window of the last 5 answers. Self-correcting.
+//
+// A book qualifies if at least one criterion fires.
+//
+// Returns { books, eligible, reason } so callers can render the
+// disabled state with the right explanation. Pure read — does not
+// mutate any user data.
 //
 // Disabled reasons:
 //   'insufficient-data' — fewer than MIN_CARDS_FOR_STATS books have cards
-//   'no-outliers'       — no books match either criterion (user is doing fine)
-//   'too-few'           — matches exist but < MIN_ATTENTION_BOOKS (not enough
-//                         for a useful Box Mode session)
-export function getAttentionBooks(fsrsCards, allBooks, now = new Date()) {
+//   'no-outliers'       — no books match any criterion (user is doing fine)
+//   'too-few'           — matches exist but < MIN_ATTENTION_BOOKS
+//
+// Note: the function still requires fsrsCards to determine the
+// eligibility floor (20 cards = "user has done enough quizzing to
+// produce meaningful data"). recentAnswers is the new primary signal
+// for criteria 2 and 3.
+export function getAttentionBooks(fsrsCards, allBooks, recentAnswers = {}, now = new Date()) {
   const MIN_CARDS_FOR_STATS = 20;
   const MIN_ATTENTION_BOOKS = 3;
 
-  // Collect books that have FSRS cards (skip Unseen).
+  // Collect books that have FSRS cards (skip Unseen). The card presence
+  // is the signal that the user has engaged with this book at all.
   const withCards = allBooks
     .map(b => ({ book: b, card: fsrsCards?.[b.id] }))
     .filter(x => x.card != null);
@@ -334,18 +347,17 @@ export function getAttentionBooks(fsrsCards, allBooks, now = new Date()) {
     return { books: [], eligible: false, reason: 'insufficient-data' };
   }
 
-  // Compute mean and standard deviation of difficulty across books with cards.
-  const difficulties = withCards.map(x => x.card.difficulty || 0);
-  const mean = difficulties.reduce((a, b) => a + b, 0) / difficulties.length;
-  const variance = difficulties.reduce((sum, d) => sum + (d - mean) ** 2, 0) / difficulties.length;
-  const stddev = Math.sqrt(variance);
-  const threshold = mean + stddev;
+  // Compute the two recent-answer sets up front so we can union them
+  // with FSRS-due in the filter below.
+  const bookMedians = computeBookMedians(recentAnswers);
+  const slowIds = getSlowBookIds(bookMedians);
+  const missedIds = getRecentlyMissedBookIds(recentAnswers);
 
-  // Build attention set: union of (difficulty > threshold) and (FSRS-due).
-  const attention = withCards.filter(({ card }) => {
-    const isHigh = (card.difficulty || 0) > threshold;
+  const attention = withCards.filter(({ book, card }) => {
     const isDue = isDueNow(card, now);
-    return isHigh || isDue;
+    const isSlow = slowIds.has(book.id);
+    const wasMissed = missedIds.has(book.id);
+    return isDue || isSlow || wasMissed;
   }).map(x => x.book);
 
   if (attention.length === 0) {

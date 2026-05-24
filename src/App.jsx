@@ -3,6 +3,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { bibleBooks, translations, groupNames } from './data';
 import { getCurrentUser, getUser, updateUser, addToTotalQuizMs, setCurrentUser as persistCurrentUser } from './users';
 import { getBookStats, getTierStats, TIERS, getConfidentCount, recordConfidentAttempt, migrateConfidentBuffers } from './fsrs';
+import { recordAnswer } from './recentAnswers';
 import { applyDeviceScoped } from './settingsScope';
 import { formatDuration, formatTimeAgo } from './timeFormat';
 import { getBoxModeBests } from './boxModeStorage';
@@ -237,6 +238,17 @@ function App() {
     }));
   }, [updateUserData]);
 
+  // ADR 0010: recent-answer tracking for the attention scope.
+  // Records a single answer event (correct or miss) into the per-book
+  // rolling window. Quiz Mode calls this for every answered question;
+  // Box Mode deliberately does NOT (preserves Box Mode's safe-zone
+  // FSRS-independence and avoids cram-practice polluting the signal).
+  const recordRecentAnswer = useCallback((bookId, event) => {
+    updateUserData(prev => ({
+      recentAnswers: recordAnswer(prev.recentAnswers || {}, bookId, event)
+    }));
+  }, [updateUserData]);
+
   // ─── Paused-session helpers (v4) ─────────────────────────────────
   // Quiz Mode and Box Mode now treat "← Back" mid-session as a pause,
   // not a session-end. The full session state gets snapshotted into
@@ -395,6 +407,10 @@ function App() {
       // v6.3: re-snapshot from the unified speed setting.
       masteryMsAtStart: config.targetSpeedMs,
       totalQuizMs: 0,
+      // ADR 0010: wipe the recent-answer windows along with FSRS data.
+      // This is a "start Quiz Mode fresh" action, so the attention-
+      // scope's response-time signal should also reset.
+      recentAnswers: {},
     });
   };
 
@@ -628,6 +644,13 @@ function App() {
       // would be misleading. Modern v5 backups round-trip cleanly.
       pausedQuizSession: userData.pausedQuizSession ?? null,
       pausedBoxSession: userData.pausedBoxSession ?? null,
+      // ADR 0010 (schema v6): per-book recent-answer windows. Pre-v6
+      // backups lack this — `?? {}` means a legacy restore starts the
+      // attention scope's response-time tracking from scratch. The
+      // window rebuilds naturally within 1-2 Quiz Mode sessions.
+      // During the rebuild window the attention scope falls back to
+      // criterion 1 (FSRS-due) only, which may be temporarily smaller.
+      recentAnswers: userData.recentAnswers ?? {},
       settings: restoredConfig,
     });
     setConfig(restoredConfig);
@@ -1178,6 +1201,7 @@ function App() {
             <BoxMode
               ownerUserId={currentUser.id}
               fsrsCards={fsrsCards}
+              recentAnswers={currentUser.recentAnswers || {}}
               initialPausedSession={pausedBoxSession}
               onPause={handleBoxPause}
               onBack={() => {
@@ -1204,6 +1228,7 @@ function App() {
                 ownerUserId={currentUser.id}
                 fsrsCards={fsrsCards}
                 updateFsrsCard={updateFsrsCard}
+                recordRecentAnswer={recordRecentAnswer}
                 confidentBuffers={confidentBuffers}
                 updateConfidentBuffer={updateConfidentBuffer}
                 bestTimes={currentUser.bestTimes || {}}
