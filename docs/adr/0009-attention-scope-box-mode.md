@@ -1,6 +1,6 @@
 # ADR 0009 — Attention scope in Box Mode
 
-**Status:** Accepted
+**Status:** Accepted (criterion superseded by [ADR 0010](./0010-response-time-miss-tracking-attention-scope.md))
 
 **Date:** 2026-05-18
 
@@ -88,6 +88,7 @@ Reopen this decision if:
 ## Related
 
 - Supersedes nothing. Extends Box Mode.
+- **Superseded (criterion only) by [ADR 0010](./0010-response-time-miss-tracking-attention-scope.md)** — the difficulty-outlier criterion proved unreliable in live use (under BBF's race mechanic, FSRS difficulty values converge rather than diverge, so the outlier test produced consistently empty scopes for active users). ADR 0010 replaces criterion 2 with response-time and miss tracking. The scope itself, its eligibility gates, mutual exclusivity rules, and no-records policy from this ADR all remain.
 - ADR 0005 — soft-reset framework (the calendar-hiding principle holds; this scope is on-demand, not pushed).
 - ADR 0008 — speedrun-only Quiz Mode model (Quiz Mode mechanic untouched).
 - BibleBookFinder Help FAQ "Wat doet 'Boeken die aandacht nodig hebben'?" (added in the same commit as this ADR).

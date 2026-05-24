@@ -77,6 +77,13 @@ export function createUser(name, initialSettings) {
     pausedQuizSession: null,
     pausedBoxSession: null,
     bestTimes: {},
+    // ADR 0010: per-book rolling window of the last 5 answer events
+    // ({ms, correct, ts}), driving the attention scope's response-time
+    // and miss criteria. Explicit {} init keeps the user object shape
+    // stable — every reader uses `|| {}` defensively, but a consistent
+    // shape at creation avoids surprises in tooling that inspects user
+    // state. Only Quiz Mode writes to this field; Box Mode does not.
+    recentAnswers: {},
     // Cumulative active-quiz time in ms. Grows with each answered question
     // (capped at 30s per question, Anki-style). Reset by Reset Progress.
     // Restored from backup, falling back to 0 for legacy backups.
