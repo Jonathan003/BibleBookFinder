@@ -987,13 +987,24 @@ export default function QuizGrid({
         //   celebration and bump the session counter.
         //
         // Both conditions update bestTime; only isNewBest triggers UI.
+        //
+        // ADR 0010 refinement: same-book back-to-back working-memory
+        // repeats are excluded from both the bestTime record and the
+        // celebration. A 1-second answer right after a 5-second answer
+        // for the same book measures working memory, not real recall —
+        // it shouldn't become the personal best. Consistent with the
+        // FSRS Rating and confident-buffer overrides above: a wm-assisted
+        // tap doesn't count toward any "you've improved" signal. The
+        // user's tap was real (score, streak, sessionMs all still count),
+        // but the bestTime metric is supposed to reflect recall quality,
+        // not raw tap speed.
         const prevBest = bestTimes[targetBook.id];
         const isFirstSolve = !prevBest;
         const isNewBest = !isFirstSolve && timeTaken < prevBest;
-        if (isFirstSolve || isNewBest) {
+        if (!isWorkingMemoryRepeat && (isFirstSolve || isNewBest)) {
           updateBestTime(targetBook.id, timeTaken);
         }
-        if (isNewBest) {
+        if (!isWorkingMemoryRepeat && isNewBest) {
           setSessionNewBests(prev => prev + 1);
           setNewBestTime(timeTaken);
           setShowNewBest(true);

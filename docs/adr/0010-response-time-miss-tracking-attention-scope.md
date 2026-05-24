@@ -158,12 +158,14 @@ The ref is updated at every answer site (correct / wrong-tap / time-up) via `upd
 
 | Event | Same book as previous AND within 60s? | What changes |
 |---|---|---|
-| Correct (Easy/Good/Hard by speed) | No | Normal: natural Rating, normal confident-buffer push, recorded into recentAnswers |
-| Correct | Yes | FSRS Rating overridden to **Hard**; confident-buffer pushes **false**; recentAnswers record **suppressed**; other counters unchanged |
+| Correct (Easy/Good/Hard by speed) | No | Normal: natural Rating, normal confident-buffer push, recorded into recentAnswers, bestTime updated if faster |
+| Correct | Yes | FSRS Rating overridden to **Hard**; confident-buffer pushes **false**; recentAnswers record **suppressed**; **bestTime update skipped** + ⚡ celebration suppressed; other counters unchanged |
 | Wrong-tap (Rating.Again) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Again to FSRS; always confident false |
 | Time-up (Rating.Hard) | Yes or No | Always recorded as miss in recentAnswers; always Rating.Hard to FSRS; always confident false |
 
 Misses (wrong-tap and time-up) never get overridden — they're already "bad" outcomes and pushing them further makes no sense.
+
+The protections are kept logically consistent: every metric that's supposed to reflect **recall quality** (FSRS schedule, confident buffer, recentAnswers median, per-book bestTime) is shielded from working-memory contamination. Every metric that reflects **tap performance** (score, streak, best-streak, sessionMs, training-time) passes through unchanged — a fast tap is a fast tap. The bestTime metric is in the recall-quality bucket because it's framed as a "how well do I know this book" record in the UI, not a raw-reflex record.
 
 ### Research backing
 
@@ -187,7 +189,7 @@ Gold-line growth is slower for users who get many back-to-back same-book picks (
 
 - Box Mode still tracks nothing (unchanged from base ADR 0010).
 - Misses (wrong-tap, time-up) are recorded unchanged.
-- Score, streak, best-time, training-time, sessionMs — all unchanged. A fast tap is a fast tap regardless of recall quality.
+- Score, streak, best-streak, sessionMs, training-time — all unchanged. These reflect tap performance, not recall quality. A fast tap is a fast tap regardless of where the recall came from.
 - Window size (5) and `MIN_CORRECT_FOR_MEDIAN` (3) are unchanged.
 - Schema version stays at v6 — the refinement is implementation-only, no new data fields.
 

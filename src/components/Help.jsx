@@ -136,6 +136,11 @@ Geen druk om dagelijks te oefenen. Train wanneer je tijd hebt.`,
         q: 'Wat is de gouden lijn onder sommige boeken en wanneer verschijnt die?',
         a: 'De gouden lijn verschijnt onder een boek zodra je laatste 3 antwoorden op dat boek allemaal correct én binnen je doeltijd waren. Eén fout antwoord of één te traag antwoord laat de lijn verdwijnen; drie nieuwe correct-en-snel antwoorden brengen hem terug. Dit is de "ik ben vertrouwd met dit boek" markering, los van het FSRS-niveau. Het maakt een race-naar-alle-66-goud in één sessie haalbaar voor gebruikers die de boekenrij al deels kennen. Het FSRS-niveau (Geworteld, Verankerd, Permanent) blijft daarnaast bestaan als lange-termijn maat — twee verschillende signalen, allebei nuttig. Je kunt de lijn helemaal uitschakelen via Instellingen → Training → Algemeen → "Vertrouwde boeken" als je liever zonder visuele voortgangshulp oefent.',
       },
+      // ─── 8a-bis. Working-memory protection — ADR 0010 refinement ──────
+      {
+        q: 'Waarom telt een snel antwoord soms niet mee voor de gouden lijn of mijn record?',
+        a: 'Als je voor hetzelfde boek twee keer kort na elkaar de vraag krijgt (binnen een minuut), wordt het tweede snelle antwoord niet meegerekend voor je vooruitgang. Reden: je herinnerde gewoon nog waar het boek stond — dat is werkgeheugen, niet echte recall. Wetenschappelijk onderzoek (Kahana & Loftus 1999) toont aan dat antwoorden direct na elkaar artificieel sneller zijn dan echte herinnering vanuit het lange-termijn geheugen. BBF beschermt drie metingen tegen deze "vals snelle" antwoorden: de gouden lijn, je FSRS-planning, en je persoonlijke record per boek. Je score, streak en totale tijd tellen wel gewoon mee — die meten je tap-snelheid, niet je kennis. In de praktijk: als je een boek 5 seconden eerste keer en 1 seconde tweede keer doet, telt alleen de eerste 5 seconden als echte leer-meting. Voor de gouden lijn moet je het boek dus ook later in een nieuwe race nog vlot kunnen vinden.',
+      },
       // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {
         q: 'Wat gebeurt er als alle 66 boeken vertrouwd zijn?',
@@ -405,6 +410,11 @@ No pressure to practice daily. Train when you have the time.`,
       {
         q: 'What is the gold line at the bottom of some book cells, and when does it appear?',
         a: 'The gold line appears under a book once your last 3 answers on that book were all correct AND within your target time. One wrong answer or one too-slow answer makes the line disappear; three more correct-and-fast answers bring it back. This is the "I know this book confidently" marker, decoupled from the FSRS tier. It makes a race-to-all-66-gold in a single session achievable for users who already partly know the layout. The FSRS tier (Rooted, Anchored, Permanent) still exists alongside as the long-term retention measure — two different signals, both useful. You can turn the line off entirely via Settings → Training → Shared → "Confident books" if you prefer practicing without the visual progress aid.',
+      },
+      // ─── 8a-bis. Working-memory protection — ADR 0010 refinement ──────
+      {
+        q: 'Why does a fast answer sometimes not count toward my gold line or personal best?',
+        a: 'When the same book is asked twice in close succession (within one minute), the second fast answer is not counted as progress. The reason: you simply remembered where the book was — that\'s working memory, not real recall. Cognitive research (Kahana & Loftus, 1999) shows that answers given immediately after each other are artificially faster than genuine recall from long-term memory. BBF protects three measurements against these "falsely fast" answers: the gold line, your FSRS schedule, and your per-book personal best. Your score, streak, and total time DO count — those measure tap speed, not knowledge. In practice: if you answer a book in 5 seconds first time and 1 second second time, only the first 5 seconds counts as a real learning measurement. To earn the gold line, you need to also find the book quickly in a later race.',
       },
       // ─── 8b. After all 66 confident — rewritten for ADR 0008 ─────────
       {
