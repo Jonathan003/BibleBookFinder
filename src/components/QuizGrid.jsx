@@ -202,6 +202,34 @@ export default function QuizGrid({
   // silently dropping the count from 66 to 65 between the prompt
   // render and the home render. See ADR 0004.
   const sessionCompleteRef = useRef(false);
+  // ADR 0010 refinement: tracks the most recent bookId for which a
+  // correct answer was recorded into recentAnswers. Used by the
+  // recordRecentAnswerFiltered wrapper below to suppress back-to-back
+  // repeats of the same book.
+  //
+  // Why: when a book is asked twice in immediate succession (common in
+  // BBF's picker — Rating.Hard schedules a quick re-show, Rating.Again
+  // schedules even sooner), the second answer is contaminated by
+  // working memory. The user just visually located the cell; the
+  // 1-second second answer measures working-memory recall, not
+  // long-term recall. Cognitive psychology backs this up:
+  //   - Kahana & Loftus (1999): IRTs to second repeated elements are
+  //     artificially shorter when repetitions are in nearby positions.
+  //     Spaced repetitions show normal RTs.
+  //   - Intertrial priming literature: direct repetition produces
+  //     well-documented RT-acceleration effects.
+  //   - Working-memory decay: gamma-band activity drops to noise within
+  //     500ms; one intervening item is usually enough to displace the
+  //     previous item.
+  //
+  // The wrapper only filters CORRECT answers. Misses are always
+  // recorded — a wrong-tap or time-up even after a same-book correct is
+  // a strong signal (the user had working-memory help and still missed).
+  //
+  // The ref resets implicitly on a new component mount (fresh session,
+  // including post-pause resume — working memory is gone after any
+  // real-world pause anyway).
+  const lastRecordedBookIdRef = useRef(null);
   const promptRowRef = useRef(null);
   const quizTopRef = useRef(null);
   const [overlayTop, setOverlayTop] = useState(null);
@@ -212,6 +240,35 @@ export default function QuizGrid({
   // time-up tick interval (which holds a stale closure) can read the
   // current value via the ref.
   useEffect(() => { sessionCompleteRef.current = sessionComplete; }, [sessionComplete]);
+
+  // ADR 0010 refinement: wraps recordRecentAnswer with back-to-back
+  // suppression. Three rules:
+  //   1. If event.correct === true AND bookId matches lastRecordedBookIdRef
+  //      → SKIP (working-memory contamination — see ref declaration above).
+  //   2. Misses (correct: false) are always recorded, even back-to-back.
+  //      A miss after a same-book correct is a strong signal (working
+  //      memory should have helped — it didn't).
+  //   3. Every recording updates lastRecordedBookIdRef to the current
+  //      bookId, so the next call compares against the most recent
+  //      RECORDED book (not just the most recent picked book — a skipped
+  //      pick doesn't change what we compare against, which is exactly
+  //      what we want for catching 3+ in a row of the same book).
+  //
+  // Caller can pass `null` for recordRecentAnswer (e.g. if the parent
+  // hasn't wired it yet) — the wrapper is a no-op in that case.
+  const recordRecentAnswerFiltered = useCallback((bookId, event) => {
+    if (!recordRecentAnswer) return;
+    if (event.correct && lastRecordedBookIdRef.current === bookId) {
+      // Same-book back-to-back correct — suppress as working-memory
+      // contamination. Do NOT update the ref: the next pick should
+      // still compare against the earlier recorded answer for this
+      // book, not against the suppressed one. This is what catches
+      // 3+ identical-book streaks correctly.
+      return;
+    }
+    recordRecentAnswer(bookId, event);
+    lastRecordedBookIdRef.current = bookId;
+  }, [recordRecentAnswer]);
 
   // Mode of the *current* in-flight segment (the one not yet saved to
   // quizHistory). Stored as a ref because the autosave-on-unmount
@@ -398,14 +455,12 @@ export default function QuizGrid({
         updateFsrsCard(tb.id, serializeCard(result.card));
         logAnswerResult(tb, currentCardData, serializeCard(result.card), Rating.Hard);
 
-        // ADR 0010: record the time-up as a miss in the recent-answer
-        // window. correct=false (the user didn't tap the right cell
-        // before time ran out), ms=0 (no valid response-time measurement).
-        // This is criterion-3 territory: time-up counts as "didn't get
-        // it right on first try."
-        if (recordRecentAnswer) {
-          recordRecentAnswer(tb.id, { ms: 0, correct: false });
-        }
+        // ADR 0010 + refinement: record the time-up as a miss. Misses
+        // are always recorded (filtered wrapper lets them through
+        // unconditionally) — even a miss right after a same-book
+        // correct is a strong signal that the user can't hold the
+        // book reliably.
+        recordRecentAnswerFiltered(tb.id, { ms: 0, correct: false });
 
         // Confident buffer: push `false` — a question that timed
         // out is by definition not a confident answer. Mirrors the
@@ -825,13 +880,13 @@ export default function QuizGrid({
       const rating = ratingFromSpeed(timeTaken, config.targetSpeedMs);
       setFeedback(isWithinTime ? 'correct' : 'slow');
 
-      // ADR 0010: record this correct answer into the recent-answer
-      // window. Both fast and slow correct answers count; only the
-      // actual response time matters for the median, capped at the
-      // same MAX_ANSWER_MS used for training-time accumulation.
-      if (recordRecentAnswer) {
-        recordRecentAnswer(targetBook.id, { ms: cappedMs, correct: true });
-      }
+      // ADR 0010 + refinement: record this correct answer into the
+      // recent-answer window via the filtered wrapper. If this is the
+      // SAME book as the last recorded answer, the wrapper suppresses
+      // this record as working-memory contamination (the user just
+      // located this cell visually; the 1-2s answer measures recall
+      // from working memory, not long-term memory).
+      recordRecentAnswerFiltered(targetBook.id, { ms: cappedMs, correct: true });
 
       // Update FSRS card with the new rating.
       const currentCard = fsrsCards[targetBook.id]
@@ -966,13 +1021,12 @@ export default function QuizGrid({
     setFeedback('wrong');
     setCorrectBookId(targetBook.id);
 
-    // ADR 0010: record the miss. ms=0 because the user's response time
-    // was spent finding the wrong cell, not the target — not a valid
-    // measurement for the target book's median. The `correct: false`
-    // flag is what criterion 3 (recent miss) keys on.
-    if (recordRecentAnswer) {
-      recordRecentAnswer(targetBook.id, { ms: 0, correct: false });
-    }
+    // ADR 0010 + refinement: record the miss. Misses always go through
+    // the filter (the wrapper only suppresses correct same-book repeats,
+    // not misses). A wrong-tap even after a same-book correct is the
+    // strongest possible "needs attention" signal — working memory
+    // should have helped, but didn't.
+    recordRecentAnswerFiltered(targetBook.id, { ms: 0, correct: false });
 
     // Track time spent on this question for the cumulative training
     // counter and the per-segment sessionMs accumulator. Wrong answers
