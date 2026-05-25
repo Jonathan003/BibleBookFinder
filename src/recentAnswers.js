@@ -8,6 +8,36 @@
 // Window size is 5: small enough to react quickly to improvement,
 // large enough to filter out one-off noise. Sized to fill within
 // 1–2 Quiz Mode races for any given book.
+//
+// ─── Type contract for Set-returning helpers ──────────────────────────
+// IMPORTANT: getSlowBookIds and getRecentlyMissedBookIds both return a
+// Set of NUMBERS — matching the numeric `book.id` in bibleBooks
+// (data.js: `{ id: 1, ... }`). This is non-obvious because their input
+// is iterated via Object.entries(), which always returns keys as
+// STRINGS, even when the source object was indexed with numeric values
+// (`recentAnswers[1] = ...` is stored as the key `"1"` — all JS object
+// keys are strings under the hood).
+//
+// Forgetting to coerce here is a silent, hard-to-spot bug: Set.has()
+// uses SameValueZero equality (no type coercion), so Set(["1"]).has(1)
+// returns false even though the values "look" the same. The downstream
+// consumer (getAttentionBooks in fsrs.js) calls slowIds.has(book.id)
+// with a NUMBER — so the Set MUST contain numbers, not strings, or
+// every lookup will silently return false and the entire "books that
+// need attention" scope will appear empty after a race even when slow
+// and missed books are clearly present in the data.
+//
+// Object property access elsewhere in the codebase
+// (`recentAnswers[bid]`, `fsrsCards[book.id]`, `bestTimes[book.id]`, …)
+// is safe because JS auto-coerces object keys to string. Only Set and
+// Map operations break, because they don't coerce on .has() / .get().
+// Those are the only spots where the explicit Number() coercion below
+// is required.
+//
+// Diagnosed live: a fully-trained user with 8 slow + 3 missed books
+// (union = 11) saw "No clearly weak books — you're in good shape!"
+// because slowIds.has(11) returned false against a Set that contained
+// "11" (string).
 
 export const ANSWER_WINDOW_SIZE = 5;
 
@@ -57,6 +87,11 @@ function median(numbers) {
  * in its window, compute the median of its correct response times.
  * Returns a map { bookId: medianMs }. Books without enough data are
  * omitted.
+ *
+ * Note: the returned object has STRING keys (a JS-engine artefact of
+ * object property keys always being coerced to strings). Its only
+ * consumer is getSlowBookIds below, which iterates via Object.entries
+ * and then coerces back to Number when populating its Set output.
  */
 export function computeBookMedians(recentAnswers) {
   const result = {};
@@ -75,7 +110,8 @@ export function computeBookMedians(recentAnswers) {
 
 /**
  * From the per-book median map, identify books whose median exceeds
- * (mean of all medians + 1 stddev). Returns a Set of bookIds.
+ * (mean of all medians + 1 stddev). Returns a Set of bookIds AS NUMBERS
+ * (see the "Type contract" note at the top of this file).
  * Returns an empty Set if fewer than 2 books have medians (need at
  * least 2 for a meaningful standard deviation).
  *
@@ -95,14 +131,19 @@ export function getSlowBookIds(bookMedians) {
   const threshold = mean + stddev;
   const slow = new Set();
   for (const [bookId, m] of Object.entries(bookMedians)) {
-    if (m > threshold) slow.add(bookId);
+    // Number() coercion required — see "Type contract" note at top of
+    // file. bookId comes out of Object.entries() as a string; the
+    // consumer (getAttentionBooks) looks up by numeric book.id, and
+    // Set.has() does not type-coerce.
+    if (m > threshold) slow.add(Number(bookId));
   }
   return slow;
 }
 
 /**
  * Identify books with at least one miss in their recent window.
- * Returns a Set of bookIds.
+ * Returns a Set of bookIds AS NUMBERS (see the "Type contract" note at
+ * the top of this file).
  *
  * This is criterion 3 ("recent miss") from ADR 0010. A miss is any
  * entry with correct=false (covers both wrong-tap and time-up).
@@ -111,7 +152,9 @@ export function getRecentlyMissedBookIds(recentAnswers) {
   const missed = new Set();
   if (!recentAnswers) return missed;
   for (const [bookId, entries] of Object.entries(recentAnswers)) {
-    if (entries.some(e => !e.correct)) missed.add(bookId);
+    // Number() coercion required — see "Type contract" note at top of
+    // file. Same reason as in getSlowBookIds.
+    if (entries.some(e => !e.correct)) missed.add(Number(bookId));
   }
   return missed;
 }
